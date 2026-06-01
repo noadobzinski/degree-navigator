@@ -36,7 +36,7 @@ function CourseTableCallbackPage() {
               },
             });
             setStatus("success");
-            setMessage("Your Yale NetID is linked. The full CourseTable catalog is now available.");
+            setMessage("Your Yale NetID is linked to your BluePath profile.");
           } catch {
             setStatus("partial");
             setMessage(
@@ -54,7 +54,7 @@ function CourseTableCallbackPage() {
         if (cancelled) return;
         setStatus("partial");
         setMessage(
-          "Yale sign-in may have succeeded, but your browser blocked the session check. The full course catalog still loads via CourseTable — open Settings after signing in to BluePath to confirm your connection.",
+          "Yale sign-in may have succeeded, but your browser blocked the session check. The course catalog still loads automatically — sign in to BluePath and open Settings to link your NetID if needed.",
         );
       }
     }

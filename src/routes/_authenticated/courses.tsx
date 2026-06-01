@@ -4,17 +4,16 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { getMyCourses, addCourse, updateCourse, deleteCourse } from "@/lib/audit.functions";
 import {
-  getCourseTableCatalogMeta,
-  searchCourseTableCatalog,
-} from "@/lib/coursetable.functions";
+  useCourseTableCatalogMeta,
+  useCourseTableCatalogSearch,
+} from "@/hooks/use-coursetable-catalog";
 import { CATALOG, CATALOG_BY_CODE, type CatalogCourse } from "@/data/courses";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { YaleNetIdButton } from "@/components/yale-netid-button";
-import { Trash2, Plus, Search, Database, AlertCircle, ExternalLink } from "lucide-react";
+import { Trash2, Plus, Search, Database, AlertCircle, ExternalLink, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { courseTableSearchUrl } from "@/lib/coursetable";
 
@@ -28,11 +27,9 @@ function CoursesPage() {
   const addFn = useServerFn(addCourse);
   const updateFn = useServerFn(updateCourse);
   const deleteFn = useServerFn(deleteCourse);
-  const searchCatalogFn = useServerFn(searchCourseTableCatalog);
-  const catalogMetaFn = useServerFn(getCourseTableCatalogMeta);
   const qc = useQueryClient();
   const coursesQ = useQuery({ queryKey: ["courses"], queryFn: () => fetchCourses() });
-  const metaQ = useQuery({ queryKey: ["coursetable-meta"], queryFn: () => catalogMetaFn() });
+  const metaQ = useCourseTableCatalogMeta();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
@@ -41,17 +38,10 @@ function CoursesPage() {
     return () => clearTimeout(t);
   }, [search]);
 
-  const catalogQ = useQuery({
-    queryKey: ["coursetable-catalog", debouncedSearch],
-    queryFn: () =>
-      searchCatalogFn({
-        data: { query: debouncedSearch || undefined, limit: 50 },
-      }),
-    retry: 1,
-  });
+  const catalogQ = useCourseTableCatalogSearch(debouncedSearch, 50);
 
   const catalogCourses: CatalogCourse[] = catalogQ.data?.courses ?? [];
-  const usingLiveCatalog = catalogQ.isSuccess && catalogCourses.length > 0;
+  const usingLiveCatalog = !catalogQ.isError && (catalogQ.isSuccess || !!metaQ.data);
   const fallbackCourses = useMemo(() => {
     const q = debouncedSearch.trim().toLowerCase();
     if (!q) return CATALOG.slice(0, 30);
@@ -115,7 +105,7 @@ function CoursesPage() {
       <div>
         <h1 className="font-serif text-3xl font-bold">My Courses</h1>
         <p className="text-muted-foreground">
-          Add courses from the Yale catalog via CourseTable.
+          Yale courses load automatically from CourseTable — search and add them to your degree audit.
         </p>
       </div>
 
@@ -125,11 +115,14 @@ function CoursesPage() {
             <div className="flex items-start gap-2 text-sm">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
               <p>
-                Could not load the live CourseTable catalog — showing a small sample instead.
-                Connect your Yale NetID or try again later.
+                Could not reach CourseTable right now — showing a small sample instead.
+                The catalog usually loads automatically when you sign in.
               </p>
             </div>
-            <YaleNetIdButton label="Connect Yale NetID" />
+            <Button variant="outline" size="sm" onClick={() => catalogQ.refetch()} disabled={catalogQ.isFetching}>
+              <RefreshCw className={`mr-1 h-3.5 w-3.5 ${catalogQ.isFetching ? "animate-spin" : ""}`} />
+              Retry
+            </Button>
           </CardContent>
         </Card>
       ) : null}

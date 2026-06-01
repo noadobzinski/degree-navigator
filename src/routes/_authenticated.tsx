@@ -1,7 +1,8 @@
 import { createFileRoute, redirect, Outlet, Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { GraduationCap, LayoutDashboard, BookOpen, Map, Settings, LogOut, BookOpenCheck } from "lucide-react";
+import { GraduationCap, LayoutDashboard, BookOpen, Map, Settings, LogOut, BookOpenCheck, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { usePrefetchCourseTableCatalog, useCourseTableCatalogMeta } from "@/hooks/use-coursetable-catalog";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ context, location }) => {
@@ -23,6 +24,9 @@ const NAV = [
 function AuthLayout() {
   const router = useRouter();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  usePrefetchCourseTableCatalog();
+  const catalogMeta = useCourseTableCatalogMeta();
+
   async function signOut() {
     await supabase.auth.signOut();
     router.navigate({ to: "/" });
@@ -34,6 +38,16 @@ function AuthLayout() {
           <GraduationCap className="h-6 w-6" />
           <span className="font-serif text-lg font-bold">BluePath</span>
         </Link>
+        {catalogMeta.data ? (
+          <div className="mx-3 mb-3 flex items-center gap-2 rounded-md border border-sidebar-border bg-sidebar-accent/40 px-3 py-2 text-xs text-sidebar-foreground">
+            <Database className="h-3.5 w-3.5 shrink-0 text-primary" />
+            <span>
+              CourseTable · {catalogMeta.data.courseCount.toLocaleString()} courses
+            </span>
+          </div>
+        ) : catalogMeta.isLoading ? (
+          <p className="mx-6 mb-3 text-xs text-muted-foreground">Loading Yale catalog…</p>
+        ) : null}
         <nav className="flex-1 space-y-1 px-3">
           {NAV.map((n) => {
             const active = pathname.startsWith(n.to);

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { getProfile, updateProfile } from "@/lib/audit.functions";
 import { unlinkCourseTable } from "@/lib/coursetable.functions";
+import { useCourseTableCatalogMeta } from "@/hooks/use-coursetable-catalog";
 import { MAJORS_BY_ID } from "@/data/majors";
 import { TRACKS } from "@/data/tracks";
 import { MajorPicker } from "@/components/major-picker";
@@ -15,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { Database } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   validateSearch: z.object({ major: z.string().optional() }),
@@ -29,6 +31,7 @@ function SettingsPage() {
   const unlinkFn = useServerFn(unlinkCourseTable);
   const qc = useQueryClient();
   const profileQ = useQuery({ queryKey: ["profile"], queryFn: () => fetchProfile() });
+  const catalogMeta = useCourseTableCatalogMeta();
 
   const [name, setName] = useState("");
   const [majorId, setMajorId] = useState<string>("");
@@ -138,12 +141,39 @@ function SettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="font-serif">CourseTable & Yale NetID</CardTitle>
+          <CardTitle className="font-serif">Yale course catalog</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-start gap-3 rounded-md border border-border bg-muted/40 p-4 text-sm">
+            <Database className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+            <div>
+              {catalogMeta.data ? (
+                <>
+                  <p className="font-medium">Connected to CourseTable</p>
+                  <p className="mt-1 text-muted-foreground">
+                    {catalogMeta.data.courseCount.toLocaleString()} Yale courses are available across My Courses,
+                    Roadmap, and your degree audit. No extra sign-in required.
+                  </p>
+                </>
+              ) : catalogMeta.isLoading ? (
+                <p className="text-muted-foreground">Loading catalog from CourseTable…</p>
+              ) : (
+                <p className="text-muted-foreground">
+                  CourseTable catalog is unavailable right now. Course search will retry automatically.
+                </p>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-serif">Yale NetID (optional)</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Connect your Yale NetID through CourseTable to load the full Yale course catalog
-            (thousands of courses with distributional tags). Uses Yale CAS — the same login as CourseTable.
+            Optionally link your Yale NetID to save it on your profile. The course catalog works without this step.
           </p>
           {coursetableNetId ? (
             <div className="rounded-md border border-border bg-muted/40 p-4 text-sm">

@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { getProfile, getMyCourses } from "@/lib/audit.functions";
-import { getRoadmapSuggestions, getCourseTableCatalogMeta } from "@/lib/coursetable.functions";
+import { getRoadmapSuggestions } from "@/lib/coursetable.functions";
+import { useCourseTableCatalogMeta } from "@/hooks/use-coursetable-catalog";
 import { courseTableSearchUrl } from "@/lib/coursetable";
 import type { UserCourse } from "@/lib/audit";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,10 +19,9 @@ function RoadmapPage() {
   const fetchProfile = useServerFn(getProfile);
   const fetchCourses = useServerFn(getMyCourses);
   const roadmapFn = useServerFn(getRoadmapSuggestions);
-  const metaFn = useServerFn(getCourseTableCatalogMeta);
+  const metaQ = useCourseTableCatalogMeta();
   const profileQ = useQuery({ queryKey: ["profile"], queryFn: () => fetchProfile() });
   const coursesQ = useQuery({ queryKey: ["courses"], queryFn: () => fetchCourses() });
-  const metaQ = useQuery({ queryKey: ["coursetable-meta"], queryFn: () => metaFn() });
 
   const roadmapQ = useQuery({
     queryKey: ["roadmap", profileQ.data?.major_id, profileQ.data?.degree_type, profileQ.data?.track_id, coursesQ.data],
