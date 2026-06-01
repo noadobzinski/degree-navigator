@@ -35,6 +35,27 @@ function matchesSlot(course: UserCourse, slot: RequirementSlot): boolean {
   return false;
 }
 
+function matchesCatalogCourse(course: CatalogCourse, slot: RequirementSlot): boolean {
+  return matchesSlot(
+    {
+      id: course.code,
+      course_code: course.code,
+      course_title: course.title,
+      credits: course.credits,
+      distributional: course.distributional,
+      skills: course.skills,
+      status: "planned",
+      term: null,
+      year: null,
+    },
+    slot,
+  );
+}
+
+function lookupCatalog(code: string, catalogByCode: Record<string, CatalogCourse>): CatalogCourse | undefined {
+  return catalogByCode[code] ?? catalogByCode[code.toUpperCase()];
+}
+
 function fillSlots(
   slots: RequirementSlot[],
   courses: UserCourse[],
@@ -121,17 +142,36 @@ export function suggestRoadmap(
   majorId: string | null,
   degree: "BA" | "BS",
   trackId: string | null,
+  catalogByCode: Record<string, CatalogCourse> = CATALOG_BY_CODE,
 ): { priority: "high" | "med" | "low"; code: string; title: string; reason: string }[] {
   const completedCodes = new Set(courses.map((c) => c.course_code.toUpperCase()));
   const suggestions: { priority: "high" | "med" | "low"; code: string; title: string; reason: string }[] = [];
   const seen = new Set<string>();
   const pushIf = (code: string, reason: string, priority: "high" | "med" | "low") => {
-    const c = CATALOG_BY_CODE[code];
+    const c = lookupCatalog(code, catalogByCode);
     if (!c) return;
     if (completedCodes.has(code.toUpperCase())) return;
     if (seen.has(code)) return;
     seen.add(code);
     suggestions.push({ code, title: c.title, reason, priority });
+  };
+
+  const suggestForSlot = (slot: RequirementSlot, remaining: number, reason: string, priority: "high" | "med" | "low") => {
+    if (remaining <= 0) return;
+    (slot.codes ?? []).slice(0, remaining).forEach((code) => pushIf(code, reason, priority));
+    const explicitCount = Math.min(remaining, slot.codes?.length ?? 0);
+    const prefixNeed = remaining - explicitCount;
+    if (prefixNeed > 0 && slot.codePrefix?.length) {
+      let added = 0;
+      for (const c of Object.values(catalogByCode)) {
+        if (added >= prefixNeed) break;
+        if (!matchesCatalogCourse(c, slot)) continue;
+        const key = c.code.toUpperCase();
+        if (completedCodes.has(key) || seen.has(c.code)) continue;
+        pushIf(c.code, reason, priority);
+        added++;
+      }
+    }
   };
 
   if (majorId) {
@@ -144,9 +184,7 @@ export function suggestRoadmap(
       for (const s of audit.sections) {
         for (const r of s.results) {
           if (r.satisfied) continue;
-          (r.slot.codes ?? []).slice(0, r.remaining).forEach((code) =>
-            pushIf(code, `Major: ${r.slot.label}`, "high"),
-          );
+          suggestForSlot(r.slot, r.remaining, `Major: ${r.slot.label}`, "high");
         }
       }
     }
@@ -157,9 +195,7 @@ export function suggestRoadmap(
     if (t) {
       for (const r of t.results) {
         if (r.satisfied) continue;
-        (r.slot.codes ?? []).slice(0, r.remaining).forEach((code) =>
-          pushIf(code, `${t.track.name}: ${r.slot.label}`, "high"),
-        );
+        suggestForSlot(r.slot, r.remaining, `${t.track.name}: ${r.slot.label}`, "high");
       }
     }
   }
@@ -167,15 +203,14 @@ export function suggestRoadmap(
   const dist = auditDistributional(courses);
   for (const d of dist) {
     if (d.satisfied) continue;
-    // suggest a course matching this distributional that the user hasn't taken
-    for (const [code, c] of Object.entries(CATALOG_BY_CODE) as [string, CatalogCourse][]) {
-      if (completedCodes.has(code.toUpperCase())) continue;
+    for (const c of Object.values(catalogByCode)) {
+      if (completedCodes.has(c.code.toUpperCase())) continue;
       const matches =
         d.req.tag === "L_ANY"
           ? c.skills.some((s) => ["L4", "L5"].includes(s))
           : c.distributional.includes(d.req.tag as never) || c.skills.includes(d.req.tag as never);
       if (matches) {
-        pushIf(code, `Distributional: ${d.req.label}`, "med");
+        pushIf(c.code, `Distributional: ${d.req.label}`, "med");
         if (suggestions.filter((s) => s.reason.startsWith("Distributional")).length >= 6) break;
       }
     }

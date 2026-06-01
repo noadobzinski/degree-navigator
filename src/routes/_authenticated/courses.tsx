@@ -14,8 +14,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { YaleNetIdButton } from "@/components/yale-netid-button";
-import { Trash2, Plus, Search, Database, AlertCircle } from "lucide-react";
+import { Trash2, Plus, Search, Database, AlertCircle, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+import { courseTableSearchUrl } from "@/lib/coursetable";
 
 export const Route = createFileRoute("/_authenticated/courses")({
   head: () => ({ meta: [{ title: "My Courses — BluePath" }] }),
@@ -168,6 +169,17 @@ function CoursesPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold">{c.code}</span>
                     <span className="truncate text-sm text-muted-foreground">{c.title}</span>
+                    {usingLiveCatalog ? (
+                      <a
+                        href={courseTableSearchUrl(c.code)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-muted-foreground hover:text-primary"
+                        title="View on CourseTable"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </a>
+                    ) : null}
                   </div>
                   <div className="mt-1 flex flex-wrap gap-1">
                     {c.distributional.map((d) => (

@@ -2,12 +2,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { getProfile, getMyCourses } from "@/lib/audit.functions";
+import { getCourseTableCatalogMeta } from "@/lib/coursetable.functions";
 import { auditMajor, auditTrack, auditDistributional, totalCredits, graduationCredits, type UserCourse } from "@/lib/audit";
 import { MAJORS_BY_ID } from "@/data/majors";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Circle, AlertCircle, GraduationCap } from "lucide-react";
+import { CheckCircle2, Circle, AlertCircle, GraduationCap, Database } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — BluePath" }] }),
@@ -17,8 +18,10 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 function Dashboard() {
   const fetchProfile = useServerFn(getProfile);
   const fetchCourses = useServerFn(getMyCourses);
+  const metaFn = useServerFn(getCourseTableCatalogMeta);
   const profileQ = useQuery({ queryKey: ["profile"], queryFn: () => fetchProfile() });
   const coursesQ = useQuery({ queryKey: ["courses"], queryFn: () => fetchCourses() });
+  const metaQ = useQuery({ queryKey: ["coursetable-meta"], queryFn: () => metaFn() });
 
   if (profileQ.isLoading || coursesQ.isLoading) return <div className="text-muted-foreground">Loading your audit…</div>;
   const profile = profileQ.data;
@@ -63,6 +66,22 @@ function Dashboard() {
         </div>
         <Link to="/settings" className="text-sm font-medium text-primary hover:underline">Edit profile</Link>
       </header>
+
+      {metaQ.data ? (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
+          <Database className="h-4 w-4 text-primary" />
+          <span>
+            Course catalog synced from CourseTable — {metaQ.data.courseCount.toLocaleString()} courses ({metaQ.data.season}).
+          </span>
+          <Link to="/courses" className="font-medium text-primary hover:underline">
+            Search courses
+          </Link>
+          <span className="text-muted-foreground">·</span>
+          <Link to="/roadmap" className="font-medium text-primary hover:underline">
+            View roadmap
+          </Link>
+        </div>
+      ) : null}
 
       {/* Top summary cards */}
       <div className="grid gap-4 md:grid-cols-3">

@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import type { CatalogCourse } from "@/data/courses";
+import { CATALOG_BY_CODE, type CatalogCourse } from "@/data/courses";
+import { suggestRoadmap, type UserCourse } from "@/lib/audit";
 import {
   COURSETABLE_API,
   currentSeasonCode,
@@ -39,6 +40,58 @@ async function fetchSeasonCatalog(season: string): Promise<CatalogCourse[]> {
   catalogCache = { season, courses, fetchedAt: Date.now() };
   return courses;
 }
+
+export function buildMergedCatalog(courses: CatalogCourse[]): Record<string, CatalogCourse> {
+  const merged: Record<string, CatalogCourse> = { ...CATALOG_BY_CODE };
+  for (const c of courses) {
+    merged[c.code.toUpperCase()] = c;
+  }
+  return merged;
+}
+
+export const getRoadmapSuggestions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        courses: z.array(
+          z.object({
+            id: z.string(),
+            course_code: z.string(),
+            course_title: z.string().nullable(),
+            credits: z.number(),
+            distributional: z.array(z.string()),
+            skills: z.array(z.string()),
+            status: z.enum(["planned", "in_progress", "completed"]),
+            term: z.string().nullable(),
+            year: z.number().nullable(),
+          }),
+        ),
+        majorId: z.string().nullable(),
+        degree: z.enum(["BA", "BS"]),
+        trackId: z.string().nullable(),
+        season: z.string().regex(/^\d{6}$/).optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const season = data.season ?? currentSeasonCode();
+    const catalog = await fetchSeasonCatalog(season);
+    const catalogByCode = buildMergedCatalog(catalog);
+    const suggestions = suggestRoadmap(
+      data.courses as UserCourse[],
+      data.majorId,
+      data.degree,
+      data.trackId,
+      catalogByCode,
+    );
+    return {
+      season,
+      catalogSize: catalog.length,
+      suggestions,
+      source: "coursetable" as const,
+    };
+  });
 
 export const searchCourseTableCatalog = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

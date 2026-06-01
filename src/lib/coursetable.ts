@@ -90,3 +90,9 @@ export function dedupeCourseTableCourses(entries: CourseTableCourse[]): CatalogC
   }
   return [...byKey.values()].sort((a, b) => a.code.localeCompare(b.code));
 }
+
+/** Open CourseTable search for a course code (public, no auth required). */
+export function courseTableSearchUrl(code: string): string {
+  const q = encodeURIComponent(code.trim());
+  return `https://coursetable.com/?q=${q}`;
+}
