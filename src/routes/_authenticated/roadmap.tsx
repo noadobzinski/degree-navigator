@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { getProfile, getMyCourses } from "@/lib/audit.functions";
 import { getRoadmapSuggestions } from "@/lib/coursetable.functions";
-import { useCourseTableCatalogMeta } from "@/hooks/use-coursetable-catalog";
+import { useCourseTableCatalogMeta, useClientQueryEnabled } from "@/hooks/use-coursetable-catalog";
 import { courseTableSearchUrl } from "@/lib/coursetable";
 import type { UserCourse } from "@/lib/audit";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,14 +18,23 @@ export const Route = createFileRoute("/_authenticated/roadmap")({
 function RoadmapPage() {
   const fetchProfile = useServerFn(getProfile);
   const fetchCourses = useServerFn(getMyCourses);
+  const clientReady = useClientQueryEnabled();
   const roadmapFn = useServerFn(getRoadmapSuggestions);
   const metaQ = useCourseTableCatalogMeta();
-  const profileQ = useQuery({ queryKey: ["profile"], queryFn: () => fetchProfile() });
-  const coursesQ = useQuery({ queryKey: ["courses"], queryFn: () => fetchCourses() });
+  const profileQ = useQuery({
+    queryKey: ["profile"],
+    queryFn: () => fetchProfile(),
+    enabled: clientReady,
+  });
+  const coursesQ = useQuery({
+    queryKey: ["courses"],
+    queryFn: () => fetchCourses(),
+    enabled: clientReady,
+  });
 
   const roadmapQ = useQuery({
     queryKey: ["roadmap", profileQ.data?.major_id, profileQ.data?.degree_type, profileQ.data?.track_id, coursesQ.data],
-    enabled: !!profileQ.data?.major_id && coursesQ.data !== undefined,
+    enabled: clientReady && !!profileQ.data?.major_id && coursesQ.data !== undefined,
     queryFn: () =>
       roadmapFn({
         data: {
@@ -37,7 +46,9 @@ function RoadmapPage() {
       }),
   });
 
-  if (profileQ.isLoading || coursesQ.isLoading) return <p className="text-muted-foreground">Loading…</p>;
+  if (!clientReady || profileQ.isLoading || coursesQ.isLoading) {
+    return <p className="text-muted-foreground">Loading…</p>;
+  }
   const profile = profileQ.data;
   if (!profile?.major_id) {
     return (

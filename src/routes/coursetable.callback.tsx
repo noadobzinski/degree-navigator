@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { checkCourseTableAuth } from "@/lib/coursetable.client";
 import { linkCourseTableNetId } from "@/lib/coursetable.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +22,7 @@ function CourseTableCallbackPage() {
 
     async function finish() {
       try {
+        const { checkCourseTableAuth } = await import("@/lib/coursetable.client");
         const auth = await checkCourseTableAuth();
         if (cancelled) return;
 

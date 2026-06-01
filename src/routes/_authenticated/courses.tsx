@@ -6,6 +6,7 @@ import { getMyCourses, addCourse, updateCourse, deleteCourse } from "@/lib/audit
 import {
   useCourseTableCatalogMeta,
   useCourseTableCatalogSearch,
+  useClientQueryEnabled,
 } from "@/hooks/use-coursetable-catalog";
 import { CATALOG, CATALOG_BY_CODE, type CatalogCourse } from "@/data/courses";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,8 +28,13 @@ function CoursesPage() {
   const addFn = useServerFn(addCourse);
   const updateFn = useServerFn(updateCourse);
   const deleteFn = useServerFn(deleteCourse);
+  const clientReady = useClientQueryEnabled();
   const qc = useQueryClient();
-  const coursesQ = useQuery({ queryKey: ["courses"], queryFn: () => fetchCourses() });
+  const coursesQ = useQuery({
+    queryKey: ["courses"],
+    queryFn: () => fetchCourses(),
+    enabled: clientReady,
+  });
   const metaQ = useCourseTableCatalogMeta();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");

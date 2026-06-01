@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { getProfile, getMyCourses } from "@/lib/audit.functions";
-import { useCourseTableCatalogMeta } from "@/hooks/use-coursetable-catalog";
+import { useCourseTableCatalogMeta, useClientQueryEnabled } from "@/hooks/use-coursetable-catalog";
 import { auditMajor, auditTrack, auditDistributional, totalCredits, graduationCredits, type UserCourse } from "@/lib/audit";
 import { MAJORS_BY_ID } from "@/data/majors";
 import { Progress } from "@/components/ui/progress";
@@ -18,11 +18,22 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 function Dashboard() {
   const fetchProfile = useServerFn(getProfile);
   const fetchCourses = useServerFn(getMyCourses);
+  const clientReady = useClientQueryEnabled();
   const metaQ = useCourseTableCatalogMeta();
-  const profileQ = useQuery({ queryKey: ["profile"], queryFn: () => fetchProfile() });
-  const coursesQ = useQuery({ queryKey: ["courses"], queryFn: () => fetchCourses() });
+  const profileQ = useQuery({
+    queryKey: ["profile"],
+    queryFn: () => fetchProfile(),
+    enabled: clientReady,
+  });
+  const coursesQ = useQuery({
+    queryKey: ["courses"],
+    queryFn: () => fetchCourses(),
+    enabled: clientReady,
+  });
 
-  if (profileQ.isLoading || coursesQ.isLoading) return <div className="text-muted-foreground">Loading your audit…</div>;
+  if (!clientReady || profileQ.isLoading || coursesQ.isLoading) {
+    return <div className="text-muted-foreground">Loading your audit…</div>;
+  }
   const profile = profileQ.data;
   const courses = (coursesQ.data ?? []) as UserCourse[];
 

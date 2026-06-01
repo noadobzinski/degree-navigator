@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { getProfile, updateProfile } from "@/lib/audit.functions";
 import { unlinkCourseTable } from "@/lib/coursetable.functions";
-import { useCourseTableCatalogMeta } from "@/hooks/use-coursetable-catalog";
+import { useCourseTableCatalogMeta, useClientQueryEnabled } from "@/hooks/use-coursetable-catalog";
 import { MAJORS_BY_ID } from "@/data/majors";
 import { TRACKS } from "@/data/tracks";
 import { MajorPicker } from "@/components/major-picker";
@@ -30,7 +30,12 @@ function SettingsPage() {
   const updateFn = useServerFn(updateProfile);
   const unlinkFn = useServerFn(unlinkCourseTable);
   const qc = useQueryClient();
-  const profileQ = useQuery({ queryKey: ["profile"], queryFn: () => fetchProfile() });
+  const clientReady = useClientQueryEnabled();
+  const profileQ = useQuery({
+    queryKey: ["profile"],
+    queryFn: () => fetchProfile(),
+    enabled: clientReady,
+  });
   const catalogMeta = useCourseTableCatalogMeta();
 
   const [name, setName] = useState("");

@@ -94,7 +94,6 @@ export const getRoadmapSuggestions = createServerFn({ method: "POST" })
   });
 
 export const searchCourseTableCatalog = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -123,9 +122,7 @@ export const searchCourseTableCatalog = createServerFn({ method: "POST" })
     return { season, courses: filtered.slice(0, limit), total: filtered.length };
   });
 
-export const getCourseTableCatalogMeta = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async () => {
+export const getCourseTableCatalogMeta = createServerFn({ method: "GET" }).handler(async () => {
     const res = await fetch(`${COURSETABLE_API}/api/catalog/metadata`);
     if (!res.ok) throw new Error("Could not reach CourseTable");
     const meta = (await res.json()) as { last_update: string };

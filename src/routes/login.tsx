@@ -1,5 +1,6 @@
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
+import { z } from "zod";
 import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,9 @@ import { GraduationCap } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
+  validateSearch: z.object({
+    redirect: z.string().optional(),
+  }),
   beforeLoad: ({ context }) => {
     if (context.auth.isAuthenticated) throw redirect({ to: "/dashboard" });
   },
@@ -18,18 +22,31 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const router = useRouter();
+  const { redirect: redirectTo } = Route.useSearch();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const afterSignIn = redirectTo && redirectTo.startsWith("/") ? redirectTo : "/dashboard";
+
   async function handleGoogle() {
+    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+      toast.error("Google sign-in is not available on localhost. Use email and password instead.");
+      return;
+    }
     setLoading(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/dashboard" });
-      if (result.error) { toast.error(result.error.message ?? "Sign-in failed"); setLoading(false); return; }
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin + afterSignIn,
+      });
+      if (result.error) {
+        toast.error(result.error.message ?? "Sign-in failed");
+        setLoading(false);
+        return;
+      }
       if (result.redirected) return;
-      router.navigate({ to: "/dashboard" });
+      await router.navigate({ to: afterSignIn as "/dashboard" });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Sign-in failed");
       setLoading(false);
@@ -42,19 +59,22 @@ function LoginPage() {
     try {
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
-          email, password,
-          options: { emailRedirectTo: `${window.location.origin}/dashboard` },
+          email,
+          password,
+          options: { emailRedirectTo: `${window.location.origin}${afterSignIn}` },
         });
         if (error) throw error;
-        toast.success("Check your email to confirm your account.");
+        toast.success("Account created. Check your email to confirm, then sign in.");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        router.navigate({ to: "/dashboard" });
+        await router.navigate({ to: afterSignIn as "/dashboard" });
       }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed");
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -93,6 +113,10 @@ function LoginPage() {
             {mode === "signin" ? "Sign in" : "Create account"}
           </Button>
         </form>
+
+        <p className="mt-2 text-center text-xs text-muted-foreground">
+          On localhost, use email and password. Google sign-in works on the deployed site.
+        </p>
 
         <p className="mt-4 text-center text-xs text-muted-foreground">
           {mode === "signin" ? "New here? " : "Already have an account? "}
