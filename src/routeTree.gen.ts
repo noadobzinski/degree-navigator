@@ -13,9 +13,9 @@ import { Route as CoursetableCallbackRouteImport } from './routes/coursetable/ca
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedMajorsRouteImport } from './routes/_authenticated/majors'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedRoadmapRouteImport } from './routes/_authenticated/roadmap'
+import { Route as AuthenticatedMajorsRouteImport } from './routes/_authenticated/majors'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCoursesRouteImport } from './routes/_authenticated/courses'
 
@@ -38,11 +38,6 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedMajorsRoute = AuthenticatedMajorsRouteImport.update({
-  id: '/majors',
-  path: '/majors',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -51,6 +46,11 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
 const AuthenticatedRoadmapRoute = AuthenticatedRoadmapRouteImport.update({
   id: '/roadmap',
   path: '/roadmap',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedMajorsRoute = AuthenticatedMajorsRouteImport.update({
+  id: '/majors',
+  path: '/majors',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -92,6 +92,7 @@ export interface FileRoutesById {
   '/coursetable/callback': typeof CoursetableCallbackRoute
   '/_authenticated/courses': typeof AuthenticatedCoursesRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/majors': typeof AuthenticatedMajorsRoute
   '/_authenticated/roadmap': typeof AuthenticatedRoadmapRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
 }
@@ -107,7 +108,15 @@ export interface FileRouteTypes {
     | '/roadmap'
     | '/settings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/coursetable/callback' | '/courses' | '/dashboard' | '/majors' | '/roadmap' | '/settings'
+  to:
+    | '/'
+    | '/login'
+    | '/coursetable/callback'
+    | '/courses'
+    | '/dashboard'
+    | '/majors'
+    | '/roadmap'
+    | '/settings'
   id:
     | '__root__'
     | '/'
@@ -158,13 +167,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/majors': {
-      id: '/_authenticated/majors'
-      path: '/majors'
-      fullPath: '/majors'
-      preLoaderRoute: typeof AuthenticatedMajorsRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -177,6 +179,13 @@ declare module '@tanstack/react-router' {
       path: '/roadmap'
       fullPath: '/roadmap'
       preLoaderRoute: typeof AuthenticatedRoadmapRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/majors': {
+      id: '/_authenticated/majors'
+      path: '/majors'
+      fullPath: '/majors'
+      preLoaderRoute: typeof AuthenticatedMajorsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/dashboard': {
