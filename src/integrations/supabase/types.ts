@@ -14,7 +14,99 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          class_year: number | null
+          created_at: string
+          degree_type: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          major_id: string | null
+          second_major_id: string | null
+          track_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          class_year?: number | null
+          created_at?: string
+          degree_type?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          major_id?: string | null
+          second_major_id?: string | null
+          track_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          class_year?: number | null
+          created_at?: string
+          degree_type?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          major_id?: string | null
+          second_major_id?: string | null
+          track_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_courses: {
+        Row: {
+          course_code: string
+          course_title: string | null
+          created_at: string
+          credits: number
+          distributional: string[] | null
+          grade: string | null
+          id: string
+          satisfies_major: boolean | null
+          satisfies_track: boolean | null
+          skills: string[] | null
+          status: string
+          term: string | null
+          updated_at: string
+          user_id: string
+          year: number | null
+        }
+        Insert: {
+          course_code: string
+          course_title?: string | null
+          created_at?: string
+          credits?: number
+          distributional?: string[] | null
+          grade?: string | null
+          id?: string
+          satisfies_major?: boolean | null
+          satisfies_track?: boolean | null
+          skills?: string[] | null
+          status?: string
+          term?: string | null
+          updated_at?: string
+          user_id: string
+          year?: number | null
+        }
+        Update: {
+          course_code?: string
+          course_title?: string | null
+          created_at?: string
+          credits?: number
+          distributional?: string[] | null
+          grade?: string | null
+          id?: string
+          satisfies_major?: boolean | null
+          satisfies_track?: boolean | null
+          skills?: string[] | null
+          status?: string
+          term?: string | null
+          updated_at?: string
+          user_id?: string
+          year?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
