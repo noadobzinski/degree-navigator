@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { checkCourseTableAuth } from "@/lib/coursetable.client";
@@ -13,7 +13,6 @@ export const Route = createFileRoute("/coursetable/callback")({
 });
 
 function CourseTableCallbackPage() {
-  const navigate = useNavigate();
   const linkFn = useServerFn(linkCourseTableNetId);
   const [status, setStatus] = useState<"loading" | "success" | "partial" | "error">("loading");
   const [netId, setNetId] = useState<string | null>(null);
@@ -93,9 +92,11 @@ function CourseTableCallbackPage() {
             </p>
           ) : null}
           <div className="flex flex-wrap justify-center gap-2 pt-2">
-            <Button onClick={() => navigate({ to: "/courses" })}>Browse courses</Button>
+            <Button asChild>
+              <Link to="/courses">Browse courses</Link>
+            </Button>
             <Button variant="outline" asChild>
-              <Link to="/settings">Settings</Link>
+              <Link to="/settings" search={{}}>Settings</Link>
             </Button>
           </div>
         </CardContent>
