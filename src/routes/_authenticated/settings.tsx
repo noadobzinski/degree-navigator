@@ -1,0 +1,115 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { getProfile, updateProfile } from "@/lib/audit.functions";
+import { MAJORS, MAJORS_BY_ID } from "@/data/majors";
+import { TRACKS } from "@/data/tracks";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
+
+export const Route = createFileRoute("/_authenticated/settings")({
+  head: () => ({ meta: [{ title: "Settings — BluePath" }] }),
+  component: SettingsPage,
+});
+
+function SettingsPage() {
+  const fetchProfile = useServerFn(getProfile);
+  const updateFn = useServerFn(updateProfile);
+  const qc = useQueryClient();
+  const profileQ = useQuery({ queryKey: ["profile"], queryFn: () => fetchProfile() });
+
+  const [name, setName] = useState("");
+  const [majorId, setMajorId] = useState<string>("");
+  const [degree, setDegree] = useState<"BA" | "BS">("BA");
+  const [trackId, setTrackId] = useState<string>("none");
+  const [year, setYear] = useState<string>("");
+
+  useEffect(() => {
+    const p = profileQ.data;
+    if (!p) return;
+    setName(p.full_name ?? "");
+    setMajorId(p.major_id ?? "");
+    setDegree(((p.degree_type as "BA" | "BS") ?? "BA"));
+    setTrackId(p.track_id ?? "none");
+    setYear(p.class_year ? String(p.class_year) : "");
+  }, [profileQ.data]);
+
+  const major = majorId ? MAJORS_BY_ID[majorId] : null;
+  const availableDegrees = major?.degrees ?? ["BA", "BS"];
+
+  const saveM = useMutation({
+    mutationFn: () => updateFn({
+      data: {
+        full_name: name || null,
+        major_id: majorId || null,
+        degree_type: degree,
+        track_id: trackId === "none" ? null : trackId,
+        class_year: year ? parseInt(year, 10) : null,
+      },
+    }),
+    onSuccess: () => { toast.success("Saved"); qc.invalidateQueries({ queryKey: ["profile"] }); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+  });
+
+  return (
+    <div className="mx-auto max-w-2xl space-y-6">
+      <div>
+        <h1 className="font-serif text-3xl font-bold">Settings</h1>
+        <p className="text-muted-foreground">Choose your major, degree type, and track.</p>
+      </div>
+
+      <Card>
+        <CardHeader><CardTitle className="font-serif">Your degree</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="name">Name</Label>
+            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Jane Doe" />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Major</Label>
+            <Select value={majorId} onValueChange={(v) => { setMajorId(v); const m = MAJORS_BY_ID[v]; if (m) setDegree(m.defaultDegree); }}>
+              <SelectTrigger><SelectValue placeholder="Choose a major" /></SelectTrigger>
+              <SelectContent>
+                {MAJORS.map((m) => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Degree</Label>
+            <Select value={degree} onValueChange={(v) => setDegree(v as "BA" | "BS")}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {availableDegrees.map((d) => <SelectItem key={d} value={d}>{d === "BA" ? "Bachelor of Arts (B.A.)" : "Bachelor of Science (B.S.)"}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {major && <p className="text-xs text-muted-foreground">{major.notes}</p>}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Track (optional)</Label>
+            <Select value={trackId} onValueChange={setTrackId}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {TRACKS.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="year">Class year</Label>
+            <Input id="year" inputMode="numeric" value={year} onChange={(e) => setYear(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} placeholder="2028" />
+          </div>
+
+          <Button onClick={() => saveM.mutate()} disabled={saveM.isPending || !majorId}>Save</Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
