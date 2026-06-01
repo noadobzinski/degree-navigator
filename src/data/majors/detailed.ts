@@ -1,46 +1,10 @@
-// Major requirements. Modeled on Yale's degree structure.
-// Each requirement is a "slot" the audit engine tries to fill from the student's courses.
+import type { Major } from "./types";
 
-export type RequirementSlot = {
-  id: string;
-  label: string;
-  description?: string;
-  // matches if the course code is in this list OR starts with one of these prefixes
-  codes?: string[];
-  codePrefix?: string[];
-  // numeric level filters (e.g., 300+ level)
-  minLevel?: number;
-  maxLevel?: number;
-  // how many courses needed
-  needCount: number;
-  // optional: courses already required by another slot should NOT double-count here
-  exclusive?: boolean;
-};
-
-export type MajorRequirements = {
-  totalCourses: number; // minimum number of courses for the major
-  prerequisites?: RequirementSlot[];
-  core: RequirementSlot[];
-  electives?: RequirementSlot[];
-  senior?: RequirementSlot[];
-};
-
-export type Major = {
-  id: string;
-  name: string;
-  department: string;
-  degrees: ("BA" | "BS")[];
-  defaultDegree: "BA" | "BS";
-  requirements: {
-    BA?: MajorRequirements;
-    BS?: MajorRequirements;
-  };
-  notes?: string;
-};
-
-export const MAJORS: Major[] = [
+/** Majors with detailed slot-level requirements aligned to Yale roadmaps. */
+export const DETAILED_MAJORS: Major[] = [
   {
     id: "cpsc",
+    roadmapCode: "CPSC",
     name: "Computer Science",
     department: "Computer Science",
     degrees: ["BA", "BS"],
@@ -91,6 +55,7 @@ export const MAJORS: Major[] = [
   },
   {
     id: "mcdb",
+    roadmapCode: "MCDB",
     name: "Molecular, Cellular & Developmental Biology",
     department: "MCDB",
     degrees: ["BA", "BS"],
@@ -133,6 +98,7 @@ export const MAJORS: Major[] = [
   },
   {
     id: "econ",
+    roadmapCode: "ECON",
     name: "Economics",
     department: "Economics",
     degrees: ["BA"],
@@ -160,6 +126,7 @@ export const MAJORS: Major[] = [
   },
   {
     id: "plsc",
+    roadmapCode: "PLSC",
     name: "Political Science",
     department: "Political Science",
     degrees: ["BA"],
@@ -182,20 +149,21 @@ export const MAJORS: Major[] = [
   },
   {
     id: "engl",
+    roadmapCode: "ENGL",
     name: "English Language and Literature",
     department: "English",
     degrees: ["BA"],
     defaultDegree: "BA",
     requirements: {
       BA: {
-        totalCourses: 12,
+        totalCourses: 14,
         core: [
           { id: "writing", label: "Writing seminar (ENGL 114/115)", codes: ["ENGL 114", "ENGL 115"], needCount: 1 },
           { id: "poets", label: "Major English Poets (2 terms)", codes: ["ENGL 125", "ENGL 126"], needCount: 2 },
           { id: "shakespeare", label: "Shakespeare (ENGL 200)", codes: ["ENGL 200"], needCount: 1 },
         ],
         electives: [
-          { id: "engl_electives", label: "7 English electives", codePrefix: ["ENGL"], needCount: 7 },
+          { id: "engl_electives", label: "9 English electives", codePrefix: ["ENGL"], needCount: 9 },
         ],
         senior: [
           { id: "senior", label: "Senior essay (ENGL 491)", codes: ["ENGL 491"], needCount: 1 },
@@ -205,6 +173,7 @@ export const MAJORS: Major[] = [
   },
   {
     id: "math",
+    roadmapCode: "MATH",
     name: "Mathematics",
     department: "Mathematics",
     degrees: ["BA", "BS"],
@@ -243,6 +212,7 @@ export const MAJORS: Major[] = [
   },
   {
     id: "chem",
+    roadmapCode: "CHEM",
     name: "Chemistry",
     department: "Chemistry",
     degrees: ["BA", "BS"],
@@ -278,6 +248,7 @@ export const MAJORS: Major[] = [
   },
   {
     id: "hist",
+    roadmapCode: "HIST",
     name: "History",
     department: "History",
     degrees: ["BA"],
@@ -300,13 +271,14 @@ export const MAJORS: Major[] = [
   },
   {
     id: "psyc",
+    roadmapCode: "PSYC",
     name: "Psychology",
     department: "Psychology",
     degrees: ["BA", "BS"],
     defaultDegree: "BA",
     requirements: {
       BA: {
-        totalCourses: 10,
+        totalCourses: 12,
         core: [
           { id: "intro", label: "Intro Psychology (PSYC 110)", codes: ["PSYC 110"], needCount: 1 },
           { id: "stats", label: "Statistics (PSYC 200 or S&DS 100)", codes: ["PSYC 200", "S&DS 100"], needCount: 1 },
@@ -314,9 +286,12 @@ export const MAJORS: Major[] = [
         electives: [
           { id: "psyc_electives", label: "8 PSYC electives across areas", codePrefix: ["PSYC"], needCount: 8 },
         ],
+        senior: [
+          { id: "senior", label: "Senior research (PSYC 400+)", codePrefix: ["PSYC"], minLevel: 400, needCount: 1 },
+        ],
       },
       BS: {
-        totalCourses: 13,
+        totalCourses: 15,
         core: [
           { id: "intro", label: "Intro Psychology (PSYC 110)", codes: ["PSYC 110"], needCount: 1 },
           { id: "stats", label: "Statistics (PSYC 200)", codes: ["PSYC 200"], needCount: 1 },
@@ -326,11 +301,10 @@ export const MAJORS: Major[] = [
           { id: "psyc_electives", label: "8 PSYC electives", codePrefix: ["PSYC"], needCount: 8 },
           { id: "science", label: "2 additional science courses", codePrefix: ["BIOL", "MCDB", "CHEM"], needCount: 2 },
         ],
+        senior: [
+          { id: "senior", label: "Senior research (PSYC 499)", codePrefix: ["PSYC"], minLevel: 490, needCount: 1 },
+        ],
       },
     },
   },
 ];
-
-export const MAJORS_BY_ID: Record<string, Major> = Object.fromEntries(
-  MAJORS.map((m) => [m.id, m]),
-);

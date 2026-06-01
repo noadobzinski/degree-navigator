@@ -2,9 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { z } from "zod";
 import { getProfile, updateProfile } from "@/lib/audit.functions";
-import { MAJORS, MAJORS_BY_ID } from "@/data/majors";
+import { MAJORS_BY_ID } from "@/data/majors";
 import { TRACKS } from "@/data/tracks";
+import { MajorPicker } from "@/components/major-picker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,11 +15,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/settings")({
+  validateSearch: z.object({ major: z.string().optional() }),
   head: () => ({ meta: [{ title: "Settings — BluePath" }] }),
   component: SettingsPage,
 });
 
 function SettingsPage() {
+  const { major: majorFromUrl } = Route.useSearch();
   const fetchProfile = useServerFn(getProfile);
   const updateFn = useServerFn(updateProfile);
   const qc = useQueryClient();
@@ -38,6 +42,13 @@ function SettingsPage() {
     setTrackId(p.track_id ?? "none");
     setYear(p.class_year ? String(p.class_year) : "");
   }, [profileQ.data]);
+
+  useEffect(() => {
+    if (!majorFromUrl || !MAJORS_BY_ID[majorFromUrl]) return;
+    const m = MAJORS_BY_ID[majorFromUrl];
+    setMajorId(majorFromUrl);
+    setDegree(m.defaultDegree);
+  }, [majorFromUrl]);
 
   const major = majorId ? MAJORS_BY_ID[majorId] : null;
   const availableDegrees = major?.degrees ?? ["BA", "BS"];
@@ -73,12 +84,11 @@ function SettingsPage() {
 
           <div className="space-y-1.5">
             <Label>Major</Label>
-            <Select value={majorId} onValueChange={(v) => { setMajorId(v); const m = MAJORS_BY_ID[v]; if (m) setDegree(m.defaultDegree); }}>
-              <SelectTrigger><SelectValue placeholder="Choose a major" /></SelectTrigger>
-              <SelectContent>
-                {MAJORS.map((m) => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <MajorPicker
+              value={majorId}
+              onChange={setMajorId}
+              onDegreeDefault={setDegree}
+            />
           </div>
 
           <div className="space-y-1.5">

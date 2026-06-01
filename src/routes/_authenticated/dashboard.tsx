@@ -29,10 +29,15 @@ function Dashboard() {
       <div className="mx-auto max-w-2xl rounded-xl border border-border bg-card p-8 text-center">
         <GraduationCap className="mx-auto h-10 w-10 text-primary" />
         <h2 className="mt-4 font-serif text-2xl font-bold">Welcome to BluePath</h2>
-        <p className="mt-2 text-muted-foreground">Let's set up your degree audit. Pick a major, degree type, and (optional) track.</p>
-        <Link to="/settings" className="mt-6 inline-block rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
-          Get started
-        </Link>
+        <p className="mt-2 text-muted-foreground">Let's set up your degree audit. Browse majors or pick one in Settings.</p>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <Link to="/majors" className="inline-block rounded-md border border-border px-5 py-2.5 text-sm font-semibold hover:bg-accent">
+            Explore majors
+          </Link>
+          <Link to="/settings" className="inline-block rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
+            Get started
+          </Link>
+        </div>
       </div>
     );
   }
