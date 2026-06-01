@@ -17,6 +17,8 @@ export type Database = {
       profiles: {
         Row: {
           class_year: number | null
+          coursetable_connected_at: string | null
+          coursetable_netid: string | null
           created_at: string
           degree_type: string | null
           email: string | null
@@ -29,6 +31,8 @@ export type Database = {
         }
         Insert: {
           class_year?: number | null
+          coursetable_connected_at?: string | null
+          coursetable_netid?: string | null
           created_at?: string
           degree_type?: string | null
           email?: string | null
@@ -41,6 +45,8 @@ export type Database = {
         }
         Update: {
           class_year?: number | null
+          coursetable_connected_at?: string | null
+          coursetable_netid?: string | null
           created_at?: string
           degree_type?: string | null
           email?: string | null

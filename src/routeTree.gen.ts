@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as CoursetableCallbackRouteImport } from './routes/coursetable/callback'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
@@ -18,6 +19,11 @@ import { Route as AuthenticatedRoadmapRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCoursesRouteImport } from './routes/_authenticated/courses'
 
+const CoursetableCallbackRoute = CoursetableCallbackRouteImport.update({
+  id: '/coursetable/callback',
+  path: '/coursetable/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -61,6 +67,7 @@ const AuthenticatedCoursesRoute = AuthenticatedCoursesRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/coursetable/callback': typeof CoursetableCallbackRoute
   '/courses': typeof AuthenticatedCoursesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/majors': typeof AuthenticatedMajorsRoute
@@ -70,6 +77,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/coursetable/callback': typeof CoursetableCallbackRoute
   '/courses': typeof AuthenticatedCoursesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/majors': typeof AuthenticatedMajorsRoute
@@ -81,6 +89,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
+  '/coursetable/callback': typeof CoursetableCallbackRoute
   '/_authenticated/courses': typeof AuthenticatedCoursesRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/roadmap': typeof AuthenticatedRoadmapRoute
@@ -91,18 +100,20 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/coursetable/callback'
     | '/courses'
     | '/dashboard'
     | '/majors'
     | '/roadmap'
     | '/settings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/courses' | '/dashboard' | '/majors' | '/roadmap' | '/settings'
+  to: '/' | '/login' | '/coursetable/callback' | '/courses' | '/dashboard' | '/majors' | '/roadmap' | '/settings'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/login'
+    | '/coursetable/callback'
     | '/_authenticated/courses'
     | '/_authenticated/dashboard'
     | '/_authenticated/majors'
@@ -114,10 +125,18 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
+  CoursetableCallbackRoute: typeof CoursetableCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/coursetable/callback': {
+      id: '/coursetable/callback'
+      path: '/coursetable/callback'
+      fullPath: '/coursetable/callback'
+      preLoaderRoute: typeof CoursetableCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -201,6 +220,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
+  CoursetableCallbackRoute: CoursetableCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

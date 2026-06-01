@@ -4,9 +4,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { getProfile, updateProfile } from "@/lib/audit.functions";
+import { unlinkCourseTable } from "@/lib/coursetable.functions";
 import { MAJORS_BY_ID } from "@/data/majors";
 import { TRACKS } from "@/data/tracks";
 import { MajorPicker } from "@/components/major-picker";
+import { YaleNetIdButton } from "@/components/yale-netid-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +26,7 @@ function SettingsPage() {
   const { major: majorFromUrl } = Route.useSearch();
   const fetchProfile = useServerFn(getProfile);
   const updateFn = useServerFn(updateProfile);
+  const unlinkFn = useServerFn(unlinkCourseTable);
   const qc = useQueryClient();
   const profileQ = useQuery({ queryKey: ["profile"], queryFn: () => fetchProfile() });
 
@@ -66,6 +69,18 @@ function SettingsPage() {
     onSuccess: () => { toast.success("Saved"); qc.invalidateQueries({ queryKey: ["profile"] }); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
   });
+
+  const unlinkM = useMutation({
+    mutationFn: () => unlinkFn(),
+    onSuccess: () => {
+      toast.success("CourseTable disconnected");
+      qc.invalidateQueries({ queryKey: ["profile"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+  });
+
+  const coursetableNetId = profileQ.data?.coursetable_netid;
+  const coursetableConnectedAt = profileQ.data?.coursetable_connected_at;
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -118,6 +133,39 @@ function SettingsPage() {
           </div>
 
           <Button onClick={() => saveM.mutate()} disabled={saveM.isPending || !majorId}>Save</Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-serif">CourseTable & Yale NetID</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Connect your Yale NetID through CourseTable to load the full Yale course catalog
+            (thousands of courses with distributional tags). Uses Yale CAS — the same login as CourseTable.
+          </p>
+          {coursetableNetId ? (
+            <div className="rounded-md border border-border bg-muted/40 p-4 text-sm">
+              <p className="font-medium">Connected as <span className="font-mono">{coursetableNetId}</span></p>
+              {coursetableConnectedAt ? (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Linked {new Date(coursetableConnectedAt).toLocaleDateString()}
+                </p>
+              ) : null}
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-3"
+                onClick={() => unlinkM.mutate()}
+                disabled={unlinkM.isPending}
+              >
+                Disconnect
+              </Button>
+            </div>
+          ) : (
+            <YaleNetIdButton label="Connect Yale NetID" />
+          )}
         </CardContent>
       </Card>
     </div>
