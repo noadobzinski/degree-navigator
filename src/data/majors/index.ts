@@ -1,16 +1,20 @@
 import { CATALOG_MAJORS } from "./catalog";
 import { DETAILED_MAJORS } from "./detailed";
+import { ROADMAP_MAJORS } from "./roadmap-majors";
 import type { Major } from "./types";
 
 export type { Major, MajorRequirements, RequirementSlot } from "./types";
 export { YALE_ROADMAP_PDF } from "./types";
 
 const DETAILED_IDS = new Set(DETAILED_MAJORS.map((m) => m.id));
+const ROADMAP_IDS = new Set(ROADMAP_MAJORS.map((m) => m.id));
+const OVERRIDE_IDS = new Set([...DETAILED_IDS, ...ROADMAP_IDS]);
 
-/** All Yale College majors from the official Major Roadmaps. Detailed audits for 9; catalog templates for the rest. */
+/** All Yale College majors from the official Major Roadmaps (April–May 2026). */
 export const MAJORS: Major[] = [
   ...DETAILED_MAJORS,
-  ...CATALOG_MAJORS.filter((m) => !DETAILED_IDS.has(m.id)),
+  ...ROADMAP_MAJORS.filter((m) => !DETAILED_IDS.has(m.id)),
+  ...CATALOG_MAJORS.filter((m) => !OVERRIDE_IDS.has(m.id)),
 ].sort((a, b) => a.name.localeCompare(b.name));
 
 export const MAJORS_BY_ID: Record<string, Major> = Object.fromEntries(
