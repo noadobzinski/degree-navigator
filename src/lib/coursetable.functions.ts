@@ -9,6 +9,12 @@ import {
   dedupeCourseTableCourses,
   type CourseTableCourse,
 } from "@/lib/coursetable";
+import {
+  getMajorExampleSections,
+  getTrackExampleSections,
+  seasonsForHistoricalCatalog,
+  type SlotExamplesGroup,
+} from "@/lib/requirement-examples";
 
 type CatalogCacheEntry = {
   courses: CatalogCourse[];
@@ -116,6 +122,72 @@ export const searchCourseTableCatalog = createServerFn({ method: "POST" })
     );
 
     return { season, courses: filtered.slice(0, limit), total: filtered.length };
+  });
+
+export const getRequirementExamples = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        majorId: z.string().min(1),
+        degree: z.enum(["BA", "BS"]),
+        trackId: z.string().optional().nullable(),
+        classYear: z.number().int().min(2020).max(2035).optional().nullable(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const currentSeason = currentSeasonCode();
+    const seasons = seasonsForHistoricalCatalog(data.classYear).slice(-8);
+    const seasonByCode = new Map<string, string[]>();
+    const catalogCourses: CatalogCourse[] = [];
+    const seenCodes = new Set<string>();
+
+    await Promise.all(
+      seasons.map(async (season) => {
+        try {
+          const courses = await fetchSeasonCatalog(season);
+          for (const course of courses) {
+            const key = course.code.toUpperCase();
+            const list = seasonByCode.get(key) ?? [];
+            if (!list.includes(season)) list.push(season);
+            seasonByCode.set(key, list);
+            if (!seenCodes.has(key)) {
+              seenCodes.add(key);
+              catalogCourses.push(course);
+            }
+          }
+        } catch {
+          /* skip unavailable historical seasons */
+        }
+      }),
+    );
+
+    const major = getMajorExampleSections(
+      data.majorId,
+      data.degree,
+      catalogCourses,
+      seasonByCode,
+      currentSeason,
+    );
+    const track = getTrackExampleSections(
+      data.trackId,
+      catalogCourses,
+      seasonByCode,
+      currentSeason,
+    );
+
+    const bySlotId: Record<string, SlotExamplesGroup["examples"]> = {};
+    for (const group of [...major, ...track]) {
+      bySlotId[group.slotId] = group.examples;
+    }
+
+    return {
+      currentSeason,
+      seasonsSearched: seasons.length,
+      major,
+      track,
+      bySlotId,
+    };
   });
 
 export const getCourseTableCatalogMeta = createServerFn({ method: "GET" }).handler(async () => {

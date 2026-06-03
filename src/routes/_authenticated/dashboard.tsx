@@ -3,6 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { getProfile, getMyCourses } from "@/lib/audit.functions";
 import { useCourseTableCatalogMeta, useClientQueryEnabled } from "@/hooks/use-coursetable-catalog";
+import { useRequirementExamples, getSlotExamples } from "@/hooks/use-requirement-examples";
+import { RequirementExamples } from "@/components/requirement-examples";
 import { auditMajor, auditTrack, auditDistributional, totalCredits, graduationCredits, type UserCourse } from "@/lib/audit";
 import { MAJORS_BY_ID } from "@/data/majors";
 import { Progress } from "@/components/ui/progress";
@@ -30,6 +32,14 @@ function Dashboard() {
     queryFn: () => fetchCourses(),
     enabled: clientReady,
   });
+  const profileForExamples = profileQ.data;
+  const degreeForExamples = profileForExamples?.degree_type as "BA" | "BS" | undefined;
+  const examplesQ = useRequirementExamples(
+    profileForExamples?.major_id,
+    degreeForExamples,
+    profileForExamples?.track_id,
+    profileForExamples?.class_year,
+  );
 
   if (!clientReady || profileQ.isLoading || coursesQ.isLoading) {
     return <div className="text-muted-foreground">Loading your audit…</div>;
@@ -147,7 +157,15 @@ function Dashboard() {
       {/* Major requirements detail */}
       {majorAudit && (
         <Card>
-          <CardHeader><CardTitle className="font-serif">{major?.name} ({degree}) requirements</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="font-serif">{major?.name} ({degree}) requirements</CardTitle>
+            {examplesQ.data ? (
+              <p className="text-sm text-muted-foreground">
+                Examples from CourseTable across the last {examplesQ.data.seasonsSearched} terms
+                {examplesQ.data.seasonsSearched > 0 ? " (includes current and historical offerings)" : ""}.
+              </p>
+            ) : null}
+          </CardHeader>
           <CardContent className="space-y-5">
             {majorAudit.sections.map((s) => (
               <div key={s.title}>
@@ -161,7 +179,15 @@ function Dashboard() {
                           <p className="font-medium">{r.slot.label}</p>
                           <Badge variant={r.satisfied ? "default" : "secondary"}>{r.filled.length}/{r.slot.needCount}</Badge>
                         </div>
-                        {r.filled.length > 0 && <p className="mt-1 text-xs text-muted-foreground">{r.filled.map((c) => c.course_code).join(", ")}</p>}
+                        {r.filled.length > 0 && (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Your courses: {r.filled.map((c) => c.course_code).join(", ")}
+                          </p>
+                        )}
+                        <RequirementExamples
+                          examples={getSlotExamples(examplesQ.data?.bySlotId, r.slot.id)}
+                          isLoading={examplesQ.isLoading}
+                        />
                       </div>
                     </div>
                   ))}
@@ -188,7 +214,15 @@ function Dashboard() {
                     <p className="font-medium">{r.slot.label}</p>
                     <Badge variant={r.satisfied ? "default" : "secondary"}>{r.filled.length}/{r.slot.needCount}</Badge>
                   </div>
-                  {r.filled.length > 0 && <p className="mt-1 text-xs text-muted-foreground">{r.filled.map((c) => c.course_code).join(", ")}</p>}
+                  {r.filled.length > 0 && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Your courses: {r.filled.map((c) => c.course_code).join(", ")}
+                    </p>
+                  )}
+                  <RequirementExamples
+                    examples={getSlotExamples(examplesQ.data?.bySlotId, r.slot.id)}
+                    isLoading={examplesQ.isLoading}
+                  />
                 </div>
               </div>
             ))}

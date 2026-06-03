@@ -63,7 +63,7 @@ function matchesSlot(course: UserCourse, slot: RequirementSlot): boolean {
   return false;
 }
 
-function matchesCatalogCourse(course: CatalogCourse, slot: RequirementSlot): boolean {
+export function catalogMatchesSlot(course: CatalogCourse, slot: RequirementSlot): boolean {
   return matchesSlot(
     {
       id: course.code,
