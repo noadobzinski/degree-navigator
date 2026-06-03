@@ -7,6 +7,7 @@ import { useCrosslistLookup } from "@/hooks/use-crosslist";
 import { useRequirementExamples, getSlotExamples } from "@/hooks/use-requirement-examples";
 import { FilledRequirementCourses } from "@/components/filled-requirement-courses";
 import { RequirementExamples } from "@/components/requirement-examples";
+import { CredentialSuggestionsCard } from "@/components/credential-suggestions-card";
 import { MajorAuditCard } from "@/components/major-audit-card";
 import {
   auditCertificates,
@@ -18,6 +19,7 @@ import {
   graduationCredits,
   type UserCourse,
 } from "@/lib/audit";
+import { suggestReachableCredentials } from "@/lib/credential-suggestions";
 import { MAJORS_BY_ID, YALE_DOUBLE_MAJOR_MAX_OVERLAP } from "@/data/majors";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -125,6 +127,16 @@ function Dashboard() {
   const titleParts = [`${major?.name} · ${degree}`];
   if (secondAudit && secondMajor) titleParts.push(`${secondMajor.name} · ${degree2}`);
 
+  const reachableCredentials = suggestReachableCredentials({
+    courses,
+    primaryMajorId: profile.major_id,
+    primaryDegree: degree,
+    primaryConcentrationId: profile.concentration_id,
+    secondMajorId: profile.second_major_id,
+    certificateIds: profile.certificate_ids,
+    crosslistLookup,
+  });
+
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
@@ -186,6 +198,8 @@ function Dashboard() {
           </CardContent>
         </Card>
       ) : null}
+
+      <CredentialSuggestionsCard suggestions={reachableCredentials} />
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
