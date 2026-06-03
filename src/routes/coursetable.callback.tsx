@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { linkCourseTableNetId } from "@/lib/coursetable.functions";
+import { COURSETABLE_API, type CourseTableAuthCheck } from "@/lib/coursetable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { GraduationCap, Loader2 } from "lucide-react";
@@ -22,8 +23,9 @@ function CourseTableCallbackPage() {
 
     async function finish() {
       try {
-        const { checkCourseTableAuth } = await import("@/lib/coursetable.client");
-        const auth = await checkCourseTableAuth();
+        const res = await fetch(`${COURSETABLE_API}/api/auth/check`, { credentials: "include" });
+        if (!res.ok) throw new Error("Could not verify CourseTable session");
+        const auth = (await res.json()) as CourseTableAuthCheck;
         if (cancelled) return;
 
         if (auth.auth && auth.netId) {
