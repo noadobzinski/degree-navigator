@@ -4,13 +4,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import {
+  CatalogLink,
+  RequirementSlotRows,
+} from "@/components/requirement-slot-rows";
 import type { CredentialSuggestion } from "@/lib/credential-suggestions";
+import type { CrosslistLookup } from "@/lib/crosslist";
 
 type CredentialSuggestionsCardProps = {
   suggestions: CredentialSuggestion[];
+  crosslistLookup?: CrosslistLookup;
 };
 
-export function CredentialSuggestionsCard({ suggestions }: CredentialSuggestionsCardProps) {
+export function CredentialSuggestionsCard({
+  suggestions,
+  crosslistLookup,
+}: CredentialSuggestionsCardProps) {
   if (suggestions.length === 0) return null;
 
   return (
@@ -27,7 +36,7 @@ export function CredentialSuggestionsCard({ suggestions }: CredentialSuggestions
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-4">
         {suggestions.map((s) => (
           <div
             key={`${s.kind}-${s.id}`}
@@ -44,20 +53,31 @@ export function CredentialSuggestionsCard({ suggestions }: CredentialSuggestions
                 {s.department ? (
                   <p className="text-xs text-muted-foreground">{s.department}</p>
                 ) : null}
+                {s.catalogUrl ? (
+                  <p className="mt-1">
+                    <CatalogLink href={s.catalogUrl} />
+                  </p>
+                ) : null}
               </div>
-              <Badge variant={s.remainingCount === 0 ? "default" : "outline"}>
-                {s.satisfiedCount}/{s.totalCount} met
+              <Badge variant={s.progress.remainingCourses === 0 ? "default" : "outline"}>
+                {s.progress.coursesFilled}/{s.progress.coursesRequired} credits
               </Badge>
             </div>
-            <Progress value={s.progressPct} className="mt-3 h-1.5" />
+            <Progress value={s.progress.progressPct} className="mt-3 h-1.5" />
             <p className="mt-2 text-sm text-muted-foreground">{s.summary}</p>
             {s.kind === "double_major" && s.overlapCount != null && s.overlapCount > 0 ? (
               <p className="mt-1 text-xs text-muted-foreground">
                 {s.overlapCount} overlapping{" "}
                 {s.overlapCount === 1 ? "course" : "courses"} with your primary major
-                {s.overlapWithinLimit ? " (allowed)" : " — may exceed Yale's overlap limit"}.
+                {s.overlapWithinLimit ? " (allowed)" : " — may exceed Yale's overlap limit"}
+                {s.overlapCourseCodes?.length ? `: ${s.overlapCourseCodes.join(", ")}` : ""}.
               </p>
             ) : null}
+            <RequirementSlotRows
+              rows={s.requirementRows}
+              crosslistLookup={crosslistLookup}
+              hideEmpty={s.kind === "double_major"}
+            />
           </div>
         ))}
         <Button variant="outline" size="sm" asChild className="w-full sm:w-auto">

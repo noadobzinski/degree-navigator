@@ -1,5 +1,19 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { resolveCertificateId } from "@/data/certificates";
+
+function normalizeCertificateIds(ids: string[] | null | undefined): string[] {
+  if (!ids?.length) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const id of ids) {
+    const resolved = resolveCertificateId(id);
+    if (seen.has(resolved)) continue;
+    seen.add(resolved);
+    out.push(resolved);
+  }
+  return out;
+}
 
 const SECOND_DEGREE_COLUMN = "second_degree_type";
 /** Stashed in track_id when the DB column is not migrated yet (only if no real track). */
@@ -59,7 +73,7 @@ export function decodeProfileFromDb(row: ProfileRow | null): ProfileRow | null {
     track_id = null;
   }
 
-  const certificate_ids = row.certificate_ids ?? [];
+  const certificate_ids = normalizeCertificateIds(row.certificate_ids);
   const concentration_id = row.concentration_id ?? null;
 
   return { ...row, track_id, second_degree_type, certificate_ids, concentration_id };
@@ -79,7 +93,7 @@ function buildUpdatePayload(data: ProfileUpdateInput, omit: ProfileColumnOmit): 
     payload.concentration_id = concentration_id;
   }
   if (!omit.certificates && certificate_ids !== undefined) {
-    payload.certificate_ids = certificate_ids;
+    payload.certificate_ids = normalizeCertificateIds(certificate_ids);
   }
 
   if (second_major_id !== undefined) payload.second_major_id = second_major_id;

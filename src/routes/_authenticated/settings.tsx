@@ -6,7 +6,7 @@ import { z } from "zod";
 import { getProfile, updateProfile } from "@/lib/audit.functions";
 import { unlinkCourseTable } from "@/lib/coursetable.functions";
 import { useCourseTableCatalogMeta, useClientQueryEnabled } from "@/hooks/use-coursetable-catalog";
-import { CERTIFICATES } from "@/data/certificates";
+import { CERTIFICATE_CATEGORIES, CERTIFICATES, resolveCertificateId } from "@/data/certificates";
 import { concentrationsForMajor, MAJORS_BY_ID } from "@/data/majors";
 import { TRACKS } from "@/data/tracks";
 import { MajorPicker } from "@/components/major-picker";
@@ -63,7 +63,7 @@ function SettingsPage() {
     setSecondMajorId(second);
     setSecondDegree(((p.second_degree_type as "BA" | "BS") ?? p.degree_type ?? "BA") as "BA" | "BS");
     setConcentrationId(p.concentration_id ?? "");
-    setCertificateIds(p.certificate_ids ?? []);
+    setCertificateIds((p.certificate_ids ?? []).map(resolveCertificateId));
     setTrackId(p.track_id ?? "none");
     setYear(p.class_year ? String(p.class_year) : "");
   }, [profileQ.data]);
@@ -250,28 +250,50 @@ function SettingsPage() {
             <p className="text-xs text-muted-foreground">
               Structured credentials audited separately from your major (YCPS certificate programs).
             </p>
-            <div className="space-y-2 rounded-md border border-border p-3">
-              {CERTIFICATES.map((cert) => {
-                const checked = certificateIds.includes(cert.id);
+            <div className="space-y-4 rounded-md border border-border p-3">
+              {CERTIFICATE_CATEGORIES.map((cat) => {
+                const certs = CERTIFICATES.filter((c) => c.category === cat.id);
+                if (certs.length === 0) return null;
                 return (
-                  <div key={cert.id} className="flex items-start gap-3">
-                    <Checkbox
-                      id={`cert-${cert.id}`}
-                      checked={checked}
-                      onCheckedChange={(v) => {
-                        if (v === true) {
-                          setCertificateIds((ids) => [...new Set([...ids, cert.id])]);
-                        } else {
-                          setCertificateIds((ids) => ids.filter((id) => id !== cert.id));
-                        }
-                      }}
-                    />
-                    <div className="space-y-0.5">
-                      <Label htmlFor={`cert-${cert.id}`} className="cursor-pointer font-medium">
-                        {cert.name}
-                      </Label>
-                      <p className="text-xs text-muted-foreground">{cert.description}</p>
-                    </div>
+                  <div key={cat.id} className="space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {cat.label}
+                    </p>
+                    {certs.map((cert) => {
+                      const checked = certificateIds.some(
+                        (id) => resolveCertificateId(id) === cert.id,
+                      );
+                      return (
+                        <div key={cert.id} className="flex items-start gap-3">
+                          <Checkbox
+                            id={`cert-${cert.id}`}
+                            checked={checked}
+                            onCheckedChange={(v) => {
+                              if (v === true) {
+                                setCertificateIds((ids) => [
+                                  ...new Set([...ids.map(resolveCertificateId), cert.id]),
+                                ]);
+                              } else {
+                                setCertificateIds((ids) =>
+                                  ids.filter((id) => resolveCertificateId(id) !== cert.id),
+                                );
+                              }
+                            }}
+                          />
+                          <div className="space-y-0.5">
+                            <Label htmlFor={`cert-${cert.id}`} className="cursor-pointer font-medium">
+                              {cert.name}
+                              {cert.requiresApplication ? (
+                                <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                                  (application required)
+                                </span>
+                              ) : null}
+                            </Label>
+                            <p className="text-xs text-muted-foreground">{cert.description}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 );
               })}

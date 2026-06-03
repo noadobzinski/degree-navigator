@@ -1,6 +1,10 @@
 import { CATALOG_BY_CODE, type CatalogCourse } from "@/data/courses";
 import { DISTRIBUTIONAL_REQUIREMENTS, GRADUATION_CREDITS } from "@/data/distributional";
-import { CERTIFICATES_BY_ID } from "@/data/certificates";
+import { resolveCertificate, type Certificate } from "@/data/certificates";
+import {
+  progressFromSlotResults,
+  type RequirementProgress,
+} from "@/lib/credential-progress";
 import {
   MAJORS_BY_ID,
   mergeElectivesIntoCore,
@@ -270,11 +274,38 @@ export function auditMajor(
 }
 
 export type CertificateAudit = {
-  certificate: (typeof CERTIFICATES_BY_ID)[string];
+  certificate: Certificate;
+  prerequisiteResult?: SlotResult;
   results: SlotResult[];
-  satisfiedCount: number;
-  totalCount: number;
+  progress: RequirementProgress;
 };
+
+export function auditOneCertificate(
+  courses: UserCourse[],
+  certificateId: string,
+  crosslistLookup?: CrosslistLookup,
+): CertificateAudit | null {
+  const certificate = resolveCertificate(certificateId);
+  if (!certificate) return null;
+  const consumed = new Set<string>();
+  let prerequisiteResult: SlotResult | undefined;
+  if (certificate.prerequisite) {
+    const prereqResults = fillSlots(
+      [certificate.prerequisite],
+      courses,
+      consumed,
+      crosslistLookup,
+    );
+    prerequisiteResult = prereqResults[0];
+  }
+  const results = fillSlots(certificate.requirements, courses, consumed, crosslistLookup);
+  return {
+    certificate,
+    prerequisiteResult,
+    results,
+    progress: progressFromSlotResults(results),
+  };
+}
 
 export function auditCertificates(
   courses: UserCourse[],
@@ -283,17 +314,9 @@ export function auditCertificates(
 ): CertificateAudit[] {
   if (!certificateIds?.length) return [];
   const audits: CertificateAudit[] = [];
-  for (const id of certificateIds) {
-    const certificate = CERTIFICATES_BY_ID[id];
-    if (!certificate) continue;
-    const consumed = new Set<string>();
-    const results = fillSlots(certificate.requirements, courses, consumed, crosslistLookup);
-    audits.push({
-      certificate,
-      results,
-      satisfiedCount: results.filter((r) => r.satisfied).length,
-      totalCount: results.length,
-    });
+  for (const rawId of certificateIds) {
+    const audit = auditOneCertificate(courses, rawId, crosslistLookup);
+    if (audit) audits.push(audit);
   }
   return audits;
 }

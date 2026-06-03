@@ -8,6 +8,8 @@ import { useRequirementExamples, getSlotExamples } from "@/hooks/use-requirement
 import { FilledRequirementCourses } from "@/components/filled-requirement-courses";
 import { RequirementExamples } from "@/components/requirement-examples";
 import { CredentialSuggestionsCard } from "@/components/credential-suggestions-card";
+import { CatalogLink, RequirementSlotRows } from "@/components/requirement-slot-rows";
+import { slotResultsToRows } from "@/lib/credential-progress";
 import { MajorAuditCard } from "@/components/major-audit-card";
 import {
   auditCertificates,
@@ -199,7 +201,10 @@ function Dashboard() {
         </Card>
       ) : null}
 
-      <CredentialSuggestionsCard suggestions={reachableCredentials} />
+      <CredentialSuggestionsCard
+        suggestions={reachableCredentials}
+        crosslistLookup={crosslistLookup}
+      />
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
@@ -303,32 +308,36 @@ function Dashboard() {
         </Card>
       )}
 
-      {certificateAudits.map((certAudit) => (
-        <Card key={certAudit.certificate.id}>
-          <CardHeader>
-            <CardTitle className="font-serif">{certAudit.certificate.name} certificate</CardTitle>
-            <p className="text-sm text-muted-foreground">{certAudit.certificate.description}</p>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {certAudit.results.map((r) => (
-              <div key={r.slot.id} className="flex items-start gap-3 rounded-md border border-border p-3">
-                {r.satisfied ? <CheckCircle2 className="mt-0.5 h-5 w-5 text-success" /> : <AlertCircle className="mt-0.5 h-5 w-5 text-warning" />}
-                <div className="flex-1">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="font-medium">{r.slot.label}</p>
-                    <Badge variant={r.satisfied ? "default" : "secondary"}>{r.filled.length}/{r.slot.needCount}</Badge>
-                  </div>
-                  <FilledRequirementCourses
-                    courses={r.filled}
-                    crosslistLookup={crosslistLookup}
-                    complete={r.satisfied}
-                  />
+      {certificateAudits.map((certAudit) => {
+        const rows = [
+          ...(certAudit.prerequisiteResult
+            ? slotResultsToRows([certAudit.prerequisiteResult], "prereq-")
+            : []),
+          ...slotResultsToRows(certAudit.results),
+        ];
+        return (
+          <Card key={certAudit.certificate.id}>
+            <CardHeader>
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <CardTitle className="font-serif">{certAudit.certificate.name} certificate</CardTitle>
+                  <p className="mt-1 text-sm text-muted-foreground">{certAudit.certificate.description}</p>
+                  <p className="mt-1">
+                    <CatalogLink href={certAudit.certificate.catalogUrl} />
+                  </p>
                 </div>
+                <Badge variant={certAudit.progress.remainingCourses === 0 ? "default" : "secondary"}>
+                  {certAudit.progress.coursesFilled}/{certAudit.progress.coursesRequired} credits
+                </Badge>
               </div>
-            ))}
-          </CardContent>
-        </Card>
-      ))}
+              <Progress value={certAudit.progress.progressPct} className="mt-3 h-1.5" />
+            </CardHeader>
+            <CardContent>
+              <RequirementSlotRows rows={rows} crosslistLookup={crosslistLookup} />
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }
