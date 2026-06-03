@@ -15,8 +15,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Database } from "lucide-react";
+import { YALE_DOUBLE_MAJOR_MAX_OVERLAP } from "@/data/majors";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   validateSearch: z.object({ major: z.string().optional() }),
@@ -41,6 +43,9 @@ function SettingsPage() {
   const [name, setName] = useState("");
   const [majorId, setMajorId] = useState<string>("");
   const [degree, setDegree] = useState<"BA" | "BS">("BA");
+  const [doubleMajor, setDoubleMajor] = useState(false);
+  const [secondMajorId, setSecondMajorId] = useState<string>("");
+  const [secondDegree, setSecondDegree] = useState<"BA" | "BS">("BA");
   const [trackId, setTrackId] = useState<string>("none");
   const [year, setYear] = useState<string>("");
 
@@ -50,6 +55,10 @@ function SettingsPage() {
     setName(p.full_name ?? "");
     setMajorId(p.major_id ?? "");
     setDegree(((p.degree_type as "BA" | "BS") ?? "BA"));
+    const second = p.second_major_id ?? "";
+    setDoubleMajor(!!second);
+    setSecondMajorId(second);
+    setSecondDegree(((p.second_degree_type as "BA" | "BS") ?? p.degree_type ?? "BA") as "BA" | "BS");
     setTrackId(p.track_id ?? "none");
     setYear(p.class_year ? String(p.class_year) : "");
   }, [profileQ.data]);
@@ -62,18 +71,28 @@ function SettingsPage() {
   }, [majorFromUrl]);
 
   const major = majorId ? MAJORS_BY_ID[majorId] : null;
+  const secondMajor = secondMajorId ? MAJORS_BY_ID[secondMajorId] : null;
   const availableDegrees = major?.degrees ?? ["BA", "BS"];
+  const secondDegrees = secondMajor?.degrees ?? ["BA", "BS"];
 
   const saveM = useMutation({
-    mutationFn: () => updateFn({
-      data: {
-        full_name: name || null,
-        major_id: majorId || null,
-        degree_type: degree,
-        track_id: trackId === "none" ? null : trackId,
-        class_year: year ? parseInt(year, 10) : null,
-      },
-    }),
+    mutationFn: () => {
+      if (doubleMajor && secondMajorId && secondMajorId === majorId) {
+        throw new Error("Second major must differ from your primary major.");
+      }
+      return updateFn({
+        data: {
+          full_name: name || null,
+          major_id: majorId || null,
+          degree_type: degree,
+          second_major_id: doubleMajor && secondMajorId ? secondMajorId : null,
+          second_degree_type:
+            doubleMajor && secondMajorId ? secondDegree : null,
+          track_id: trackId === "none" ? null : trackId,
+          class_year: year ? parseInt(year, 10) : null,
+        },
+      });
+    },
     onSuccess: () => { toast.success("Saved"); qc.invalidateQueries({ queryKey: ["profile"] }); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
   });
@@ -125,6 +144,59 @@ function SettingsPage() {
             {major && <p className="text-xs text-muted-foreground">{major.notes}</p>}
           </div>
 
+          <div className="flex items-start gap-3 rounded-md border border-border p-4">
+            <Checkbox
+              id="double-major"
+              checked={doubleMajor}
+              onCheckedChange={(v) => {
+                const on = v === true;
+                setDoubleMajor(on);
+                if (!on) setSecondMajorId("");
+              }}
+            />
+            <div className="space-y-1">
+              <Label htmlFor="double-major" className="cursor-pointer font-medium">
+                Double major
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Each major is completed independently. Yale allows no more than{" "}
+                {YALE_DOUBLE_MAJOR_MAX_OVERLAP} term courses to overlap between majors.
+              </p>
+            </div>
+          </div>
+
+          {doubleMajor ? (
+            <div className="space-y-4 rounded-md border border-dashed border-border p-4">
+              <div className="space-y-1.5">
+                <Label>Second major</Label>
+                <MajorPicker
+                  value={secondMajorId}
+                  onChange={(id) => {
+                    setSecondMajorId(id);
+                    const m = MAJORS_BY_ID[id];
+                    if (m) setSecondDegree(m.defaultDegree);
+                  }}
+                  onDegreeDefault={setSecondDegree}
+                  excludeId={majorId}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Second major degree</Label>
+                <Select value={secondDegree} onValueChange={(v) => setSecondDegree(v as "BA" | "BS")}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {secondDegrees.map((d) => (
+                      <SelectItem key={d} value={d}>
+                        {d === "BA" ? "Bachelor of Arts (B.A.)" : "Bachelor of Science (B.S.)"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {secondMajor && <p className="text-xs text-muted-foreground">{secondMajor.notes}</p>}
+              </div>
+            </div>
+          ) : null}
+
           <div className="space-y-1.5">
             <Label>Track (optional)</Label>
             <Select value={trackId} onValueChange={setTrackId}>
@@ -140,7 +212,12 @@ function SettingsPage() {
             <Input id="year" inputMode="numeric" value={year} onChange={(e) => setYear(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} placeholder="2028" />
           </div>
 
-          <Button onClick={() => saveM.mutate()} disabled={saveM.isPending || !majorId}>Save</Button>
+          <Button
+            onClick={() => saveM.mutate()}
+            disabled={saveM.isPending || !majorId || (doubleMajor && !secondMajorId)}
+          >
+            Save
+          </Button>
         </CardContent>
       </Card>
 

@@ -34,6 +34,17 @@ function sortExamples(a: CourseExample, b: CourseExample, slot: RequirementSlot)
   return a.code.localeCompare(b.code);
 }
 
+function pushGroupSlots(
+  out: { section: string; slot: RequirementSlot }[],
+  section: string,
+  groups: { slots: RequirementSlot[] }[] | undefined,
+) {
+  if (!groups?.length) return;
+  for (const group of groups) {
+    for (const slot of group.slots) out.push({ section, slot });
+  }
+}
+
 export function collectSlotsFromRequirements(
   reqs: MajorRequirements,
 ): { section: string; slot: RequirementSlot }[] {
@@ -41,13 +52,17 @@ export function collectSlotsFromRequirements(
   if (reqs.prerequisites?.length) {
     for (const slot of reqs.prerequisites) groups.push({ section: "Prerequisites", slot });
   }
+  pushGroupSlots(groups, "Prerequisites", reqs.prerequisiteGroups);
   for (const slot of reqs.core) groups.push({ section: "Core requirements", slot });
+  pushGroupSlots(groups, "Core requirements", reqs.coreGroups);
   if (reqs.electives?.length) {
     for (const slot of reqs.electives) groups.push({ section: "Electives", slot });
   }
+  pushGroupSlots(groups, "Electives", reqs.electiveGroups);
   if (reqs.senior?.length) {
     for (const slot of reqs.senior) groups.push({ section: "Senior requirement", slot });
   }
+  pushGroupSlots(groups, "Senior requirement", reqs.seniorGroups);
   return groups;
 }
 

@@ -1,6 +1,12 @@
 import { CATALOG_BY_CODE, type CatalogCourse } from "@/data/courses";
 import { DISTRIBUTIONAL_REQUIREMENTS, GRADUATION_CREDITS } from "@/data/distributional";
-import { MAJORS_BY_ID, type RequirementSlot, type MajorRequirements } from "@/data/majors";
+import {
+  MAJORS_BY_ID,
+  YALE_DOUBLE_MAJOR_MAX_OVERLAP,
+  type RequirementGroup,
+  type RequirementSlot,
+  type MajorRequirements,
+} from "@/data/majors";
 import { TRACKS_BY_ID } from "@/data/tracks";
 import {
   auditDistributionalWithAllocation,
@@ -35,6 +41,22 @@ export type SlotResult = {
   filled: UserCourse[];
   satisfied: boolean;
   remaining: number;
+};
+
+export type GroupResult = {
+  group: RequirementGroup;
+  slotResults: SlotResult[];
+  /** Subfields (or options) satisfied within the group */
+  satisfiedCount: number;
+  pickCount: number;
+  satisfied: boolean;
+  remaining: number;
+};
+
+export type MajorAuditSection = {
+  title: string;
+  results: SlotResult[];
+  groups?: GroupResult[];
 };
 
 function matchesSlot(course: UserCourse, slot: RequirementSlot): boolean {
@@ -108,24 +130,145 @@ function fillSlots(
   });
 }
 
-export type MajorAuditSection = { title: string; results: SlotResult[] };
+function fillGroups(
+  groups: RequirementGroup[],
+  courses: UserCourse[],
+  consumed: Set<string>,
+): GroupResult[] {
+  return groups.map((group) => {
+    const slotResults = fillSlots(group.slots, courses, consumed);
+    const satisfiedCount = slotResults.filter((r) => r.satisfied).length;
+    const pickCount = group.pickCount;
+    return {
+      group,
+      slotResults,
+      satisfiedCount,
+      pickCount,
+      satisfied: satisfiedCount >= pickCount,
+      remaining: Math.max(0, pickCount - satisfiedCount),
+    };
+  });
+}
 
-export function auditMajor(courses: UserCourse[], majorId: string, degree: "BA" | "BS") {
+function auditRequirementSections(
+  reqs: MajorRequirements,
+  courses: UserCourse[],
+  consumed: Set<string>,
+): MajorAuditSection[] {
+  const sections: MajorAuditSection[] = [];
+  if (reqs.prerequisites?.length || reqs.prerequisiteGroups?.length) {
+    const prereqSection: MajorAuditSection = { title: "Prerequisites", results: [] };
+    if (reqs.prerequisiteGroups?.length) {
+      prereqSection.groups = fillGroups(reqs.prerequisiteGroups, courses, consumed);
+    }
+    prereqSection.results = fillSlots(reqs.prerequisites ?? [], courses, consumed);
+    sections.push(prereqSection);
+  }
+  sections.push({
+    title: "Core requirements",
+    // Breadth groups (e.g. 4 of 7 subfields) before broad prefix slots that could absorb the same courses.
+    results: [],
+    groups: undefined,
+  });
+  const coreSection = sections[sections.length - 1]!;
+  if (reqs.coreGroups?.length) {
+    coreSection.groups = fillGroups(reqs.coreGroups, courses, consumed);
+  }
+  coreSection.results = fillSlots(reqs.core, courses, consumed);
+  if (reqs.electives?.length || reqs.electiveGroups?.length) {
+    const electiveSection: MajorAuditSection = { title: "Electives", results: [] };
+    if (reqs.electiveGroups?.length) {
+      electiveSection.groups = fillGroups(reqs.electiveGroups, courses, consumed);
+    }
+    electiveSection.results = fillSlots(reqs.electives ?? [], courses, consumed);
+    sections.push(electiveSection);
+  }
+  if (reqs.senior?.length || reqs.seniorGroups?.length) {
+    const seniorSection: MajorAuditSection = { title: "Senior requirement", results: [] };
+    if (reqs.seniorGroups?.length) {
+      seniorSection.groups = fillGroups(reqs.seniorGroups, courses, consumed);
+    }
+    seniorSection.results = fillSlots(reqs.senior ?? [], courses, consumed);
+    sections.push(seniorSection);
+  }
+  return sections;
+}
+
+export function countMajorAuditUnits(sections: MajorAuditSection[]): {
+  satisfiedCount: number;
+  totalCount: number;
+} {
+  let satisfiedCount = 0;
+  let totalCount = 0;
+  for (const s of sections) {
+    for (const r of s.results) {
+      totalCount++;
+      if (r.satisfied) satisfiedCount++;
+    }
+    for (const g of s.groups ?? []) {
+      totalCount++;
+      if (g.satisfied) satisfiedCount++;
+    }
+  }
+  return { satisfiedCount, totalCount };
+}
+
+/** Course instances assigned to any slot in this major audit. */
+export function coursesUsedInMajorAudit(sections: MajorAuditSection[]): UserCourse[] {
+  const byId = new Map<string, UserCourse>();
+  for (const s of sections) {
+    for (const r of s.results) {
+      for (const c of r.filled) byId.set(c.id, c);
+    }
+    for (const g of s.groups ?? []) {
+      for (const r of g.slotResults) {
+        for (const c of r.filled) byId.set(c.id, c);
+      }
+    }
+  }
+  return [...byId.values()];
+}
+
+export type MajorAudit = {
+  major: (typeof MAJORS_BY_ID)[string];
+  degree: "BA" | "BS";
+  reqs: MajorRequirements;
+  sections: MajorAuditSection[];
+  satisfiedCount: number;
+  totalCount: number;
+};
+
+export function auditMajor(courses: UserCourse[], majorId: string, degree: "BA" | "BS"): MajorAudit | null {
   const major = MAJORS_BY_ID[majorId];
   if (!major) return null;
   const reqs = major.requirements[degree] ?? Object.values(major.requirements)[0];
   if (!reqs) return null;
   const consumed = new Set<string>();
-  const sections: MajorAuditSection[] = [];
-  if (reqs.prerequisites?.length) sections.push({ title: "Prerequisites", results: fillSlots(reqs.prerequisites, courses, consumed) });
-  sections.push({ title: "Core requirements", results: fillSlots(reqs.core, courses, consumed) });
-  if (reqs.electives?.length) sections.push({ title: "Electives", results: fillSlots(reqs.electives, courses, consumed) });
-  if (reqs.senior?.length) sections.push({ title: "Senior requirement", results: fillSlots(reqs.senior, courses, consumed) });
-
-  const allResults = sections.flatMap((s) => s.results);
-  const satisfiedCount = allResults.filter((r) => r.satisfied).length;
-  const totalCount = allResults.length;
+  const sections = auditRequirementSections(reqs, courses, consumed);
+  const { satisfiedCount, totalCount } = countMajorAuditUnits(sections);
   return { major, degree, reqs, sections, satisfiedCount, totalCount };
+}
+
+export type DoubleMajorOverlap = {
+  courses: UserCourse[];
+  count: number;
+  maxAllowed: number;
+  withinLimit: boolean;
+};
+
+export function computeDoubleMajorOverlap(
+  primary: MajorAudit,
+  secondary: MajorAudit,
+): DoubleMajorOverlap {
+  const primaryIds = new Set(coursesUsedInMajorAudit(primary.sections).map((c) => c.id));
+  const overlap = coursesUsedInMajorAudit(secondary.sections).filter((c) => primaryIds.has(c.id));
+  const count = overlap.length;
+  return {
+    courses: overlap,
+    count,
+    maxAllowed: YALE_DOUBLE_MAJOR_MAX_OVERLAP,
+    withinLimit: count <= YALE_DOUBLE_MAJOR_MAX_OVERLAP,
+  };
 }
 
 export function auditTrack(courses: UserCourse[], trackId: string | null) {
@@ -149,12 +292,67 @@ export function graduationCredits() {
   return GRADUATION_CREDITS;
 }
 
+function suggestForSlot(
+  slot: RequirementSlot,
+  remaining: number,
+  reason: string,
+  priority: "high" | "med" | "low",
+  completedCodes: Set<string>,
+  seen: Set<string>,
+  suggestions: { priority: "high" | "med" | "low"; code: string; title: string; reason: string }[],
+  catalogByCode: Record<string, CatalogCourse>,
+  pushIf: (code: string, reason: string, priority: "high" | "med" | "low") => void,
+) {
+  if (remaining <= 0) return;
+  (slot.codes ?? []).slice(0, remaining).forEach((code) => pushIf(code, reason, priority));
+  const explicitCount = Math.min(remaining, slot.codes?.length ?? 0);
+  const prefixNeed = remaining - explicitCount;
+  if (prefixNeed > 0 && slot.codePrefix?.length) {
+    let added = 0;
+    for (const c of Object.values(catalogByCode)) {
+      if (added >= prefixNeed) break;
+      if (!catalogMatchesSlot(c, slot)) continue;
+      const key = c.code.toUpperCase();
+      if (completedCodes.has(key) || seen.has(c.code)) continue;
+      pushIf(c.code, reason, priority);
+      added++;
+    }
+  }
+}
+
+function suggestFromMajorAudit(
+  audit: MajorAudit,
+  label: string,
+  completedCodes: Set<string>,
+  seen: Set<string>,
+  suggestions: { priority: "high" | "med" | "low"; code: string; title: string; reason: string }[],
+  catalogByCode: Record<string, CatalogCourse>,
+  pushIf: (code: string, reason: string, priority: "high" | "med" | "low") => void,
+) {
+  for (const s of audit.sections) {
+    for (const r of s.results) {
+      if (r.satisfied) continue;
+      suggestForSlot(r.slot, r.remaining, `${label}: ${r.slot.label}`, "high", completedCodes, seen, suggestions, catalogByCode, pushIf);
+    }
+    for (const g of s.groups ?? []) {
+      if (g.satisfied) continue;
+      const need = g.remaining;
+      const unsatisfied = g.slotResults.filter((r) => !r.satisfied);
+      for (const r of unsatisfied.slice(0, need)) {
+        suggestForSlot(r.slot, r.remaining, `${label}: ${g.group.label} — ${r.slot.label}`, "high", completedCodes, seen, suggestions, catalogByCode, pushIf);
+      }
+    }
+  }
+}
+
 export function suggestRoadmap(
   courses: UserCourse[],
   majorId: string | null,
   degree: "BA" | "BS",
   trackId: string | null,
   catalogByCode: Record<string, CatalogCourse> = CATALOG_BY_CODE,
+  secondMajorId?: string | null,
+  secondDegree?: "BA" | "BS",
 ): { priority: "high" | "med" | "low"; code: string; title: string; reason: string }[] {
   const completedCodes = new Set(courses.map((c) => c.course_code.toUpperCase()));
   const suggestions: { priority: "high" | "med" | "low"; code: string; title: string; reason: string }[] = [];
@@ -168,37 +366,17 @@ export function suggestRoadmap(
     suggestions.push({ code, title: c.title, reason, priority });
   };
 
-  const suggestForSlot = (slot: RequirementSlot, remaining: number, reason: string, priority: "high" | "med" | "low") => {
-    if (remaining <= 0) return;
-    (slot.codes ?? []).slice(0, remaining).forEach((code) => pushIf(code, reason, priority));
-    const explicitCount = Math.min(remaining, slot.codes?.length ?? 0);
-    const prefixNeed = remaining - explicitCount;
-    if (prefixNeed > 0 && slot.codePrefix?.length) {
-      let added = 0;
-      for (const c of Object.values(catalogByCode)) {
-        if (added >= prefixNeed) break;
-        if (!matchesCatalogCourse(c, slot)) continue;
-        const key = c.code.toUpperCase();
-        if (completedCodes.has(key) || seen.has(c.code)) continue;
-        pushIf(c.code, reason, priority);
-        added++;
-      }
-    }
-  };
-
   if (majorId) {
-    const audit = auditMajor(
-      courses.map((c) => ({ ...c })),
-      majorId,
-      degree,
-    );
-    if (audit) {
-      for (const s of audit.sections) {
-        for (const r of s.results) {
-          if (r.satisfied) continue;
-          suggestForSlot(r.slot, r.remaining, `Major: ${r.slot.label}`, "high");
-        }
-      }
+    const audit = auditMajor(courses.map((c) => ({ ...c })), majorId, degree);
+    if (audit) suggestFromMajorAudit(audit, "Major", completedCodes, seen, suggestions, catalogByCode, pushIf);
+  }
+
+  if (secondMajorId && secondMajorId !== majorId) {
+    const deg2 = secondDegree ?? degree;
+    const audit2 = auditMajor(courses.map((c) => ({ ...c })), secondMajorId, deg2);
+    if (audit2) {
+      const name = audit2.major.name;
+      suggestFromMajorAudit(audit2, `Second major (${name})`, completedCodes, seen, suggestions, catalogByCode, pushIf);
     }
   }
 
@@ -207,7 +385,7 @@ export function suggestRoadmap(
     if (t) {
       for (const r of t.results) {
         if (r.satisfied) continue;
-        suggestForSlot(r.slot, r.remaining, `${t.track.name}: ${r.slot.label}`, "high");
+        suggestForSlot(r.slot, r.remaining, `${t.track.name}: ${r.slot.label}`, "high", completedCodes, seen, suggestions, catalogByCode, pushIf);
       }
     }
   }

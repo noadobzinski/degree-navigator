@@ -1,4 +1,4 @@
-import type { Major, RequirementSlot } from "./types";
+import type { Major, RequirementGroup, RequirementSlot } from "./types";
 
 /** Expand Yale roadmap codes to include CourseTable 4-digit variants. */
 function y(codes: string[]): string[] {
@@ -58,8 +58,15 @@ const CGSC_SUBFIELDS: RequirementSlot[] = [
   },
 ];
 
+const CGSC_SUBFIELD_GROUP: RequirementGroup = {
+  id: "subfields",
+  label: "Subfield breadth (4 of 7)",
+  description: "One course from four different subfields below.",
+  pickCount: 4,
+  slots: CGSC_SUBFIELDS,
+};
+
 const cgscSharedCore: RequirementSlot[] = [
-  ...CGSC_SUBFIELDS,
   {
     id: "concentration",
     label: "6 concentration courses (3000+, 2+ subfields)",
@@ -112,6 +119,7 @@ export const ROADMAP_MAJORS: Major[] = [
           { id: "junior_colloq", label: "Junior colloquium (CGSC 3950)", codes: y(["CGSC 3950"]), needCount: 1 },
         ],
         core: cgscSharedCore,
+        coreGroups: [CGSC_SUBFIELD_GROUP],
         senior: cgscSenior,
       },
       BS: {
@@ -120,6 +128,7 @@ export const ROADMAP_MAJORS: Major[] = [
           { id: "intro", label: "CGSC 1100", codes: y(["CGSC 110"]), needCount: 1 },
           { id: "junior_colloq", label: "Junior colloquium (CGSC 3950)", codes: y(["CGSC 3950"]), needCount: 1 },
         ],
+        coreGroups: [CGSC_SUBFIELD_GROUP],
         core: [
           ...cgscSharedCore.filter((s) => s.id !== "skills"),
           {

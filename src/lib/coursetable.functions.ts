@@ -71,6 +71,8 @@ export const getRoadmapSuggestions = createServerFn({ method: "POST" })
         ),
         majorId: z.string().nullable(),
         degree: z.enum(["BA", "BS"]),
+        secondMajorId: z.string().nullable().optional(),
+        secondDegree: z.enum(["BA", "BS"]).optional(),
         trackId: z.string().nullable(),
         season: z.string().regex(/^\d{6}$/).optional(),
       })
@@ -86,6 +88,8 @@ export const getRoadmapSuggestions = createServerFn({ method: "POST" })
       data.degree,
       data.trackId,
       catalogByCode,
+      data.secondMajorId ?? null,
+      data.secondDegree,
     );
     return {
       season,

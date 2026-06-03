@@ -3,8 +3,8 @@ import { DETAILED_MAJORS } from "./detailed";
 import { ROADMAP_MAJORS } from "./roadmap-majors";
 import type { Major } from "./types";
 
-export type { Major, MajorRequirements, RequirementSlot } from "./types";
-export { YALE_ROADMAP_PDF } from "./types";
+export type { Major, MajorRequirements, RequirementGroup, RequirementSlot } from "./types";
+export { YALE_DOUBLE_MAJOR_MAX_OVERLAP, YALE_ROADMAP_PDF } from "./types";
 
 const DETAILED_IDS = new Set(DETAILED_MAJORS.map((m) => m.id));
 const ROADMAP_IDS = new Set(ROADMAP_MAJORS.map((m) => m.id));

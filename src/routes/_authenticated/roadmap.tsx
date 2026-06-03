@@ -33,7 +33,15 @@ function RoadmapPage() {
   });
 
   const roadmapQ = useQuery({
-    queryKey: ["roadmap", profileQ.data?.major_id, profileQ.data?.degree_type, profileQ.data?.track_id, coursesQ.data],
+    queryKey: [
+      "roadmap",
+      profileQ.data?.major_id,
+      profileQ.data?.degree_type,
+      profileQ.data?.second_major_id,
+      profileQ.data?.second_degree_type,
+      profileQ.data?.track_id,
+      coursesQ.data,
+    ],
     enabled: clientReady && !!profileQ.data?.major_id && coursesQ.data !== undefined,
     queryFn: () =>
       roadmapFn({
@@ -41,6 +49,10 @@ function RoadmapPage() {
           courses: (coursesQ.data ?? []) as UserCourse[],
           majorId: profileQ.data!.major_id,
           degree: (profileQ.data!.degree_type ?? "BA") as "BA" | "BS",
+          secondMajorId: profileQ.data!.second_major_id,
+          secondDegree: (profileQ.data!.second_degree_type ??
+            profileQ.data!.degree_type ??
+            "BA") as "BA" | "BS",
           trackId: profileQ.data!.track_id,
         },
       }),

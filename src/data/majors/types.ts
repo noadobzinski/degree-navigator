@@ -12,13 +12,29 @@ export type RequirementSlot = {
   exclusive?: boolean;
 };
 
+/** Breadth rule: satisfy `pickCount` of the listed slots (e.g. 4 of 7 CGSC subfields). */
+export type RequirementGroup = {
+  id: string;
+  label: string;
+  description?: string;
+  pickCount: number;
+  slots: RequirementSlot[];
+};
+
 export type MajorRequirements = {
   totalCourses: number;
   prerequisites?: RequirementSlot[];
+  prerequisiteGroups?: RequirementGroup[];
   core: RequirementSlot[];
+  coreGroups?: RequirementGroup[];
   electives?: RequirementSlot[];
+  electiveGroups?: RequirementGroup[];
   senior?: RequirementSlot[];
+  seniorGroups?: RequirementGroup[];
 };
+
+/** Yale College: at most two term courses may overlap between two majors. */
+export const YALE_DOUBLE_MAJOR_MAX_OVERLAP = 2;
 
 export type Major = {
   id: string;

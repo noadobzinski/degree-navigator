@@ -25,6 +25,7 @@ export type Database = {
           full_name: string | null
           id: string
           major_id: string | null
+          second_degree_type: string | null
           second_major_id: string | null
           track_id: string | null
           updated_at: string
@@ -39,6 +40,7 @@ export type Database = {
           full_name?: string | null
           id: string
           major_id?: string | null
+          second_degree_type?: string | null
           second_major_id?: string | null
           track_id?: string | null
           updated_at?: string
@@ -53,6 +55,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           major_id?: string | null
+          second_degree_type?: string | null
           second_major_id?: string | null
           track_id?: string | null
           updated_at?: string

@@ -17,11 +17,14 @@ type MajorPickerProps = {
   value: string;
   onChange: (majorId: string) => void;
   onDegreeDefault?: (degree: "BA" | "BS") => void;
+  /** Hide this major from the list (e.g. primary major when picking a second). */
+  excludeId?: string;
 };
 
-export function MajorPicker({ value, onChange, onDegreeDefault }: MajorPickerProps) {
+export function MajorPicker({ value, onChange, onDegreeDefault, excludeId }: MajorPickerProps) {
   const [open, setOpen] = useState(false);
-  const selected = MAJORS.find((m) => m.id === value);
+  const options = excludeId ? MAJORS.filter((m) => m.id !== excludeId) : MAJORS;
+  const selected = options.find((m) => m.id === value) ?? MAJORS.find((m) => m.id === value);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -50,7 +53,7 @@ export function MajorPicker({ value, onChange, onDegreeDefault }: MajorPickerPro
           <CommandList>
             <CommandEmpty>No major found.</CommandEmpty>
             <CommandGroup>
-              {MAJORS.map((m) => (
+              {options.map((m) => (
                 <CommandItem
                   key={m.id}
                   value={`${m.roadmapCode} ${m.name} ${m.department}`}
