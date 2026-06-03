@@ -5,6 +5,7 @@ import { RequirementExamples } from "@/components/requirement-examples";
 import { getSlotExamples } from "@/hooks/use-requirement-examples";
 import type { CourseExample } from "@/lib/requirement-examples";
 import type { MajorAudit } from "@/lib/audit";
+import { formatCrosslistNote, type CrosslistLookup } from "@/lib/crosslist";
 
 type ExamplesQuery = {
   data?: { bySlotId?: Record<string, CourseExample[]>; seasonsSearched: number };
@@ -15,9 +16,10 @@ type MajorAuditCardProps = {
   audit: MajorAudit;
   title?: string;
   examplesQ: ExamplesQuery;
+  crosslistLookup?: CrosslistLookup;
 };
 
-export function MajorAuditCard({ audit, title, examplesQ }: MajorAuditCardProps) {
+export function MajorAuditCard({ audit, title, examplesQ, crosslistLookup }: MajorAuditCardProps) {
   const heading = title ?? `${audit.major.name} (${audit.degree}) requirements`;
 
   return (
@@ -50,12 +52,23 @@ export function MajorAuditCard({ audit, title, examplesQ }: MajorAuditCardProps)
                     </Badge>
                   </div>
                   {g.slotResults.map((r) => (
-                    <SlotRow key={r.slot.id} result={r} examplesQ={examplesQ} indent />
+                    <SlotRow
+                      key={r.slot.id}
+                      result={r}
+                      examplesQ={examplesQ}
+                      crosslistLookup={crosslistLookup}
+                      indent
+                    />
                   ))}
                 </div>
               ))}
               {s.results.map((r) => (
-                <SlotRow key={r.slot.id} result={r} examplesQ={examplesQ} />
+                <SlotRow
+                  key={r.slot.id}
+                  result={r}
+                  examplesQ={examplesQ}
+                  crosslistLookup={crosslistLookup}
+                />
               ))}
             </div>
           </div>
@@ -68,10 +81,12 @@ export function MajorAuditCard({ audit, title, examplesQ }: MajorAuditCardProps)
 function SlotRow({
   result: r,
   examplesQ,
+  crosslistLookup,
   indent,
 }: {
   result: import("@/lib/audit").SlotResult;
   examplesQ: MajorAuditCardProps["examplesQ"];
+  crosslistLookup?: CrosslistLookup;
   indent?: boolean;
 }) {
   return (
@@ -91,9 +106,17 @@ function SlotRow({
           </Badge>
         </div>
         {r.filled.length > 0 && (
-          <p className="mt-1 text-xs text-muted-foreground">
-            Your courses: {r.filled.map((c) => c.course_code).join(", ")}
-          </p>
+          <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+            {r.filled.map((c) => {
+              const note = formatCrosslistNote(c.course_code, c.crosslisted_codes, crosslistLookup);
+              return (
+                <p key={c.id}>
+                  {c.course_code}
+                  {note ? <span className="text-[10px]"> — {note}</span> : null}
+                </p>
+              );
+            })}
+          </div>
         )}
         <RequirementExamples
           examples={getSlotExamples(examplesQ.data?.bySlotId, r.slot.id)}

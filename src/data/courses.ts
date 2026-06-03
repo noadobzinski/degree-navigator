@@ -8,6 +8,8 @@ export type CatalogCourse = {
   distributional: ("Hu" | "So" | "Sc")[];
   skills: ("QR" | "WR" | "L1" | "L2" | "L3" | "L4" | "L5")[];
   subject: string;
+  /** Other Yale course codes for the same offering (from CourseTable listings). */
+  crosslistedCodes?: string[];
 };
 
 export const CATALOG: CatalogCourse[] = [

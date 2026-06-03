@@ -60,13 +60,31 @@ function normalizeSkill(raw: string): CatalogCourse["skills"][number] | null {
   return null;
 }
 
+function listingCodes(entry: CourseTableCourse): string[] {
+  const seen = new Set<string>();
+  const codes: string[] = [];
+  for (const listing of entry.listings ?? []) {
+    const code = listing.course_code?.replace(/\s+/g, " ").trim();
+    if (!code) continue;
+    const key = code.toUpperCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    codes.push(code);
+  }
+  return codes;
+}
+
 export function normalizeCourseTableCourse(entry: CourseTableCourse): CatalogCourse | null {
-  const listing = entry.listings?.[0];
-  if (!listing?.course_code) return null;
+  const codes = listingCodes(entry);
+  if (!codes.length) return null;
+  const primary = codes[0];
+  const primaryListing = entry.listings!.find((l) => l.course_code?.replace(/\s+/g, " ").trim() === primary)!;
+  const crosslistedCodes = codes.length > 1 ? codes.slice(1) : undefined;
   return {
-    code: listing.course_code.replace(/\s+/g, " ").trim(),
+    code: primary,
+    crosslistedCodes,
     title: entry.title.trim(),
-    credits: resolveCatalogCredits(entry.credits, listing.course_code),
+    credits: resolveCatalogCredits(entry.credits, primary),
     distributional: entry.areas.filter((a): a is CatalogCourse["distributional"][number] =>
       DIST_TAGS.has(a),
     ),
@@ -77,7 +95,23 @@ export function normalizeCourseTableCourse(entry: CourseTableCourse): CatalogCou
           .filter((s): s is CatalogCourse["skills"][number] => s !== null),
       ),
     ],
-    subject: listing.subject,
+    subject: primaryListing.subject,
+  };
+}
+
+function mergeCatalogCourses(a: CatalogCourse, b: CatalogCourse): CatalogCourse {
+  const allCodes = [...new Set([a.code, b.code, ...(a.crosslistedCodes ?? []), ...(b.crosslistedCodes ?? [])])];
+  const primary = allCodes[0];
+  const crosslistedCodes = allCodes.length > 1 ? allCodes.slice(1) : undefined;
+  const credits = Math.min(a.credits, b.credits);
+  return {
+    code: primary,
+    crosslistedCodes,
+    title: a.title || b.title,
+    credits,
+    distributional: [...new Set([...a.distributional, ...b.distributional])] as CatalogCourse["distributional"],
+    skills: [...new Set([...a.skills, ...b.skills])] as CatalogCourse["skills"],
+    subject: a.subject || b.subject,
   };
 }
 
@@ -86,17 +120,29 @@ export function dedupeCourseTableCourses(entries: CourseTableCourse[]): CatalogC
   for (const entry of entries) {
     const normalized = normalizeCourseTableCourse(entry);
     if (!normalized) continue;
-    const key = normalized.code.toUpperCase();
-    const existing = byKey.get(key);
+    const keys = [normalized.code, ...(normalized.crosslistedCodes ?? [])].map((c) => c.toUpperCase());
+    let existing: CatalogCourse | undefined;
+    for (const key of keys) {
+      const hit = byKey.get(key);
+      if (hit) {
+        existing = hit;
+        break;
+      }
+    }
     if (!existing) {
-      byKey.set(key, normalized);
+      for (const key of keys) byKey.set(key, normalized);
       continue;
     }
-    const credits =
-      normalized.credits < existing.credits ? normalized.credits : existing.credits;
-    byKey.set(key, { ...existing, credits });
+    const merged = mergeCatalogCourses(existing, normalized);
+    for (const key of [merged.code, ...(merged.crosslistedCodes ?? [])].map((c) => c.toUpperCase())) {
+      byKey.set(key, merged);
+    }
   }
-  return [...byKey.values()].sort((a, b) => a.code.localeCompare(b.code));
+  const unique = new Map<string, CatalogCourse>();
+  for (const c of byKey.values()) {
+    unique.set(c.code.toUpperCase(), c);
+  }
+  return [...unique.values()].sort((a, b) => a.code.localeCompare(b.code));
 }
 
 /** Open CourseTable search for a course code (public, no auth required). */

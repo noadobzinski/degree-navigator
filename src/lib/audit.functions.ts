@@ -7,6 +7,10 @@ import {
   updateUserCourse,
 } from "@/lib/user-course-persistence";
 import { decodeProfileFromDb, updateProfileRow } from "@/lib/profile-persistence";
+import { getCrosslistLookup } from "@/lib/catalog-cache";
+import { alternateCodesForCourse } from "@/lib/crosslist";
+import { currentSeasonCode } from "@/lib/coursetable";
+import { seasonsForHistoricalCatalog } from "@/lib/requirement-examples";
 
 export const getProfile = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -52,7 +56,22 @@ export const getMyCourses = createServerFn({ method: "GET" })
       .eq("user_id", userId)
       .order("year", { ascending: true });
     if (error) throw new Error(error.message);
-    return (data ?? []).map((row) => decodeCourseFromDb(row));
+    const decoded = (data ?? []).map((row) => decodeCourseFromDb(row));
+
+    const seasons = [
+      ...new Set([currentSeasonCode(), ...seasonsForHistoricalCatalog(null).slice(-6)]),
+    ];
+    let lookup;
+    try {
+      lookup = await getCrosslistLookup(seasons);
+    } catch {
+      return decoded;
+    }
+
+    return decoded.map((course) => ({
+      ...course,
+      crosslisted_codes: alternateCodesForCourse(course.course_code, lookup),
+    }));
   });
 
 export const addCourse = createServerFn({ method: "POST" })

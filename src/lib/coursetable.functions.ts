@@ -3,53 +3,19 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { CATALOG_BY_CODE, type CatalogCourse } from "@/data/courses";
 import { suggestRoadmap, type UserCourse } from "@/lib/audit";
+import { COURSETABLE_API, currentSeasonCode } from "@/lib/coursetable";
 import {
-  COURSETABLE_API,
-  currentSeasonCode,
-  dedupeCourseTableCourses,
-  type CourseTableCourse,
-} from "@/lib/coursetable";
+  buildMergedCatalog,
+  fetchSeasonCatalog,
+  getCrosslistLookup,
+} from "@/lib/catalog-cache";
+import { serializeCrosslistLookup } from "@/lib/crosslist";
 import {
   getMajorExampleSections,
   getTrackExampleSections,
   seasonsForHistoricalCatalog,
   type SlotExamplesGroup,
 } from "@/lib/requirement-examples";
-
-type CatalogCacheEntry = {
-  courses: CatalogCourse[];
-  fetchedAt: number;
-};
-
-const catalogCacheBySeason = new Map<string, CatalogCacheEntry>();
-const CACHE_TTL_MS = 60 * 60 * 1000;
-
-async function fetchSeasonCatalog(season: string): Promise<CatalogCourse[]> {
-  const cached = catalogCacheBySeason.get(season);
-  if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
-    return cached.courses;
-  }
-
-  const res = await fetch(`${COURSETABLE_API}/api/catalog/public/${season}`, {
-    headers: { Accept: "application/json" },
-  });
-  if (!res.ok) {
-    throw new Error(`CourseTable catalog unavailable (${res.status})`);
-  }
-
-  const raw = (await res.json()) as CourseTableCourse[];
-  const courses = dedupeCourseTableCourses(raw);
-  catalogCacheBySeason.set(season, { courses, fetchedAt: Date.now() });
-  return courses;
-}
-
-export function buildMergedCatalog(courses: CatalogCourse[]): Record<string, CatalogCourse> {
-  const merged: Record<string, CatalogCourse> = { ...CATALOG_BY_CODE };
-  for (const c of courses) {
-    merged[c.code.toUpperCase()] = c;
-  }
-  return merged;
-}
 
 export const getRoadmapSuggestions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -82,6 +48,7 @@ export const getRoadmapSuggestions = createServerFn({ method: "POST" })
     const season = data.season ?? currentSeasonCode();
     const catalog = await fetchSeasonCatalog(season);
     const catalogByCode = buildMergedCatalog(catalog);
+    const crosslistLookup = await getCrosslistLookup([season]);
     const suggestions = suggestRoadmap(
       data.courses as UserCourse[],
       data.majorId,
@@ -90,6 +57,7 @@ export const getRoadmapSuggestions = createServerFn({ method: "POST" })
       catalogByCode,
       data.secondMajorId ?? null,
       data.secondDegree,
+      crosslistLookup,
     );
     return {
       season,
@@ -118,12 +86,17 @@ export const searchCourseTableCatalog = createServerFn({ method: "POST" })
 
     if (!q) return { season, courses: catalog.slice(0, limit), total: catalog.length };
 
-    const filtered = catalog.filter(
-      (c) =>
-        c.code.toLowerCase().includes(q) ||
-        c.title.toLowerCase().includes(q) ||
-        c.subject.toLowerCase().includes(q),
-    );
+    const filtered = catalog.filter((c) => {
+      const haystack = [
+        c.code,
+        c.title,
+        c.subject,
+        ...(c.crosslistedCodes ?? []),
+      ]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(q);
+    });
 
     return { season, courses: filtered.slice(0, limit), total: filtered.length };
   });
@@ -151,12 +124,17 @@ export const getRequirementExamples = createServerFn({ method: "POST" })
         try {
           const courses = await fetchSeasonCatalog(season);
           for (const course of courses) {
-            const key = course.code.toUpperCase();
-            const list = seasonByCode.get(key) ?? [];
-            if (!list.includes(season)) list.push(season);
-            seasonByCode.set(key, list);
-            if (!seenCodes.has(key)) {
-              seenCodes.add(key);
+            const keys = [course.code, ...(course.crosslistedCodes ?? [])].map((c) =>
+              c.toUpperCase(),
+            );
+            for (const key of keys) {
+              const list = seasonByCode.get(key) ?? [];
+              if (!list.includes(season)) list.push(season);
+              seasonByCode.set(key, list);
+            }
+            const primaryKey = course.code.toUpperCase();
+            if (!seenCodes.has(primaryKey)) {
+              seenCodes.add(primaryKey);
               catalogCourses.push(course);
             }
           }
@@ -166,18 +144,22 @@ export const getRequirementExamples = createServerFn({ method: "POST" })
       }),
     );
 
+    const crosslistLookup = buildCrosslistLookup([...Object.values(CATALOG_BY_CODE), ...catalogCourses]);
+
     const major = getMajorExampleSections(
       data.majorId,
       data.degree,
       catalogCourses,
       seasonByCode,
       currentSeason,
+      crosslistLookup,
     );
     const track = getTrackExampleSections(
       data.trackId,
       catalogCourses,
       seasonByCode,
       currentSeason,
+      crosslistLookup,
     );
 
     const bySlotId: Record<string, SlotExamplesGroup["examples"]> = {};
@@ -193,6 +175,12 @@ export const getRequirementExamples = createServerFn({ method: "POST" })
       bySlotId,
     };
   });
+
+export const getCrosslistMap = createServerFn({ method: "GET" }).handler(async () => {
+  const seasons = seasonsForHistoricalCatalog(null).slice(-8);
+  const lookup = await getCrosslistLookup(seasons);
+  return serializeCrosslistLookup(lookup);
+});
 
 export const getCourseTableCatalogMeta = createServerFn({ method: "GET" }).handler(async () => {
     const res = await fetch(`${COURSETABLE_API}/api/catalog/metadata`);

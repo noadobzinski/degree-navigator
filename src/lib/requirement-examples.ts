@@ -5,6 +5,7 @@ import { MAJORS_BY_ID, type MajorRequirements } from "@/data/majors";
 import { TRACKS_BY_ID } from "@/data/tracks";
 import { catalogMatchesSlot } from "@/lib/audit";
 import { canonicalCourseCode } from "@/lib/course-codes";
+import { formatCrosslistNote, type CrosslistLookup } from "@/lib/crosslist";
 import { currentSeasonCode } from "@/lib/coursetable";
 import { recentCatalogSeasons, formatSeasonLabel } from "@/lib/coursetable-seasons";
 
@@ -15,6 +16,8 @@ export type CourseExample = {
   offeredNow: boolean;
   /** Recent semesters this course appeared in the catalog (newest first). */
   recentSeasons: string[];
+  /** Cross-listed Yale course codes (from CourseTable). */
+  crosslistedAs?: string;
 };
 
 export type SlotExamplesGroup = {
@@ -66,22 +69,31 @@ export function collectSlotsFromRequirements(
   return groups;
 }
 
+function exampleGroupKey(code: string, lookup?: CrosslistLookup): string {
+  const canon = canonicalCourseCode(code);
+  const group = lookup?.get(canon);
+  return group ? [...group].sort().join("|") : canon;
+}
+
 export function examplesForSlot(
   slot: RequirementSlot,
   catalogCourses: CatalogCourse[],
   seasonByCode: Map<string, string[]>,
   currentSeason: string,
   limit = DEFAULT_LIMIT,
+  crosslistLookup?: CrosslistLookup,
 ): CourseExample[] {
   const seen = new Set<string>();
   const examples: CourseExample[] = [];
 
   for (const course of catalogCourses) {
-    if (!catalogMatchesSlot(course, slot)) continue;
-    const key = canonicalCourseCode(course.code);
+    if (!catalogMatchesSlot(course, slot, crosslistLookup)) continue;
+    const key = exampleGroupKey(course.code, crosslistLookup);
     if (seen.has(key)) continue;
     seen.add(key);
-    const seasons = seasonByCode.get(course.code.toUpperCase()) ?? seasonByCode.get(key) ?? [];
+    const canon = canonicalCourseCode(course.code);
+    const seasons = seasonByCode.get(course.code.toUpperCase()) ?? seasonByCode.get(canon) ?? [];
+    const crosslistedAs = formatCrosslistNote(course.code, course.crosslistedCodes, crosslistLookup);
     examples.push({
       code: course.code,
       title: course.title,
@@ -91,15 +103,16 @@ export function examplesForSlot(
         .sort((a, b) => b.localeCompare(a))
         .slice(0, 3)
         .map(formatSeasonLabel),
+      crosslistedAs: crosslistedAs ?? undefined,
     });
   }
 
   if (slot.codes?.length) {
     for (const code of slot.codes) {
-      const key = canonicalCourseCode(code);
+      const key = exampleGroupKey(code, crosslistLookup);
       if (seen.has(key)) continue;
       const staticCourse = CATALOG_BY_CODE[code] ?? CATALOG_BY_CODE[key];
-      if (staticCourse && catalogMatchesSlot(staticCourse, slot)) {
+      if (staticCourse && catalogMatchesSlot(staticCourse, slot, crosslistLookup)) {
         seen.add(key);
         examples.push({
           code: staticCourse.code,
@@ -107,6 +120,9 @@ export function examplesForSlot(
           credits: staticCourse.credits,
           offeredNow: false,
           recentSeasons: [],
+          crosslistedAs:
+            formatCrosslistNote(staticCourse.code, staticCourse.crosslistedCodes, crosslistLookup) ??
+            undefined,
         });
       }
     }
@@ -125,12 +141,13 @@ export function buildSlotExampleGroups(
   catalogCourses: CatalogCourse[],
   seasonByCode: Map<string, string[]>,
   currentSeason: string,
+  crosslistLookup?: CrosslistLookup,
 ): SlotExamplesGroup[] {
   return sections.map(({ section, slot }) => ({
     section,
     slotId: slot.id,
     label: slot.label,
-    examples: examplesForSlot(slot, catalogCourses, seasonByCode, currentSeason),
+    examples: examplesForSlot(slot, catalogCourses, seasonByCode, currentSeason, DEFAULT_LIMIT, crosslistLookup),
   }));
 }
 
@@ -140,12 +157,19 @@ export function getMajorExampleSections(
   catalogCourses: CatalogCourse[],
   seasonByCode: Map<string, string[]>,
   currentSeason: string,
+  crosslistLookup?: CrosslistLookup,
 ): SlotExamplesGroup[] {
   const major = MAJORS_BY_ID[majorId];
   if (!major) return [];
   const reqs = major.requirements[degree] ?? Object.values(major.requirements)[0];
   if (!reqs) return [];
-  return buildSlotExampleGroups(collectSlotsFromRequirements(reqs), catalogCourses, seasonByCode, currentSeason);
+  return buildSlotExampleGroups(
+    collectSlotsFromRequirements(reqs),
+    catalogCourses,
+    seasonByCode,
+    currentSeason,
+    crosslistLookup,
+  );
 }
 
 export function getTrackExampleSections(
@@ -153,10 +177,11 @@ export function getTrackExampleSections(
   catalogCourses: CatalogCourse[],
   seasonByCode: Map<string, string[]>,
   currentSeason: string,
+  crosslistLookup?: CrosslistLookup,
 ): SlotExamplesGroup[] {
   if (!trackId || trackId === "none") return [];
   const track = TRACKS_BY_ID[trackId];
   if (!track) return [];
   const sections = track.requirements.map((slot) => ({ section: track.name, slot }));
-  return buildSlotExampleGroups(sections, catalogCourses, seasonByCode, currentSeason);
+  return buildSlotExampleGroups(sections, catalogCourses, seasonByCode, currentSeason, crosslistLookup);
 }

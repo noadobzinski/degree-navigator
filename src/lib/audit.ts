@@ -12,8 +12,13 @@ import {
   auditDistributionalWithAllocation,
   getEligibleCreditBuckets,
 } from "@/lib/credit-allocation";
-import { courseMatchesAny, effectiveSkills } from "@/lib/course-codes";
+import { effectiveSkills } from "@/lib/course-codes";
 import { WR_OPTIONAL_SKILL } from "@/lib/course-codes";
+import {
+  codesForRequirementMatch,
+  courseMatchesSlotCodes,
+  type CrosslistLookup,
+} from "@/lib/crosslist";
 
 export type UserCourse = {
   id: string;
@@ -25,6 +30,8 @@ export type UserCourse = {
   counts_as_wr?: boolean | null;
   /** Manual distributional/skill bucket (hu, so, sc, qr, wr, lang); null = auto-optimize */
   credit_allocation?: string | null;
+  /** Other Yale codes for this offering (from CourseTable cross-listings). */
+  crosslisted_codes?: string[] | null;
   status: "planned" | "in_progress" | "completed";
   term: string | null;
   year: number | null;
@@ -59,33 +66,34 @@ export type MajorAuditSection = {
   groups?: GroupResult[];
 };
 
-function matchesSlot(course: UserCourse, slot: RequirementSlot): boolean {
-  const code = course.course_code;
+function matchesSlot(
+  course: UserCourse,
+  slot: RequirementSlot,
+  crosslistLookup?: CrosslistLookup,
+): boolean {
   const skills = effectiveSkills(course);
   const needsSkills = slot.requiredSkills?.length;
   if (needsSkills && !slot.requiredSkills!.every((s) => skills.includes(s))) {
     return false;
   }
 
-  const codeMatch =
-    (slot.codes?.length && courseMatchesAny(code, slot.codes)) ||
-    (slot.codePrefix?.length &&
-      slot.codePrefix.some((p) => {
-        const upper = code.toUpperCase();
-        if (!upper.startsWith(p.toUpperCase())) return false;
-        const numMatch = upper.match(/(\d{3,4})/);
-        const num = numMatch ? parseInt(numMatch[1], 10) : 0;
-        if (slot.minLevel && num < slot.minLevel) return false;
-        if (slot.maxLevel && num > slot.maxLevel) return false;
-        return true;
-      }));
+  const codesToCheck = codesForRequirementMatch(
+    course.course_code,
+    course.crosslisted_codes,
+    crosslistLookup,
+  );
+  const codeMatch = courseMatchesSlotCodes(codesToCheck, slot);
 
   if (codeMatch) return true;
   if (needsSkills && !slot.codes?.length && !slot.codePrefix?.length) return true;
   return false;
 }
 
-export function catalogMatchesSlot(course: CatalogCourse, slot: RequirementSlot): boolean {
+export function catalogMatchesSlot(
+  course: CatalogCourse,
+  slot: RequirementSlot,
+  crosslistLookup?: CrosslistLookup,
+): boolean {
   return matchesSlot(
     {
       id: course.code,
@@ -94,11 +102,13 @@ export function catalogMatchesSlot(course: CatalogCourse, slot: RequirementSlot)
       credits: course.credits,
       distributional: course.distributional,
       skills: course.skills,
+      crosslisted_codes: course.crosslistedCodes,
       status: "planned",
       term: null,
       year: null,
     },
     slot,
+    crosslistLookup,
   );
 }
 
@@ -110,13 +120,14 @@ function fillSlots(
   slots: RequirementSlot[],
   courses: UserCourse[],
   consumed: Set<string>,
+  crosslistLookup?: CrosslistLookup,
 ): SlotResult[] {
   return slots.map((slot) => {
     const filled: UserCourse[] = [];
     for (const c of courses) {
       if (filled.length >= slot.needCount) break;
       if (consumed.has(c.id)) continue;
-      if (matchesSlot(c, slot)) {
+      if (matchesSlot(c, slot, crosslistLookup)) {
         filled.push(c);
         consumed.add(c.id);
       }
@@ -134,9 +145,10 @@ function fillGroups(
   groups: RequirementGroup[],
   courses: UserCourse[],
   consumed: Set<string>,
+  crosslistLookup?: CrosslistLookup,
 ): GroupResult[] {
   return groups.map((group) => {
-    const slotResults = fillSlots(group.slots, courses, consumed);
+    const slotResults = fillSlots(group.slots, courses, consumed, crosslistLookup);
     const satisfiedCount = slotResults.filter((r) => r.satisfied).length;
     const pickCount = group.pickCount;
     return {
@@ -154,14 +166,15 @@ function auditRequirementSections(
   reqs: MajorRequirements,
   courses: UserCourse[],
   consumed: Set<string>,
+  crosslistLookup?: CrosslistLookup,
 ): MajorAuditSection[] {
   const sections: MajorAuditSection[] = [];
   if (reqs.prerequisites?.length || reqs.prerequisiteGroups?.length) {
     const prereqSection: MajorAuditSection = { title: "Prerequisites", results: [] };
     if (reqs.prerequisiteGroups?.length) {
-      prereqSection.groups = fillGroups(reqs.prerequisiteGroups, courses, consumed);
+      prereqSection.groups = fillGroups(reqs.prerequisiteGroups, courses, consumed, crosslistLookup);
     }
-    prereqSection.results = fillSlots(reqs.prerequisites ?? [], courses, consumed);
+    prereqSection.results = fillSlots(reqs.prerequisites ?? [], courses, consumed, crosslistLookup);
     sections.push(prereqSection);
   }
   sections.push({
@@ -172,23 +185,23 @@ function auditRequirementSections(
   });
   const coreSection = sections[sections.length - 1]!;
   if (reqs.coreGroups?.length) {
-    coreSection.groups = fillGroups(reqs.coreGroups, courses, consumed);
+    coreSection.groups = fillGroups(reqs.coreGroups, courses, consumed, crosslistLookup);
   }
-  coreSection.results = fillSlots(reqs.core, courses, consumed);
+  coreSection.results = fillSlots(reqs.core, courses, consumed, crosslistLookup);
   if (reqs.electives?.length || reqs.electiveGroups?.length) {
     const electiveSection: MajorAuditSection = { title: "Electives", results: [] };
     if (reqs.electiveGroups?.length) {
-      electiveSection.groups = fillGroups(reqs.electiveGroups, courses, consumed);
+      electiveSection.groups = fillGroups(reqs.electiveGroups, courses, consumed, crosslistLookup);
     }
-    electiveSection.results = fillSlots(reqs.electives ?? [], courses, consumed);
+    electiveSection.results = fillSlots(reqs.electives ?? [], courses, consumed, crosslistLookup);
     sections.push(electiveSection);
   }
   if (reqs.senior?.length || reqs.seniorGroups?.length) {
     const seniorSection: MajorAuditSection = { title: "Senior requirement", results: [] };
     if (reqs.seniorGroups?.length) {
-      seniorSection.groups = fillGroups(reqs.seniorGroups, courses, consumed);
+      seniorSection.groups = fillGroups(reqs.seniorGroups, courses, consumed, crosslistLookup);
     }
-    seniorSection.results = fillSlots(reqs.senior ?? [], courses, consumed);
+    seniorSection.results = fillSlots(reqs.senior ?? [], courses, consumed, crosslistLookup);
     sections.push(seniorSection);
   }
   return sections;
@@ -238,13 +251,18 @@ export type MajorAudit = {
   totalCount: number;
 };
 
-export function auditMajor(courses: UserCourse[], majorId: string, degree: "BA" | "BS"): MajorAudit | null {
+export function auditMajor(
+  courses: UserCourse[],
+  majorId: string,
+  degree: "BA" | "BS",
+  crosslistLookup?: CrosslistLookup,
+): MajorAudit | null {
   const major = MAJORS_BY_ID[majorId];
   if (!major) return null;
   const reqs = major.requirements[degree] ?? Object.values(major.requirements)[0];
   if (!reqs) return null;
   const consumed = new Set<string>();
-  const sections = auditRequirementSections(reqs, courses, consumed);
+  const sections = auditRequirementSections(reqs, courses, consumed, crosslistLookup);
   const { satisfiedCount, totalCount } = countMajorAuditUnits(sections);
   return { major, degree, reqs, sections, satisfiedCount, totalCount };
 }
@@ -271,12 +289,16 @@ export function computeDoubleMajorOverlap(
   };
 }
 
-export function auditTrack(courses: UserCourse[], trackId: string | null) {
+export function auditTrack(
+  courses: UserCourse[],
+  trackId: string | null,
+  crosslistLookup?: CrosslistLookup,
+) {
   if (!trackId || trackId === "none") return null;
   const track = TRACKS_BY_ID[trackId];
   if (!track) return null;
   const consumed = new Set<string>();
-  const results = fillSlots(track.requirements, courses, consumed);
+  const results = fillSlots(track.requirements, courses, consumed, crosslistLookup);
   return { track, results, satisfiedCount: results.filter((r) => r.satisfied).length, totalCount: results.length };
 }
 
@@ -302,6 +324,7 @@ function suggestForSlot(
   suggestions: { priority: "high" | "med" | "low"; code: string; title: string; reason: string }[],
   catalogByCode: Record<string, CatalogCourse>,
   pushIf: (code: string, reason: string, priority: "high" | "med" | "low") => void,
+  crosslistLookup?: CrosslistLookup,
 ) {
   if (remaining <= 0) return;
   (slot.codes ?? []).slice(0, remaining).forEach((code) => pushIf(code, reason, priority));
@@ -311,7 +334,7 @@ function suggestForSlot(
     let added = 0;
     for (const c of Object.values(catalogByCode)) {
       if (added >= prefixNeed) break;
-      if (!catalogMatchesSlot(c, slot)) continue;
+      if (!catalogMatchesSlot(c, slot, crosslistLookup)) continue;
       const key = c.code.toUpperCase();
       if (completedCodes.has(key) || seen.has(c.code)) continue;
       pushIf(c.code, reason, priority);
@@ -328,18 +351,41 @@ function suggestFromMajorAudit(
   suggestions: { priority: "high" | "med" | "low"; code: string; title: string; reason: string }[],
   catalogByCode: Record<string, CatalogCourse>,
   pushIf: (code: string, reason: string, priority: "high" | "med" | "low") => void,
+  crosslistLookup?: CrosslistLookup,
 ) {
   for (const s of audit.sections) {
     for (const r of s.results) {
       if (r.satisfied) continue;
-      suggestForSlot(r.slot, r.remaining, `${label}: ${r.slot.label}`, "high", completedCodes, seen, suggestions, catalogByCode, pushIf);
+      suggestForSlot(
+        r.slot,
+        r.remaining,
+        `${label}: ${r.slot.label}`,
+        "high",
+        completedCodes,
+        seen,
+        suggestions,
+        catalogByCode,
+        pushIf,
+        crosslistLookup,
+      );
     }
     for (const g of s.groups ?? []) {
       if (g.satisfied) continue;
       const need = g.remaining;
       const unsatisfied = g.slotResults.filter((r) => !r.satisfied);
       for (const r of unsatisfied.slice(0, need)) {
-        suggestForSlot(r.slot, r.remaining, `${label}: ${g.group.label} — ${r.slot.label}`, "high", completedCodes, seen, suggestions, catalogByCode, pushIf);
+        suggestForSlot(
+          r.slot,
+          r.remaining,
+          `${label}: ${g.group.label} — ${r.slot.label}`,
+          "high",
+          completedCodes,
+          seen,
+          suggestions,
+          catalogByCode,
+          pushIf,
+          crosslistLookup,
+        );
       }
     }
   }
@@ -353,6 +399,7 @@ export function suggestRoadmap(
   catalogByCode: Record<string, CatalogCourse> = CATALOG_BY_CODE,
   secondMajorId?: string | null,
   secondDegree?: "BA" | "BS",
+  crosslistLookup?: CrosslistLookup,
 ): { priority: "high" | "med" | "low"; code: string; title: string; reason: string }[] {
   const completedCodes = new Set(courses.map((c) => c.course_code.toUpperCase()));
   const suggestions: { priority: "high" | "med" | "low"; code: string; title: string; reason: string }[] = [];
@@ -367,25 +414,56 @@ export function suggestRoadmap(
   };
 
   if (majorId) {
-    const audit = auditMajor(courses.map((c) => ({ ...c })), majorId, degree);
-    if (audit) suggestFromMajorAudit(audit, "Major", completedCodes, seen, suggestions, catalogByCode, pushIf);
+    const audit = auditMajor(courses.map((c) => ({ ...c })), majorId, degree, crosslistLookup);
+    if (audit) {
+      suggestFromMajorAudit(
+        audit,
+        "Major",
+        completedCodes,
+        seen,
+        suggestions,
+        catalogByCode,
+        pushIf,
+        crosslistLookup,
+      );
+    }
   }
 
   if (secondMajorId && secondMajorId !== majorId) {
     const deg2 = secondDegree ?? degree;
-    const audit2 = auditMajor(courses.map((c) => ({ ...c })), secondMajorId, deg2);
+    const audit2 = auditMajor(courses.map((c) => ({ ...c })), secondMajorId, deg2, crosslistLookup);
     if (audit2) {
       const name = audit2.major.name;
-      suggestFromMajorAudit(audit2, `Second major (${name})`, completedCodes, seen, suggestions, catalogByCode, pushIf);
+      suggestFromMajorAudit(
+        audit2,
+        `Second major (${name})`,
+        completedCodes,
+        seen,
+        suggestions,
+        catalogByCode,
+        pushIf,
+        crosslistLookup,
+      );
     }
   }
 
   if (trackId && trackId !== "none") {
-    const t = auditTrack(courses, trackId);
+    const t = auditTrack(courses, trackId, crosslistLookup);
     if (t) {
       for (const r of t.results) {
         if (r.satisfied) continue;
-        suggestForSlot(r.slot, r.remaining, `${t.track.name}: ${r.slot.label}`, "high", completedCodes, seen, suggestions, catalogByCode, pushIf);
+        suggestForSlot(
+          r.slot,
+          r.remaining,
+          `${t.track.name}: ${r.slot.label}`,
+          "high",
+          completedCodes,
+          seen,
+          suggestions,
+          catalogByCode,
+          pushIf,
+          crosslistLookup,
+        );
       }
     }
   }

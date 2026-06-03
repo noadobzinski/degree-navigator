@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { getProfile, getMyCourses } from "@/lib/audit.functions";
 import { useCourseTableCatalogMeta, useClientQueryEnabled } from "@/hooks/use-coursetable-catalog";
+import { useCrosslistLookup } from "@/hooks/use-crosslist";
 import { useRequirementExamples, getSlotExamples } from "@/hooks/use-requirement-examples";
 import { RequirementExamples } from "@/components/requirement-examples";
 import { MajorAuditCard } from "@/components/major-audit-card";
@@ -58,6 +59,9 @@ function Dashboard() {
     null,
     profileForExamples?.class_year,
   );
+  const { lookup: crosslistLookup } = useCrosslistLookup(
+    clientReady && !!profileForExamples?.major_id,
+  );
 
   if (!clientReady || profileQ.isLoading || coursesQ.isLoading) {
     return <div className="text-muted-foreground">Loading your audit…</div>;
@@ -85,17 +89,17 @@ function Dashboard() {
 
   const major = MAJORS_BY_ID[profile.major_id];
   const degree = (profile.degree_type ?? major?.defaultDegree ?? "BA") as "BA" | "BS";
-  const majorAudit = auditMajor(courses, profile.major_id, degree);
+  const majorAudit = auditMajor(courses, profile.major_id, degree, crosslistLookup);
   const secondMajor = secondMajorId ? MAJORS_BY_ID[secondMajorId] : null;
   const degree2 = (profile.second_degree_type ?? degree) as "BA" | "BS";
   const secondAudit =
     secondMajorId && secondMajorId !== profile.major_id
-      ? auditMajor(courses, secondMajorId, degree2)
+      ? auditMajor(courses, secondMajorId, degree2, crosslistLookup)
       : null;
   const overlap =
     majorAudit && secondAudit ? computeDoubleMajorOverlap(majorAudit, secondAudit) : null;
 
-  const trackAudit = auditTrack(courses, profile.track_id);
+  const trackAudit = auditTrack(courses, profile.track_id, crosslistLookup);
   const distAudit = auditDistributional(courses);
   const credits = totalCredits(courses);
   const gradTotal = graduationCredits();
@@ -226,13 +230,16 @@ function Dashboard() {
         </CardContent>
       </Card>
 
-      {majorAudit && <MajorAuditCard audit={majorAudit} examplesQ={examplesQ} />}
+      {majorAudit && (
+        <MajorAuditCard audit={majorAudit} examplesQ={examplesQ} crosslistLookup={crosslistLookup} />
+      )}
 
       {secondAudit && (
         <MajorAuditCard
           audit={secondAudit}
           title={`${secondMajor?.name} (${degree2}) — second major`}
           examplesQ={examplesQ2}
+          crosslistLookup={crosslistLookup}
         />
       )}
 

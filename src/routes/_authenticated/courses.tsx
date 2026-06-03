@@ -30,6 +30,7 @@ import { courseTableSearchUrl } from "@/lib/coursetable";
 import { skillsForNewCourse, effectiveSkills, isOptionalWritingOffered } from "@/lib/course-codes";
 import { formatCourseCredits, isHalfCreditCourse } from "@/lib/course-credits";
 import { wrCreditOffered, type UserCourse } from "@/lib/audit";
+import { formatCrosslistNote } from "@/lib/crosslist";
 import {
   countsAsWrForAllocation,
   courseHasExclusiveCreditChoice,
@@ -301,6 +302,12 @@ function CoursesPage() {
                       </Badge>
                     ) : null}
                   </div>
+                  {c.crosslistedCodes?.length ? (
+                    <p className="mt-1 text-[10px] text-muted-foreground">
+                      {formatCrosslistNote(c.code, c.crosslistedCodes) ??
+                        `Also listed as ${c.crosslistedCodes.join(", ")}`}
+                    </p>
+                  ) : null}
                 </div>
                 <Button
                   size="sm"
@@ -365,6 +372,12 @@ function CoursesPage() {
                         {s}
                       </Badge>
                     ))}
+                    {row.crosslisted_codes?.length ? (
+                      <span className="w-full text-[10px] text-muted-foreground">
+                        {formatCrosslistNote(row.course_code, row.crosslisted_codes) ??
+                          `Also listed as ${row.crosslisted_codes.join(", ")}`}
+                      </span>
+                    ) : null}
                     <span className="text-[10px] text-muted-foreground">
                       {formatCourseCredits(c.credits ?? 1)}
                     </span>

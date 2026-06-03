@@ -52,6 +52,9 @@ export function RequirementExamples({ examples, isLoading }: RequirementExamples
                 Last seen {ex.recentSeasons[0]}
               </span>
             ) : null}
+            {ex.crosslistedAs ? (
+              <span className="w-full text-[10px] text-muted-foreground">{ex.crosslistedAs}</span>
+            ) : null}
           </li>
         ))}
       </ul>
