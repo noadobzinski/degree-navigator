@@ -24,7 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Circle, AlertCircle, GraduationCap, Database } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard — BluePath" }] }),
+  head: () => ({ meta: [{ title: "Dashboard — Decree" }] }),
   component: Dashboard,
 });
 
@@ -74,7 +74,7 @@ function Dashboard() {
     return (
       <div className="mx-auto max-w-2xl rounded-xl border border-border bg-card p-8 text-center">
         <GraduationCap className="mx-auto h-10 w-10 text-primary" />
-        <h2 className="mt-4 font-serif text-2xl font-bold">Welcome to BluePath</h2>
+        <h2 className="mt-4 font-serif text-2xl font-bold">Welcome to Decree</h2>
         <p className="mt-2 text-muted-foreground">Let's set up your degree audit. Browse majors or pick one in Settings.</p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <Link to="/majors" className="inline-block rounded-md border border-border px-5 py-2.5 text-sm font-semibold hover:bg-accent">

@@ -36,7 +36,7 @@ function AuthLayout() {
       <aside className="hidden w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:flex">
         <Link to="/dashboard" className="flex items-center gap-2 px-6 py-5">
           <GraduationCap className="h-6 w-6" />
-          <span className="font-serif text-lg font-bold">BluePath</span>
+          <span className="font-serif text-lg font-bold">Decree</span>
         </Link>
         {catalogMeta.data ? (
           <div className="mx-3 mb-3 flex items-center gap-2 rounded-md border border-sidebar-border bg-sidebar-accent/40 px-3 py-2 text-xs text-sidebar-foreground">
@@ -69,7 +69,7 @@ function AuthLayout() {
         <header className="flex items-center justify-between border-b border-border bg-card px-6 py-3 md:hidden">
           <div className="flex items-center gap-2">
             <GraduationCap className="h-5 w-5 text-primary" />
-            <span className="font-serif font-bold text-primary">BluePath</span>
+            <span className="font-serif font-bold text-primary">Decree</span>
           </div>
           <Button variant="ghost" size="sm" onClick={signOut}><LogOut className="h-4 w-4" /></Button>
         </header>

@@ -40,7 +40,7 @@ import { CreditAllocationSelect } from "@/components/credit-allocation-select";
 import { Checkbox } from "@/components/ui/checkbox";
 
 export const Route = createFileRoute("/_authenticated/courses")({
-  head: () => ({ meta: [{ title: "My Courses — BluePath" }] }),
+  head: () => ({ meta: [{ title: "My Courses — Decree" }] }),
   component: CoursesPage,
 });
 

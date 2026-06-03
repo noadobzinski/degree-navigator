@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Map, ExternalLink } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/roadmap")({
-  head: () => ({ meta: [{ title: "Roadmap — BluePath" }] }),
+  head: () => ({ meta: [{ title: "Roadmap — Decree" }] }),
   component: RoadmapPage,
 });
 

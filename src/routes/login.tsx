@@ -16,7 +16,7 @@ export const Route = createFileRoute("/login")({
   beforeLoad: ({ context }) => {
     if (context.auth.isAuthenticated) throw redirect({ to: "/dashboard" });
   },
-  head: () => ({ meta: [{ title: "Sign in — BluePath" }] }),
+  head: () => ({ meta: [{ title: "Sign in — Decree" }] }),
   component: LoginPage,
 });
 
@@ -82,7 +82,7 @@ function LoginPage() {
       <div className="w-full max-w-md rounded-xl border border-border bg-card p-8 shadow-sm">
         <div className="mb-6 flex items-center justify-center gap-2">
           <GraduationCap className="h-7 w-7 text-primary" />
-          <span className="font-serif text-2xl font-bold text-primary">BluePath</span>
+          <span className="font-serif text-2xl font-bold text-primary">Decree</span>
         </div>
         <h1 className="text-center font-serif text-2xl font-semibold">
           {mode === "signin" ? "Welcome back" : "Create your account"}

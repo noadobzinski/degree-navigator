@@ -24,7 +24,7 @@ import {
 export const Route = createFileRoute("/catalog")({
   head: () => ({
     meta: [
-      { title: "Yale Course Catalog — BluePath" },
+      { title: "Yale Course Catalog — Decree" },
       {
         name: "description",
         content:
@@ -58,7 +58,7 @@ function PublicCatalogPage() {
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-4">
           <Link to="/" className="flex items-center gap-2">
             <GraduationCap className="h-6 w-6 text-primary" />
-            <span className="font-serif text-xl font-bold text-primary">BluePath</span>
+            <span className="font-serif text-xl font-bold text-primary">Decree</span>
           </Link>
           <Link
             to="/login"

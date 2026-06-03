@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import type { AuthContext } from "@/router";
 import { Toaster } from "@/components/ui/sonner";
+import { APP_DEFAULT_TITLE } from "@/lib/app-brand";
 
 function NotFoundComponent() {
   return (
@@ -57,10 +58,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient; auth
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "BluePath — Yale Degree Audit" },
+      { title: APP_DEFAULT_TITLE },
       { name: "description", content: "Track your Yale College major, track, and distributional requirements in one place." },
-      { property: "og:title", content: "BluePath — Yale Degree Audit" },
-      { name: "twitter:title", content: "BluePath — Yale Degree Audit" },
+      { property: "og:title", content: APP_DEFAULT_TITLE },
+      { name: "twitter:title", content: APP_DEFAULT_TITLE },
       { property: "og:description", content: "Track your Yale College major, track, and distributional requirements in one place." },
       { name: "twitter:description", content: "Track your Yale College major, track, and distributional requirements in one place." },
       { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/ec44e95b-a340-4baf-bd64-4da1be2a8e90/id-preview-f2675447--a57d9a01-be1e-4b0e-9d49-92dc37a8af08.lovable.app-1780285010070.png" },

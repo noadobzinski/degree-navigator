@@ -1,5 +1,6 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { GraduationCap, CheckCircle2, Map, Sparkles } from "lucide-react";
+import { APP_NAME, APP_TAGLINE } from "@/lib/app-brand";
 
 export const Route = createFileRoute("/")({
   beforeLoad: ({ context }) => {
@@ -7,7 +8,7 @@ export const Route = createFileRoute("/")({
   },
   head: () => ({
     meta: [
-      { title: "BluePath — A friendlier Yale degree audit" },
+      { title: `${APP_NAME} — ${APP_TAGLINE}` },
       { name: "description", content: "Plan your Yale College degree. Track major, distributional, and prehealth/prelaw requirements." },
     ],
   }),
@@ -21,7 +22,7 @@ function Landing() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2">
             <GraduationCap className="h-6 w-6 text-primary" />
-            <span className="font-serif text-xl font-bold text-primary">BluePath</span>
+            <span className="font-serif text-xl font-bold text-primary">{APP_NAME}</span>
           </div>
           <div className="flex items-center gap-2">
             <Link to="/catalog" className="rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-accent">

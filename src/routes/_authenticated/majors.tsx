@@ -21,7 +21,7 @@ import {
 import { BookOpen, ExternalLink, Search } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/majors")({
-  head: () => ({ meta: [{ title: "Major Explorer — BluePath" }] }),
+  head: () => ({ meta: [{ title: "Major Explorer — Decree" }] }),
   component: MajorsPage,
 });
 

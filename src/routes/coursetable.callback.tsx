@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { GraduationCap, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/coursetable/callback")({
-  head: () => ({ meta: [{ title: "Yale NetID — BluePath" }] }),
+  head: () => ({ meta: [{ title: "Yale NetID — Decree" }] }),
   component: CourseTableCallbackPage,
 });
 
@@ -36,11 +36,11 @@ function CourseTableCallbackPage() {
               },
             });
             setStatus("success");
-            setMessage("Your Yale NetID is linked to your BluePath profile.");
+            setMessage("Your Yale NetID is linked to your Decree profile.");
           } catch {
             setStatus("partial");
             setMessage(
-              "Yale sign-in succeeded, but BluePath could not save your NetID. Sign in to BluePath first, then try again from Settings.",
+              "Yale sign-in succeeded, but Decree could not save your NetID. Sign in to Decree first, then try again from Settings.",
             );
           }
           return;
@@ -54,7 +54,7 @@ function CourseTableCallbackPage() {
         if (cancelled) return;
         setStatus("partial");
         setMessage(
-          "Yale sign-in may have succeeded, but your browser blocked the session check. The course catalog still loads automatically — sign in to BluePath and open Settings to link your NetID if needed.",
+          "Yale sign-in may have succeeded, but your browser blocked the session check. The course catalog still loads automatically — sign in to Decree and open Settings to link your NetID if needed.",
         );
       }
     }

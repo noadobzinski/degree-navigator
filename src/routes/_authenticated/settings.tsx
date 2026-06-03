@@ -22,7 +22,7 @@ import { YALE_DOUBLE_MAJOR_MAX_OVERLAP } from "@/data/majors";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   validateSearch: z.object({ major: z.string().optional() }),
-  head: () => ({ meta: [{ title: "Settings — BluePath" }] }),
+  head: () => ({ meta: [{ title: "Settings — Decree" }] }),
   component: SettingsPage,
 });
 
