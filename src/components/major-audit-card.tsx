@@ -1,15 +1,17 @@
 import { CheckCircle2, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { FilledRequirementCourses } from "@/components/filled-requirement-courses";
 import { RequirementExamples } from "@/components/requirement-examples";
 import { getSlotExamples } from "@/hooks/use-requirement-examples";
 import type { CourseExample } from "@/lib/requirement-examples";
 import type { MajorAudit } from "@/lib/audit";
-import { formatCrosslistNote, type CrosslistLookup } from "@/lib/crosslist";
+import type { CrosslistLookup } from "@/lib/crosslist";
 
 type ExamplesQuery = {
   data?: { bySlotId?: Record<string, CourseExample[]>; seasonsSearched: number };
   isLoading: boolean;
+  isError?: boolean;
 };
 
 type MajorAuditCardProps = {
@@ -105,22 +107,16 @@ function SlotRow({
             {r.filled.length}/{r.slot.needCount}
           </Badge>
         </div>
-        {r.filled.length > 0 && (
-          <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
-            {r.filled.map((c) => {
-              const note = formatCrosslistNote(c.course_code, c.crosslisted_codes, crosslistLookup);
-              return (
-                <p key={c.id}>
-                  {c.course_code}
-                  {note ? <span className="text-[10px]"> — {note}</span> : null}
-                </p>
-              );
-            })}
-          </div>
-        )}
+        <FilledRequirementCourses
+          courses={r.filled}
+          crosslistLookup={crosslistLookup}
+          complete={r.satisfied}
+        />
         <RequirementExamples
           examples={getSlotExamples(examplesQ.data?.bySlotId, r.slot.id)}
           isLoading={examplesQ.isLoading}
+          isError={examplesQ.isError}
+          showSuggestions={!r.satisfied}
         />
       </div>
     </div>

@@ -5,6 +5,7 @@ import { getProfile, getMyCourses } from "@/lib/audit.functions";
 import { useCourseTableCatalogMeta, useClientQueryEnabled } from "@/hooks/use-coursetable-catalog";
 import { useCrosslistLookup } from "@/hooks/use-crosslist";
 import { useRequirementExamples, getSlotExamples } from "@/hooks/use-requirement-examples";
+import { FilledRequirementCourses } from "@/components/filled-requirement-courses";
 import { RequirementExamples } from "@/components/requirement-examples";
 import { MajorAuditCard } from "@/components/major-audit-card";
 import {
@@ -221,9 +222,12 @@ function Dashboard() {
                   <p className="font-medium">{d.req.label}</p>
                   <Badge variant={d.satisfied ? "default" : "secondary"}>{d.count}/{d.req.count}</Badge>
                 </div>
-                {d.matched.length > 0 && (
-                  <p className="mt-1 text-xs text-muted-foreground">{d.matched.map((c) => c.course_code).join(", ")}</p>
-                )}
+                {d.matched.length > 0 ? (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    <span className="font-medium text-foreground">Your courses: </span>
+                    {d.matched.map((c) => c.course_code).join(", ")}
+                  </p>
+                ) : null}
               </div>
             </div>
           ))}
@@ -258,14 +262,16 @@ function Dashboard() {
                     <p className="font-medium">{r.slot.label}</p>
                     <Badge variant={r.satisfied ? "default" : "secondary"}>{r.filled.length}/{r.slot.needCount}</Badge>
                   </div>
-                  {r.filled.length > 0 && (
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Your courses: {r.filled.map((c) => c.course_code).join(", ")}
-                    </p>
-                  )}
+                  <FilledRequirementCourses
+                    courses={r.filled}
+                    crosslistLookup={crosslistLookup}
+                    complete={r.satisfied}
+                  />
                   <RequirementExamples
                     examples={getSlotExamples(examplesQ.data?.bySlotId, r.slot.id)}
                     isLoading={examplesQ.isLoading}
+                    isError={examplesQ.isError}
+                    showSuggestions={!r.satisfied}
                   />
                 </div>
               </div>

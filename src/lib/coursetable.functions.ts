@@ -9,7 +9,7 @@ import {
   fetchSeasonCatalog,
   getCrosslistLookup,
 } from "@/lib/catalog-cache";
-import { serializeCrosslistLookup } from "@/lib/crosslist";
+import { buildCrosslistLookup, serializeCrosslistLookup } from "@/lib/crosslist";
 import {
   getMajorExampleSections,
   getTrackExampleSections,
@@ -119,10 +119,12 @@ export const getRequirementExamples = createServerFn({ method: "POST" })
     const catalogCourses: CatalogCourse[] = [];
     const seenCodes = new Set<string>();
 
+    let seasonsLoaded = 0;
     await Promise.all(
       seasons.map(async (season) => {
         try {
           const courses = await fetchSeasonCatalog(season);
+          seasonsLoaded += 1;
           for (const course of courses) {
             const keys = [course.code, ...(course.crosslistedCodes ?? [])].map((c) =>
               c.toUpperCase(),
@@ -143,6 +145,28 @@ export const getRequirementExamples = createServerFn({ method: "POST" })
         }
       }),
     );
+
+    if (catalogCourses.length === 0) {
+      try {
+        const courses = await fetchSeasonCatalog(currentSeason);
+        seasonsLoaded = 1;
+        for (const course of courses) {
+          const keys = [course.code, ...(course.crosslistedCodes ?? [])].map((c) => c.toUpperCase());
+          for (const key of keys) {
+            const list = seasonByCode.get(key) ?? [];
+            if (!list.includes(currentSeason)) list.push(currentSeason);
+            seasonByCode.set(key, list);
+          }
+          const primaryKey = course.code.toUpperCase();
+          if (!seenCodes.has(primaryKey)) {
+            seenCodes.add(primaryKey);
+            catalogCourses.push(course);
+          }
+        }
+      } catch {
+        /* CourseTable unavailable */
+      }
+    }
 
     const crosslistLookup = buildCrosslistLookup([...Object.values(CATALOG_BY_CODE), ...catalogCourses]);
 
@@ -169,7 +193,7 @@ export const getRequirementExamples = createServerFn({ method: "POST" })
 
     return {
       currentSeason,
-      seasonsSearched: seasons.length,
+      seasonsSearched: seasonsLoaded,
       major,
       track,
       bySlotId,

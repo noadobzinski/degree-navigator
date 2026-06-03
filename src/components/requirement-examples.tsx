@@ -7,12 +7,30 @@ import { ExternalLink } from "lucide-react";
 type RequirementExamplesProps = {
   examples: CourseExample[];
   isLoading?: boolean;
+  isError?: boolean;
+  /** When true, only show suggestions (filled courses shown separately). */
+  showSuggestions?: boolean;
 };
 
-export function RequirementExamples({ examples, isLoading }: RequirementExamplesProps) {
+export function RequirementExamples({
+  examples,
+  isLoading,
+  isError,
+  showSuggestions = true,
+}: RequirementExamplesProps) {
+  if (!showSuggestions) return null;
+
   if (isLoading) {
     return (
       <p className="mt-2 text-xs text-muted-foreground">Loading course examples from CourseTable…</p>
+    );
+  }
+
+  if (isError) {
+    return (
+      <p className="mt-2 text-xs text-muted-foreground">
+        Could not load CourseTable examples — try refreshing the page.
+      </p>
     );
   }
 

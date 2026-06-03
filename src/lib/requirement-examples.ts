@@ -111,7 +111,8 @@ export function examplesForSlot(
     for (const code of slot.codes) {
       const key = exampleGroupKey(code, crosslistLookup);
       if (seen.has(key)) continue;
-      const staticCourse = CATALOG_BY_CODE[code] ?? CATALOG_BY_CODE[key];
+      const staticCourse =
+        CATALOG_BY_CODE[code] ?? CATALOG_BY_CODE[code.toUpperCase()] ?? CATALOG_BY_CODE[canonicalCourseCode(code)];
       if (staticCourse && catalogMatchesSlot(staticCourse, slot, crosslistLookup)) {
         seen.add(key);
         examples.push({
