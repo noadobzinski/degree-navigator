@@ -1,7 +1,6 @@
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
-import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,22 +30,16 @@ function LoginPage() {
   const afterSignIn = redirectTo && redirectTo.startsWith("/") ? redirectTo : "/dashboard";
 
   async function handleGoogle() {
-    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-      toast.error("Google sign-in is not available on localhost. Use email and password instead.");
-      return;
-    }
     setLoading(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin + afterSignIn,
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}${afterSignIn}`,
+        },
       });
-      if (result.error) {
-        toast.error(result.error.message ?? "Sign-in failed");
-        setLoading(false);
-        return;
-      }
-      if (result.redirected) return;
-      await router.navigate({ to: afterSignIn as "/dashboard" });
+      if (error) throw error;
+      // Browser redirects to Google; loading state stays until return.
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Sign-in failed");
       setLoading(false);
