@@ -1,7 +1,7 @@
 import type { CatalogCourse } from "@/data/courses";
 import { CATALOG_BY_CODE } from "@/data/courses";
 import type { RequirementSlot } from "@/data/majors";
-import { MAJORS_BY_ID, type MajorRequirements } from "@/data/majors";
+import { MAJORS_BY_ID, mergeElectivesIntoCore, type MajorRequirements } from "@/data/majors";
 import { TRACKS_BY_ID } from "@/data/tracks";
 import { catalogMatchesSlot } from "@/lib/audit";
 import { canonicalCourseCode } from "@/lib/course-codes";
@@ -51,21 +51,18 @@ function pushGroupSlots(
 export function collectSlotsFromRequirements(
   reqs: MajorRequirements,
 ): { section: string; slot: RequirementSlot }[] {
+  const merged = mergeElectivesIntoCore(reqs);
   const groups: { section: string; slot: RequirementSlot }[] = [];
-  if (reqs.prerequisites?.length) {
-    for (const slot of reqs.prerequisites) groups.push({ section: "Prerequisites", slot });
+  if (merged.prerequisites?.length) {
+    for (const slot of merged.prerequisites) groups.push({ section: "Prerequisites", slot });
   }
-  pushGroupSlots(groups, "Prerequisites", reqs.prerequisiteGroups);
-  for (const slot of reqs.core) groups.push({ section: "Core requirements", slot });
-  pushGroupSlots(groups, "Core requirements", reqs.coreGroups);
-  if (reqs.electives?.length) {
-    for (const slot of reqs.electives) groups.push({ section: "Electives", slot });
+  pushGroupSlots(groups, "Prerequisites", merged.prerequisiteGroups);
+  for (const slot of merged.core) groups.push({ section: "Core requirements", slot });
+  pushGroupSlots(groups, "Core requirements", merged.coreGroups);
+  if (merged.senior?.length) {
+    for (const slot of merged.senior) groups.push({ section: "Senior requirement", slot });
   }
-  pushGroupSlots(groups, "Electives", reqs.electiveGroups);
-  if (reqs.senior?.length) {
-    for (const slot of reqs.senior) groups.push({ section: "Senior requirement", slot });
-  }
-  pushGroupSlots(groups, "Senior requirement", reqs.seniorGroups);
+  pushGroupSlots(groups, "Senior requirement", merged.seniorGroups);
   return groups;
 }
 

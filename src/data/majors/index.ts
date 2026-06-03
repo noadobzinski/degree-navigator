@@ -4,6 +4,7 @@ import { ROADMAP_MAJORS } from "./roadmap-majors";
 import type { Major } from "./types";
 
 export type { Major, MajorRequirements, RequirementGroup, RequirementSlot } from "./types";
+export { mergeElectivesIntoCore } from "./normalize";
 export { YALE_DOUBLE_MAJOR_MAX_OVERLAP, YALE_ROADMAP_PDF } from "./types";
 
 const DETAILED_IDS = new Set(DETAILED_MAJORS.map((m) => m.id));

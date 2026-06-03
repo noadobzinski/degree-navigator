@@ -417,20 +417,90 @@ export const ROADMAP_MAJORS: Major[] = [
     department: "Ethics, Politics & Economics",
     degrees: ["BA"],
     defaultDegree: "BA",
-    notes: "Interdisciplinary major with intro requirements across ethics, politics, and economics.",
+    notes: "8 introductory categories, core seminars, intermediate micro, and 3-course concentration (incl. senior).",
     requirements: {
       BA: {
         totalCourses: 15,
         core: [
-          { id: "ethics", label: "Ethics & political philosophy", codePrefix: ["PHIL", "EP&E", "PLSC"], needCount: 3 },
-          { id: "econ_core", label: "Economics core", codePrefix: ["ECON"], needCount: 4 },
-          { id: "polisci", label: "Political science", codePrefix: ["PLSC"], needCount: 2 },
-          { id: "seminars", label: "EP&E core seminars", codePrefix: ["EP&E"], minLevel: 300, needCount: 3 },
+          {
+            id: "intro_ethics",
+            label: "Ethics intro (PHIL 1175 or Directed Studies)",
+            codePrefix: ["PHIL", "EP&E"],
+            needCount: 1,
+          },
+          {
+            id: "intro_perspectives",
+            label: "Other perspectives (ANTH, ER&M, HIST, SOCY, WGSS, or DS)",
+            codePrefix: ["ANTH", "ER&M", "HIST", "SOCY", "WGSS", "EP&E"],
+            needCount: 1,
+          },
+          {
+            id: "intro_polphil",
+            label: "Political philosophy (PHIL 1178, PLSC 1327/1335/1352, or DS)",
+            codePrefix: ["PHIL", "PLSC", "EP&E"],
+            needCount: 1,
+          },
+          {
+            id: "intro_plsc",
+            label: "Intro political science (PLSC 1113, 1222, or 1413)",
+            codes: ["PLSC 1113", "PLSC 1222", "PLSC 1413"],
+            needCount: 1,
+          },
+          {
+            id: "intro_micro",
+            label: "Intro microeconomics (ECON 1108, 1110, or 1115)",
+            codes: ["ECON 110", "ECON 108", "ECON 1115"],
+            needCount: 1,
+          },
+          {
+            id: "intro_macro",
+            label: "Intro macroeconomics (ECON 1111 or 1116)",
+            codes: ["ECON 111", "ECON 1116"],
+            needCount: 1,
+          },
+          {
+            id: "intro_metrics",
+            label: "Econometrics (ECON 1117, 2123, 2135, GLBL 2121, or S&DS 2300/2380)",
+            codes: ["ECON 1117", "ECON 2123", "ECON 2135", "GLBL 2121", "S&DS 230", "S&DS 238"],
+            needCount: 1,
+          },
+          {
+            id: "intro_game",
+            label: "Game theory (EP&E 4220/4231/4295/4297 or ECON 2159)",
+            codePrefix: ["EP&E", "ECON"],
+            minLevel: 215,
+            needCount: 1,
+          },
+          {
+            id: "inter_micro",
+            label: "Intermediate micro (ECON 2121 or 2125)",
+            codes: ["ECON 2121", "ECON 2125", "ECON 121"],
+            needCount: 1,
+          },
+          {
+            id: "core_seminars",
+            label: "3 core seminars (1 Classics EP&E 3212–3217 + 2 in other core areas, 1 advanced)",
+            codePrefix: ["EP&E"],
+            minLevel: 300,
+            needCount: 3,
+          },
+          {
+            id: "concentration",
+            label: "3 courses in area of concentration (includes senior requirement)",
+            codePrefix: ["EP&E", "ECON", "PLSC", "PHIL", "HIST", "SOCY"],
+            minLevel: 300,
+            needCount: 3,
+          },
         ],
-        electives: [
-          { id: "concentration", label: "Area of concentration", codePrefix: ["EP&E", "ECON", "PLSC", "PHIL"], needCount: 2 },
+        senior: [
+          {
+            id: "senior",
+            label: "Senior essay in concentration (seminar, EP&E 4491, or 4492/4493)",
+            codePrefix: ["EP&E"],
+            minLevel: 449,
+            needCount: 1,
+          },
         ],
-        senior: [{ id: "senior", label: "Senior essay", codePrefix: ["EP&E"], minLevel: 490, needCount: 1 }],
       },
     },
   },
@@ -451,7 +521,20 @@ export const ROADMAP_MAJORS: Major[] = [
           { id: "math", label: "Math or statistics", codes: y(["MATH 115", "MATH 120", "S&DS 100", "S&DS 230"]), needCount: 1 },
         ],
         core: [
-          { id: "eeb_electives", label: "EEB electives (concentration)", codePrefix: ["EEB"], minLevel: 200, needCount: 4 },
+          {
+            id: "concentration",
+            label: "Concentration courses (Biodiversity or Organismal track)",
+            codePrefix: ["EEB", "MCDB", "MB&B", "BENG"],
+            minLevel: 200,
+            needCount: 2,
+          },
+          {
+            id: "eeb_electives",
+            label: "2 electives (at least 1 lecture or seminar; DUS approval)",
+            codePrefix: ["EEB"],
+            minLevel: 200,
+            needCount: 2,
+          },
         ],
         senior: [
           {
@@ -583,19 +666,33 @@ export const ROADMAP_MAJORS: Major[] = [
     department: "History of Science",
     degrees: ["BA"],
     defaultDegree: "BA",
-    notes: "7 courses in concentration including electives from any department with adviser approval.",
+    notes: "7-course concentration block plus 3 additional HSHM electives — all within the 12-credit major.",
     requirements: {
       BA: {
         totalCourses: 12,
         core: [
+          { id: "hshm_core", label: "2 HSHM courses in concentration", codePrefix: ["HSHM"], needCount: 2 },
           {
-            id: "concentration",
-            label: "7 concentration courses (2 HSHM, seminar, 3 related electives, 1 science)",
-            codePrefix: ["HSHM", "HIST", "MB&B", "MCDB", "PHIL", "SOCY"],
-            needCount: 7,
+            id: "hshm_seminar",
+            label: "1 HSHM or HIST seminar before senior year",
+            codePrefix: ["HSHM", "HIST"],
+            minLevel: 300,
+            needCount: 1,
           },
           {
-            id: "hshm_electives",
+            id: "related_electives",
+            label: "3 related electives from any department (faculty adviser approval)",
+            codePrefix: ["HSHM", "HIST", "MB&B", "MCDB", "PHIL", "SOCY", "ANTH", "EVST"],
+            needCount: 3,
+          },
+          {
+            id: "science",
+            label: "1 full-credit science course (faculty adviser approval)",
+            codePrefix: ["MB&B", "MCDB", "CHEM", "PHYS", "BIOL", "EEB", "NSCI"],
+            needCount: 1,
+          },
+          {
+            id: "hshm_additional",
             label: "3 additional HSHM electives (1 seminar, 1 outside concentration)",
             codePrefix: ["HSHM"],
             needCount: 3,
@@ -700,9 +797,14 @@ export const ROADMAP_MAJORS: Major[] = [
           { id: "molecular", label: "2 molecular/cellular core", codePrefix: ["NSCI", "MCDB", "MB&B"], needCount: 2 },
           { id: "quant", label: "1 quantitative core", codePrefix: ["NSCI", "S&DS", "CPSC", "MATH"], needCount: 1 },
           { id: "comp", label: "1 computational core", codePrefix: ["NSCI", "CPSC"], needCount: 1 },
-          { id: "allied", label: "1–3 allied core courses", codePrefix: ["NSCI", "PSYC", "MCDB", "PHYS"], needCount: 2 },
+          { id: "allied", label: "1 basic allied core (max 2 other allied)", codePrefix: ["NSCI", "PSYC", "MCDB", "PHYS"], needCount: 1 },
+          {
+            id: "nsci_electives",
+            label: "Additional credits toward 11 electives (with core distribution above)",
+            codePrefix: ["NSCI", "PSYC", "MCDB", "CPSC", "BENG"],
+            needCount: 4,
+          },
         ],
-        electives: [{ id: "electives", label: "NSCI electives", codePrefix: ["NSCI", "PSYC", "MCDB"], needCount: 6 }],
         senior: [
           {
             id: "senior",
@@ -725,9 +827,14 @@ export const ROADMAP_MAJORS: Major[] = [
           { id: "molecular", label: "2 molecular/cellular core", codePrefix: ["NSCI", "MCDB"], needCount: 2 },
           { id: "quant", label: "1 quantitative core", codePrefix: ["NSCI", "S&DS", "MATH"], needCount: 1 },
           { id: "comp", label: "1 computational core", codePrefix: ["NSCI", "CPSC"], needCount: 1 },
-          { id: "allied", label: "Allied core courses", codePrefix: ["NSCI", "PSYC", "PHYS"], needCount: 2 },
+          { id: "allied", label: "1 basic allied core (max 2 other allied)", codePrefix: ["NSCI", "PSYC", "PHYS"], needCount: 1 },
+          {
+            id: "nsci_electives",
+            label: "Additional credits toward 11 electives (with core distribution above)",
+            codePrefix: ["NSCI", "PSYC", "MCDB", "CPSC"],
+            needCount: 6,
+          },
         ],
-        electives: [{ id: "electives", label: "NSCI electives", codePrefix: ["NSCI", "PSYC"], needCount: 8 }],
         senior: [
           {
             id: "senior",

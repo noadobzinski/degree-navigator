@@ -29,11 +29,13 @@ function buildBaReqs(
   const seniorCount = (opts?.senior ?? [seniorSlot(prefix)]).reduce((n, s) => n + s.needCount, 0);
   const prereqCount = (opts?.prerequisites ?? []).reduce((n, s) => n + s.needCount, 0);
   const electiveCount = Math.max(0, totalCourses - coreCount - seniorCount - prereqCount);
+  if (electiveCount > 0) {
+    core.push(deptElectives(prefix, electiveCount));
+  }
   return {
     totalCourses,
     prerequisites: opts?.prerequisites,
     core,
-    electives: electiveCount > 0 ? [deptElectives(prefix, electiveCount)] : undefined,
     senior: opts?.senior ?? [seniorSlot(prefix)],
   };
 }
@@ -146,15 +148,22 @@ export function standardBaBsMajor(opts: {
       BA: {
         totalCourses: opts.baTotal,
         prerequisites: opts.baPrerequisites,
-        core: baCore,
-        electives: baElectives > 0 ? [deptElectives(opts.codePrefix, baElectives)] : undefined,
+        core:
+          baElectives > 0
+            ? [...baCore, deptElectives(opts.codePrefix, baElectives)]
+            : baCore,
         senior: [seniorSlot(opts.codePrefix)],
       },
       BS: {
         totalCourses: opts.bsTotal,
         prerequisites: opts.bsPrerequisites,
-        core: bsCore,
-        electives: bsElectives > 0 ? [deptElectives(opts.codePrefix, bsElectives, `${opts.codePrefix} electives (300+)`)] : undefined,
+        core:
+          bsElectives > 0
+            ? [
+                ...bsCore,
+                deptElectives(opts.codePrefix, bsElectives, `${opts.codePrefix} electives (300+)`),
+              ]
+            : bsCore,
         senior: [seniorSlot(opts.codePrefix)],
       },
     },
@@ -193,8 +202,8 @@ export function standardBsMajor(opts: {
             codePrefix: [opts.codePrefix],
             needCount: coreCount,
           },
+          ...(electiveCount > 0 ? [deptElectives(opts.codePrefix, electiveCount)] : []),
         ],
-        electives: electiveCount > 0 ? [deptElectives(opts.codePrefix, electiveCount)] : undefined,
         senior: [seniorSlot(opts.codePrefix)],
       },
     },
@@ -233,8 +242,19 @@ export function dualDeptMajor(opts: {
   ];
   const reqs: MajorRequirements = {
     totalCourses: opts.totalCourses,
-    core,
-    electives: remaining > 0 ? [{ id: "electives", label: "Additional electives", codePrefix: [opts.prefixA, opts.prefixB], needCount: remaining }] : undefined,
+    core: [
+      ...core,
+      ...(remaining > 0
+        ? [
+            {
+              id: "electives",
+              label: "Additional courses (DUS approval)",
+              codePrefix: [opts.prefixA, opts.prefixB],
+              needCount: remaining,
+            },
+          ]
+        : []),
+    ],
     senior: [{ id: "senior", label: "Senior requirement", codePrefix: [opts.prefixA, opts.prefixB], minLevel: 490, needCount: 1 }],
   };
   return {

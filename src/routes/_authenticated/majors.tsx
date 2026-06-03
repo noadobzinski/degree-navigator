@@ -5,6 +5,7 @@ import {
   MAJOR_DEPARTMENTS,
   YALE_ROADMAP_PDF,
   majorCourseCount,
+  mergeElectivesIntoCore,
   type Major,
 } from "@/data/majors";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,12 +27,12 @@ export const Route = createFileRoute("/_authenticated/majors")({
 });
 
 function RequirementSummary({ major, degree }: { major: Major; degree: "BA" | "BS" }) {
-  const reqs = major.requirements[degree] ?? Object.values(major.requirements)[0];
-  if (!reqs) return null;
+  const raw = major.requirements[degree] ?? Object.values(major.requirements)[0];
+  if (!raw) return null;
+  const reqs = mergeElectivesIntoCore(raw);
   const sections = [
     { title: "Prerequisites", slots: reqs.prerequisites ?? [] },
-    { title: "Core", slots: reqs.core },
-    { title: "Electives", slots: reqs.electives ?? [] },
+    { title: "Major requirements", slots: reqs.core },
     { title: "Senior", slots: reqs.senior ?? [] },
   ].filter((s) => s.slots.length > 0);
 

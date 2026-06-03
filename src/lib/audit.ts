@@ -2,6 +2,7 @@ import { CATALOG_BY_CODE, type CatalogCourse } from "@/data/courses";
 import { DISTRIBUTIONAL_REQUIREMENTS, GRADUATION_CREDITS } from "@/data/distributional";
 import {
   MAJORS_BY_ID,
+  mergeElectivesIntoCore,
   YALE_DOUBLE_MAJOR_MAX_OVERLAP,
   type RequirementGroup,
   type RequirementSlot,
@@ -188,14 +189,6 @@ function auditRequirementSections(
     coreSection.groups = fillGroups(reqs.coreGroups, courses, consumed, crosslistLookup);
   }
   coreSection.results = fillSlots(reqs.core, courses, consumed, crosslistLookup);
-  if (reqs.electives?.length || reqs.electiveGroups?.length) {
-    const electiveSection: MajorAuditSection = { title: "Electives", results: [] };
-    if (reqs.electiveGroups?.length) {
-      electiveSection.groups = fillGroups(reqs.electiveGroups, courses, consumed, crosslistLookup);
-    }
-    electiveSection.results = fillSlots(reqs.electives ?? [], courses, consumed, crosslistLookup);
-    sections.push(electiveSection);
-  }
   if (reqs.senior?.length || reqs.seniorGroups?.length) {
     const seniorSection: MajorAuditSection = { title: "Senior requirement", results: [] };
     if (reqs.seniorGroups?.length) {
@@ -259,8 +252,9 @@ export function auditMajor(
 ): MajorAudit | null {
   const major = MAJORS_BY_ID[majorId];
   if (!major) return null;
-  const reqs = major.requirements[degree] ?? Object.values(major.requirements)[0];
-  if (!reqs) return null;
+  const rawReqs = major.requirements[degree] ?? Object.values(major.requirements)[0];
+  if (!rawReqs) return null;
+  const reqs = mergeElectivesIntoCore(rawReqs);
   const consumed = new Set<string>();
   const sections = auditRequirementSections(reqs, courses, consumed, crosslistLookup);
   const { satisfiedCount, totalCount } = countMajorAuditUnits(sections);

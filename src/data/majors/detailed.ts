@@ -12,7 +12,7 @@ export const DETAILED_MAJORS: Major[] = [
     notes: "The B.S. requires more depth in math and CS; the B.A. is more flexible.",
     requirements: {
       BA: {
-        totalCourses: 12,
+        totalCourses: 10,
         prerequisites: [
           { id: "math", label: "Calculus (MATH 112+)", codes: ["MATH 112", "MATH 115", "MATH 120"], needCount: 1 },
         ],
@@ -21,17 +21,21 @@ export const DETAILED_MAJORS: Major[] = [
           { id: "tools", label: "Discrete math: CPSC 202 or MATH 244", codes: ["CPSC 202", "MATH 244"], needCount: 1 },
           { id: "ds", label: "Data Structures: CPSC 223", codes: ["CPSC 223"], needCount: 1 },
           { id: "systems", label: "Systems: CPSC 323", codes: ["CPSC 323"], needCount: 1 },
-          { id: "algo", label: "Algorithms: CPSC 365", codes: ["CPSC 365"], needCount: 1 },
-        ],
-        electives: [
-          { id: "cs_electives", label: "5 CS electives (CPSC 300+)", codePrefix: ["CPSC"], minLevel: 300, needCount: 5 },
+          { id: "algo", label: "Algorithms: CPSC 365 or 366", codes: ["CPSC 365", "CPSC 366"], needCount: 1 },
+          {
+            id: "cs_electives",
+            label: "3 intermediate or advanced CPSC courses (4 if CPSC 323 taken)",
+            codePrefix: ["CPSC"],
+            minLevel: 200,
+            needCount: 3,
+          },
         ],
         senior: [
           { id: "senior", label: "Senior project (CPSC 490)", codes: ["CPSC 490"], needCount: 1 },
         ],
       },
       BS: {
-        totalCourses: 14,
+        totalCourses: 12,
         prerequisites: [
           { id: "calc", label: "Calculus (MATH 115 or 120)", codes: ["MATH 115", "MATH 120"], needCount: 1 },
           { id: "lin", label: "Linear algebra (MATH 222/225/230)", codes: ["MATH 222", "MATH 225", "MATH 230"], needCount: 1 },
@@ -41,10 +45,14 @@ export const DETAILED_MAJORS: Major[] = [
           { id: "tools", label: "Discrete math: CPSC 202 or MATH 244", codes: ["CPSC 202", "MATH 244"], needCount: 1 },
           { id: "ds", label: "Data Structures: CPSC 223", codes: ["CPSC 223"], needCount: 1 },
           { id: "systems", label: "Systems: CPSC 323", codes: ["CPSC 323"], needCount: 1 },
-          { id: "algo", label: "Algorithms: CPSC 365", codes: ["CPSC 365"], needCount: 1 },
-        ],
-        electives: [
-          { id: "cs_electives", label: "6 CS electives (CPSC 300+)", codePrefix: ["CPSC"], minLevel: 300, needCount: 6 },
+          { id: "algo", label: "Algorithms: CPSC 365 or 366", codes: ["CPSC 365", "CPSC 366"], needCount: 1 },
+          {
+            id: "cs_electives",
+            label: "5 intermediate or advanced CPSC courses (6 if CPSC 323 taken)",
+            codePrefix: ["CPSC"],
+            minLevel: 200,
+            needCount: 5,
+          },
           { id: "stats", label: "Probability/Statistics", codes: ["S&DS 241", "S&DS 220", "S&DS 230"], needCount: 1 },
         ],
         senior: [
@@ -74,9 +82,13 @@ export const DETAILED_MAJORS: Major[] = [
           { id: "genetics", label: "Genetics (MCDB 202)", codes: ["MCDB 202"], needCount: 1 },
           { id: "cell", label: "Cellular & Developmental (MCDB 205)", codes: ["MCDB 205"], needCount: 1 },
           { id: "biochem", label: "Biochemistry (MCDB 310)", codes: ["MCDB 310"], needCount: 1 },
-        ],
-        electives: [
-          { id: "mcdb_electives", label: "2 advanced MCDB electives (300+)", codePrefix: ["MCDB"], minLevel: 300, needCount: 2 },
+          {
+            id: "mcdb_electives",
+            label: "2 general elective MCDB courses (2500+), or approved substitutions",
+            codePrefix: ["MCDB"],
+            minLevel: 250,
+            needCount: 2,
+          },
         ],
       },
       BA: {
@@ -89,9 +101,13 @@ export const DETAILED_MAJORS: Major[] = [
           { id: "molbio", label: "Molecular Biology (MCDB 200)", codes: ["MCDB 200"], needCount: 1 },
           { id: "genetics", label: "Genetics (MCDB 202)", codes: ["MCDB 202"], needCount: 1 },
           { id: "cell", label: "Cellular & Developmental (MCDB 205)", codes: ["MCDB 205"], needCount: 1 },
-        ],
-        electives: [
-          { id: "mcdb_electives", label: "3 MCDB or related electives", codePrefix: ["MCDB", "EEB", "BIOL"], minLevel: 200, needCount: 3 },
+          {
+            id: "mcdb_electives",
+            label: "3 MCDB or related electives (DUS approval)",
+            codePrefix: ["MCDB", "EEB", "BIOL"],
+            minLevel: 200,
+            needCount: 3,
+          },
         ],
       },
     },
@@ -107,19 +123,36 @@ export const DETAILED_MAJORS: Major[] = [
       BA: {
         totalCourses: 12,
         prerequisites: [
-          { id: "intro", label: "Intro micro & macro (ECON 110, 111)", codes: ["ECON 110", "ECON 111", "ECON 108"], needCount: 2 },
-          { id: "calc", label: "Calculus (MATH 112+)", codes: ["MATH 112", "MATH 115", "MATH 120"], needCount: 1 },
+          { id: "intro_micro", label: "Intro micro (ECON 1108/1110/1115)", codes: ["ECON 110", "ECON 108", "ECON 1115"], needCount: 1 },
+          { id: "intro_macro", label: "Intro macro (ECON 1111/1116)", codes: ["ECON 111", "ECON 1116"], needCount: 1 },
+          { id: "calc", label: "Math (MATH 1180/1200 preferred, or 1120+)", codes: ["MATH 112", "MATH 115", "MATH 118", "MATH 120"], needCount: 1 },
         ],
         core: [
-          { id: "micro", label: "Intermediate Microeconomics (ECON 121)", codes: ["ECON 121"], needCount: 1 },
-          { id: "macro", label: "Intermediate Macroeconomics (ECON 122)", codes: ["ECON 122"], needCount: 1 },
-          { id: "metrics", label: "Econometrics (ECON 131 & 132)", codes: ["ECON 131", "ECON 132"], needCount: 2 },
-        ],
-        electives: [
-          { id: "econ_electives", label: "5 ECON electives (300+)", codePrefix: ["ECON"], minLevel: 300, needCount: 5 },
+          { id: "micro", label: "Intermediate micro (ECON 2121 or 2125)", codes: ["ECON 121", "ECON 2121", "ECON 2125"], needCount: 1 },
+          { id: "macro", label: "Intermediate macro (ECON 2122 or 2126)", codes: ["ECON 122", "ECON 2122", "ECON 2126"], needCount: 1 },
+          {
+            id: "metrics",
+            label: "Econometrics (ECON 1117, 2123, or 2136)",
+            codes: ["ECON 131", "ECON 132", "ECON 1117", "ECON 2123", "ECON 2136"],
+            needCount: 1,
+          },
+          {
+            id: "econ_electives",
+            label: "4 ECON electives numbered 2000+ (not applied to core above)",
+            codePrefix: ["ECON"],
+            minLevel: 200,
+            needCount: 4,
+          },
         ],
         senior: [
-          { id: "senior", label: "Senior essay (ECON 467)", codes: ["ECON 467"], needCount: 1 },
+          {
+            id: "senior",
+            label: "2 ECON 4400–4491 (at least 1 in senior year)",
+            codePrefix: ["ECON"],
+            minLevel: 440,
+            maxLevel: 449,
+            needCount: 2,
+          },
         ],
       },
     },
@@ -135,14 +168,30 @@ export const DETAILED_MAJORS: Major[] = [
       BA: {
         totalCourses: 12,
         core: [
-          { id: "intro", label: "1 intro course (PLSC 113/114/118/121)", codes: ["PLSC 113", "PLSC 114", "PLSC 118", "PLSC 121"], needCount: 1 },
-          { id: "subfields", label: "3 courses across 3 subfields", codePrefix: ["PLSC"], needCount: 3 },
-        ],
-        electives: [
-          { id: "plsc_electives", label: "7 PLSC electives", codePrefix: ["PLSC"], needCount: 7 },
+          { id: "intro", label: "2 introductory PLSC courses", codePrefix: ["PLSC"], maxLevel: 1999, needCount: 2 },
+          { id: "lectures", label: "2 non-intro core lecture courses", codePrefix: ["PLSC"], minLevel: 200, needCount: 2 },
+          {
+            id: "methods",
+            label: "1 methodology and formal theory course",
+            codePrefix: ["PLSC"],
+            needCount: 1,
+          },
+          {
+            id: "subfields",
+            label: "2 courses each in 2 of 4 subfields (IR, American, philosophy, comparative)",
+            codePrefix: ["PLSC"],
+            needCount: 4,
+          },
+          { id: "seminars", label: "2 departmental seminars (1 in senior year)", codePrefix: ["PLSC"], minLevel: 300, needCount: 2 },
+          {
+            id: "outside",
+            label: "2 courses in other departments (DUS approval)",
+            codePrefix: ["PLSC", "ECON", "HIST", "PHIL", "SOCY", "GLBL"],
+            needCount: 2,
+          },
         ],
         senior: [
-          { id: "senior", label: "Senior essay", codePrefix: ["PLSC"], minLevel: 490, needCount: 1 },
+          { id: "senior", label: "Senior essay (seminar or PLSC 4900)", codePrefix: ["PLSC"], minLevel: 490, needCount: 1 },
         ],
       },
     },
@@ -158,15 +207,34 @@ export const DETAILED_MAJORS: Major[] = [
       BA: {
         totalCourses: 14,
         core: [
-          { id: "writing", label: "Writing seminar (ENGL 114/115)", codes: ["ENGL 114", "ENGL 115"], needCount: 1 },
-          { id: "poets", label: "Major English Poets (2 terms)", codes: ["ENGL 125", "ENGL 126"], needCount: 2 },
-          { id: "shakespeare", label: "Shakespeare (ENGL 200)", codes: ["ENGL 200"], needCount: 1 },
-        ],
-        electives: [
-          { id: "engl_electives", label: "9 English electives", codePrefix: ["ENGL"], needCount: 9 },
+          {
+            id: "foundational",
+            label: "3 foundational courses (ENGL 1025–1028)",
+            codes: ["ENGL 1025", "ENGL 1026", "ENGL 1027", "ENGL 1028"],
+            needCount: 3,
+          },
+          { id: "junior_sem", label: "1 junior seminar", codePrefix: ["ENGL"], minLevel: 300, needCount: 1 },
+          {
+            id: "periods",
+            label: "1 advanced course in each of 4 historical periods",
+            codePrefix: ["ENGL"],
+            minLevel: 300,
+            needCount: 4,
+          },
+          {
+            id: "literature",
+            label: "Literature courses toward 11 total (incl. foundational & period work)",
+            codePrefix: ["ENGL"],
+            needCount: 5,
+          },
         ],
         senior: [
-          { id: "senior", label: "Senior essay (ENGL 491)", codes: ["ENGL 491"], needCount: 1 },
+          {
+            id: "senior",
+            label: "Senior seminar or essay (ENGL 4100/4101)",
+            codes: ["ENGL 4100", "ENGL 4101"],
+            needCount: 1,
+          },
         ],
       },
     },
@@ -182,30 +250,44 @@ export const DETAILED_MAJORS: Major[] = [
       BA: {
         totalCourses: 10,
         prerequisites: [
-          { id: "calc", label: "Calculus sequence", codes: ["MATH 115", "MATH 120"], needCount: 2 },
+          { id: "calc", label: "Introductory sequence (MATH 1150/1200, 2250/2260, 2550/2560, 3020/1200)", codes: ["MATH 115", "MATH 120", "MATH 225", "MATH 226", "MATH 255", "MATH 256", "MATH 302"], needCount: 4 },
         ],
         core: [
           { id: "linalg", label: "Linear Algebra (MATH 222/225/230)", codes: ["MATH 222", "MATH 225", "MATH 230"], needCount: 1 },
-          { id: "analysis", label: "Real Analysis (MATH 305)", codes: ["MATH 305"], needCount: 1 },
-          { id: "algebra", label: "Abstract Algebra (MATH 350)", codes: ["MATH 350"], needCount: 1 },
+          { id: "analysis", label: "Real Analysis (MATH 3050)", codes: ["MATH 305"], needCount: 1 },
+          { id: "algebra", label: "Abstract Algebra (MATH 3500)", codes: ["MATH 350"], needCount: 1 },
+          {
+            id: "math_electives",
+            label: "MATH electives numbered 2250–5999 (to total 10 courses)",
+            codePrefix: ["MATH"],
+            minLevel: 225,
+            needCount: 4,
+          },
         ],
-        electives: [
-          { id: "math_electives", label: "5 MATH electives (200+)", codePrefix: ["MATH"], minLevel: 200, needCount: 5 },
+        senior: [
+          { id: "senior", label: "Senior seminar (MATH 4800–4890) or essay (MATH 4750)", codePrefix: ["MATH"], minLevel: 475, needCount: 1 },
         ],
       },
       BS: {
         totalCourses: 12,
         prerequisites: [
-          { id: "calc", label: "Calculus sequence", codes: ["MATH 115", "MATH 120"], needCount: 2 },
+          { id: "calc", label: "Introductory sequence", codes: ["MATH 115", "MATH 120", "MATH 225", "MATH 226", "MATH 255", "MATH 256"], needCount: 4 },
         ],
         core: [
           { id: "linalg", label: "Linear Algebra (MATH 225/230)", codes: ["MATH 225", "MATH 230"], needCount: 1 },
-          { id: "analysis", label: "Real Analysis (MATH 305)", codes: ["MATH 305"], needCount: 1 },
-          { id: "algebra", label: "Abstract Algebra (MATH 350)", codes: ["MATH 350"], needCount: 1 },
+          { id: "analysis", label: "Real Analysis (MATH 3050)", codes: ["MATH 305"], needCount: 1 },
+          { id: "algebra", label: "Abstract Algebra (MATH 3500)", codes: ["MATH 350"], needCount: 1 },
+          {
+            id: "math_electives",
+            label: "MATH electives numbered 2250–5999 (to total 12 courses)",
+            codePrefix: ["MATH"],
+            minLevel: 225,
+            needCount: 5,
+          },
+          { id: "outside", label: "2 advanced courses in physical science", codePrefix: ["PHYS", "CPSC", "CHEM"], minLevel: 200, needCount: 2 },
         ],
-        electives: [
-          { id: "math_electives", label: "6 MATH electives (300+)", codePrefix: ["MATH"], minLevel: 300, needCount: 6 },
-          { id: "outside", label: "1 science course outside MATH", codePrefix: ["CPSC", "PHYS", "S&DS"], needCount: 1 },
+        senior: [
+          { id: "senior", label: "Senior seminar or essay", codePrefix: ["MATH"], minLevel: 475, needCount: 1 },
         ],
       },
     },
@@ -229,9 +311,13 @@ export const DETAILED_MAJORS: Major[] = [
           { id: "ochem", label: "Organic Chemistry I & II", codes: ["CHEM 220", "CHEM 221"], needCount: 2 },
           { id: "pchem", label: "Physical Chemistry (CHEM 332)", codes: ["CHEM 332"], needCount: 1 },
           { id: "labs", label: "Lab work (CHEM 174/175/222)", codes: ["CHEM 174", "CHEM 175", "CHEM 222"], needCount: 2 },
-        ],
-        electives: [
-          { id: "chem_electives", label: "2 CHEM electives (300+)", codePrefix: ["CHEM"], minLevel: 300, needCount: 2 },
+          {
+            id: "chem_electives",
+            label: "5 additional advanced course credits (incl. lectures; B.S. roadmap)",
+            codePrefix: ["CHEM"],
+            minLevel: 300,
+            needCount: 2,
+          },
         ],
       },
       BA: {
@@ -239,9 +325,13 @@ export const DETAILED_MAJORS: Major[] = [
         core: [
           { id: "gchem", label: "General Chemistry I & II", codes: ["CHEM 161", "CHEM 165"], needCount: 2 },
           { id: "ochem", label: "Organic Chemistry I & II", codes: ["CHEM 220", "CHEM 221"], needCount: 2 },
-        ],
-        electives: [
-          { id: "chem_electives", label: "4 CHEM electives (200+)", codePrefix: ["CHEM"], minLevel: 200, needCount: 4 },
+          {
+            id: "chem_electives",
+            label: "Additional CHEM courses toward degree total",
+            codePrefix: ["CHEM"],
+            minLevel: 200,
+            needCount: 4,
+          },
         ],
       },
     },
@@ -257,14 +347,23 @@ export const DETAILED_MAJORS: Major[] = [
       BA: {
         totalCourses: 12,
         core: [
-          { id: "geo", label: "Courses across 3 geographical regions", codePrefix: ["HIST"], needCount: 3 },
-          { id: "pre1800", label: "1 pre-1800 course", codePrefix: ["HIST"], needCount: 1 },
-        ],
-        electives: [
-          { id: "hist_electives", label: "7 HIST electives", codePrefix: ["HIST"], needCount: 7 },
+          { id: "preindustrial", label: "2 course credits in preindustrial history", codePrefix: ["HIST"], needCount: 2 },
+          { id: "seminars", label: "2 departmental seminars (3000-level)", codePrefix: ["HIST"], minLevel: 300, needCount: 2 },
+          {
+            id: "regions",
+            label: "5 regional courses (1 credit in 5 of 6 geographical regions)",
+            codePrefix: ["HIST"],
+            needCount: 5,
+          },
+          {
+            id: "additional",
+            label: "Additional HIST courses (incl. 2 term courses in History)",
+            codePrefix: ["HIST"],
+            needCount: 2,
+          },
         ],
         senior: [
-          { id: "senior", label: "Senior essay", codePrefix: ["HIST"], minLevel: 490, needCount: 1 },
+          { id: "senior", label: "Senior essay (HIST 4995–4997)", codePrefix: ["HIST"], minLevel: 490, needCount: 1 },
         ],
       },
     },
@@ -279,27 +378,54 @@ export const DETAILED_MAJORS: Major[] = [
     requirements: {
       BA: {
         totalCourses: 12,
-        core: [
-          { id: "intro", label: "Intro Psychology (PSYC 110)", codes: ["PSYC 110"], needCount: 1 },
-          { id: "stats", label: "Statistics (PSYC 200 or S&DS 100)", codes: ["PSYC 200", "S&DS 100"], needCount: 1 },
+        prerequisites: [
+          { id: "intro", label: "Intro Psychology (PSYC 1100)", codes: ["PSYC 110"], needCount: 1 },
+          { id: "stats", label: "Statistics (S&DS 1000 or 2300)", codes: ["S&DS 100", "S&DS 230"], needCount: 1 },
         ],
-        electives: [
-          { id: "psyc_electives", label: "8 PSYC electives across areas", codePrefix: ["PSYC"], needCount: 8 },
+        core: [
+          {
+            id: "social",
+            label: "2 social science courses in Psychology (incl. 1 social core)",
+            codePrefix: ["PSYC"],
+            needCount: 2,
+          },
+          {
+            id: "natural",
+            label: "2 natural science courses in Psychology (incl. 1 natural core)",
+            codePrefix: ["PSYC"],
+            needCount: 2,
+          },
+          {
+            id: "methods",
+            label: "Research methods (PSYC 2000–2999 or approved substitute)",
+            codePrefix: ["PSYC"],
+            minLevel: 200,
+            maxLevel: 299,
+            needCount: 1,
+          },
+          {
+            id: "psyc_electives",
+            label: "PSYC electives toward 12 courses beyond prereqs",
+            codePrefix: ["PSYC"],
+            needCount: 4,
+          },
         ],
         senior: [
-          { id: "senior", label: "Senior research (PSYC 400+)", codePrefix: ["PSYC"], minLevel: 400, needCount: 1 },
+          { id: "senior", label: "Senior requirement", codePrefix: ["PSYC"], minLevel: 400, needCount: 1 },
         ],
       },
       BS: {
         totalCourses: 15,
-        core: [
+        prerequisites: [
           { id: "intro", label: "Intro Psychology (PSYC 110)", codes: ["PSYC 110"], needCount: 1 },
-          { id: "stats", label: "Statistics (PSYC 200)", codes: ["PSYC 200"], needCount: 1 },
-          { id: "neuro", label: "Neuroscience (PSYC 158 or 258)", codes: ["PSYC 158", "PSYC 258"], needCount: 1 },
+          { id: "stats", label: "Statistics (PSYC 200 or S&DS)", codes: ["PSYC 200", "S&DS 100"], needCount: 1 },
         ],
-        electives: [
-          { id: "psyc_electives", label: "8 PSYC electives", codePrefix: ["PSYC"], needCount: 8 },
-          { id: "science", label: "2 additional science courses", codePrefix: ["BIOL", "MCDB", "CHEM"], needCount: 2 },
+        core: [
+          { id: "social", label: "2 social science courses in Psychology", codePrefix: ["PSYC"], needCount: 2 },
+          { id: "natural", label: "2 natural science courses in Psychology", codePrefix: ["PSYC"], needCount: 2 },
+          { id: "methods", label: "Data-collection/research methods course", codePrefix: ["PSYC"], minLevel: 200, needCount: 1 },
+          { id: "advanced_sci", label: "2 advanced science courses", codePrefix: ["PSYC", "BIOL", "MCDB", "NSCI"], minLevel: 200, needCount: 2 },
+          { id: "psyc_electives", label: "2 PSYC electives", codePrefix: ["PSYC"], needCount: 2 },
         ],
         senior: [
           { id: "senior", label: "Senior research (PSYC 499)", codePrefix: ["PSYC"], minLevel: 490, needCount: 1 },
