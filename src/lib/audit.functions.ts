@@ -6,6 +6,7 @@ import {
   insertUserCourse,
   updateUserCourse,
 } from "@/lib/user-course-persistence";
+import { decodeProfileFromDb, updateProfileRow } from "@/lib/profile-persistence";
 
 export const getProfile = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -17,7 +18,7 @@ export const getProfile = createServerFn({ method: "GET" })
       .eq("id", userId)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return data;
+    return decodeProfileFromDb(data);
   });
 
 export const updateProfile = createServerFn({ method: "POST" })
@@ -37,11 +38,7 @@ export const updateProfile = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const { error } = await supabase
-      .from("profiles")
-      .update(data)
-      .eq("id", userId);
-    if (error) throw new Error(error.message);
+    await updateProfileRow(supabase, userId, data);
     return { ok: true };
   });
 
