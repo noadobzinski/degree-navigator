@@ -4,6 +4,8 @@ export type RequirementSlot = {
   description?: string;
   codes?: string[];
   codePrefix?: string[];
+  /** All listed skills must be present (after optional WR selection). */
+  requiredSkills?: string[];
   minLevel?: number;
   maxLevel?: number;
   needCount: number;

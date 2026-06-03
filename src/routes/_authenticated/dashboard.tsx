@@ -120,7 +120,12 @@ function Dashboard() {
 
       {/* Distributional detail */}
       <Card>
-        <CardHeader><CardTitle className="font-serif">Distributional & skills requirements</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="font-serif">Distributional & skills requirements</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Each course counts toward one credit only. Assignments are optimized automatically; override on My Courses.
+          </p>
+        </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2">
           {distAudit.map((d) => (
             <div key={d.req.id} className="flex items-start gap-3 rounded-md border border-border p-3">

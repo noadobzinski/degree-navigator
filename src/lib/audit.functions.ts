@@ -1,6 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import {
+  decodeCourseFromDb,
+  insertUserCourse,
+  updateUserCourse,
+} from "@/lib/user-course-persistence";
 
 export const getProfile = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -49,7 +54,7 @@ export const getMyCourses = createServerFn({ method: "GET" })
       .eq("user_id", userId)
       .order("year", { ascending: true });
     if (error) throw new Error(error.message);
-    return data ?? [];
+    return (data ?? []).map((row) => decodeCourseFromDb(row));
   });
 
 export const addCourse = createServerFn({ method: "POST" })
@@ -59,9 +64,11 @@ export const addCourse = createServerFn({ method: "POST" })
       .object({
         course_code: z.string().min(1).max(20),
         course_title: z.string().max(200).optional().nullable(),
-        credits: z.number().min(0).max(2).default(1),
+        credits: z.number().min(0).max(2).default(1), // 0.5 = half credit (e.g. BIOL 1010)
         distributional: z.array(z.string()).default([]),
         skills: z.array(z.string()).default([]),
+        counts_as_wr: z.boolean().nullable().optional(),
+        credit_allocation: z.enum(["hu", "so", "sc", "qr", "wr", "lang"]).nullable().optional(),
         term: z.string().max(20).optional().nullable(),
         year: z.number().int().min(2020).max(2035).optional().nullable(),
         status: z.enum(["planned", "in_progress", "completed"]).default("planned"),
@@ -71,8 +78,7 @@ export const addCourse = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const { error } = await supabase.from("user_courses").insert({ ...data, user_id: userId });
-    if (error) throw new Error(error.message);
+    await insertUserCourse(supabase, { ...data, user_id: userId });
     return { ok: true };
   });
 
@@ -83,6 +89,8 @@ export const updateCourse = createServerFn({ method: "POST" })
       .object({
         id: z.string().uuid(),
         status: z.enum(["planned", "in_progress", "completed"]).optional(),
+        counts_as_wr: z.boolean().nullable().optional(),
+        credit_allocation: z.enum(["hu", "so", "sc", "qr", "wr", "lang"]).nullable().optional(),
         term: z.string().max(20).optional().nullable(),
         year: z.number().int().min(2020).max(2035).optional().nullable(),
         grade: z.string().max(5).optional().nullable(),
@@ -92,8 +100,20 @@ export const updateCourse = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const { id, ...patch } = data;
-    const { error } = await supabase.from("user_courses").update(patch).eq("id", id).eq("user_id", userId);
-    if (error) throw new Error(error.message);
+    if (patch.counts_as_wr !== undefined || patch.credit_allocation !== undefined) {
+      const { data: existing, error: fetchErr } = await supabase
+        .from("user_courses")
+        .select("course_code, skills, counts_as_wr")
+        .eq("id", id)
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (fetchErr) throw new Error(fetchErr.message);
+      if (!existing) throw new Error("Course not found");
+      await updateUserCourse(supabase, id, userId, patch, decodeCourseFromDb(existing));
+    } else {
+      const { error } = await supabase.from("user_courses").update(patch).eq("id", id).eq("user_id", userId);
+      if (error) throw new Error(error.message);
+    }
     return { ok: true };
   });
 

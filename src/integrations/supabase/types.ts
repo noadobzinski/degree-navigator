@@ -61,6 +61,8 @@ export type Database = {
       }
       user_courses: {
         Row: {
+          counts_as_wr: boolean | null
+          credit_allocation: string | null
           course_code: string
           course_title: string | null
           created_at: string
@@ -78,6 +80,8 @@ export type Database = {
           year: number | null
         }
         Insert: {
+          counts_as_wr?: boolean | null
+          credit_allocation?: string | null
           course_code: string
           course_title?: string | null
           created_at?: string
@@ -95,6 +99,8 @@ export type Database = {
           year?: number | null
         }
         Update: {
+          counts_as_wr?: boolean | null
+          credit_allocation?: string | null
           course_code?: string
           course_title?: string | null
           created_at?: string

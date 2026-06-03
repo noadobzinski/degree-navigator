@@ -27,6 +27,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Trash2, Plus, Search, Database, AlertCircle, ExternalLink, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { courseTableSearchUrl } from "@/lib/coursetable";
+import { skillsForNewCourse, effectiveSkills, isOptionalWritingOffered } from "@/lib/course-codes";
+import { formatCourseCredits, isHalfCreditCourse } from "@/lib/course-credits";
+import { wrCreditOffered, type UserCourse } from "@/lib/audit";
+import {
+  countsAsWrForAllocation,
+  courseHasExclusiveCreditChoice,
+  type CreditBucketId,
+} from "@/lib/credit-allocation";
+import { CreditAllocationSelect } from "@/components/credit-allocation-select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export const Route = createFileRoute("/_authenticated/courses")({
   head: () => ({ meta: [{ title: "My Courses — BluePath" }] }),
@@ -94,19 +104,22 @@ function CoursesPage() {
   const { term: addTerm, year: addYear } = seasonToTermFields(catalogSeason);
 
   const addM = useMutation({
-    mutationFn: (course: CatalogCourse) =>
-      addFn({
+    mutationFn: (course: CatalogCourse) => {
+      const { skills, counts_as_wr } = skillsForNewCourse(course.skills, course.code);
+      return addFn({
         data: {
           course_code: course.code,
           course_title: course.title,
           credits: course.credits,
           distributional: course.distributional,
-          skills: course.skills,
+          skills,
+          counts_as_wr,
           term: addTerm,
           year: addYear,
           status: catalogSeason === currentSeasonCode() ? "in_progress" : "completed",
         },
-      }),
+      });
+    },
     onSuccess: () => {
       toast.success(`Added for ${selectedSeasonLabel}`);
       qc.invalidateQueries({ queryKey: ["courses"] });
@@ -114,8 +127,11 @@ function CoursesPage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
   });
   const updateM = useMutation({
-    mutationFn: (vars: { id: string; status: "planned" | "in_progress" | "completed" }) =>
-      updateFn({ data: vars }),
+    mutationFn: (vars: {
+      id: string;
+      status?: "planned" | "in_progress" | "completed";
+      counts_as_wr?: boolean | null;
+    }) => updateFn({ data: vars }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["courses"] }),
   });
   const delM = useMutation({
@@ -126,10 +142,20 @@ function CoursesPage() {
     },
   });
 
-  const taken = new Set(
-    (coursesQ.data ?? []).map((c) => courseTakenKey(c.course_code, c.term, c.year)),
-  );
+  const myCourses = (coursesQ.data ?? []) as UserCourse[];
+
+  const taken = new Set(myCourses.map((c) => courseTakenKey(c.course_code, c.term, c.year)));
   const takenThisSeason = (code: string) => taken.has(courseTakenKey(code, addTerm, addYear));
+
+  const allocationM = useMutation({
+    mutationFn: (vars: {
+      id: string;
+      credit_allocation: CreditBucketId | null;
+      counts_as_wr?: boolean | null;
+    }) => updateFn({ data: vars }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["courses"] }),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+  });
 
   function resolveCourse(code: string): CatalogCourse {
     const fromBrowse = browseCourses.find((c) => c.code === code);
@@ -263,7 +289,17 @@ function CoursesPage() {
                         {s}
                       </Badge>
                     ))}
-                    <span className="text-[10px] text-muted-foreground">{c.credits} cr</span>
+                    {isOptionalWritingOffered(c.skills, c.code) ? (
+                      <Badge variant="outline" className="text-[10px] text-muted-foreground">
+                        WR optional
+                      </Badge>
+                    ) : null}
+                    <span className="text-[10px] text-muted-foreground">{formatCourseCredits(c.credits)}</span>
+                    {isHalfCreditCourse(c.credits) ? (
+                      <Badge variant="outline" className="text-[10px]">
+                        Half credit
+                      </Badge>
+                    ) : null}
                   </div>
                 </div>
                 <Button
@@ -298,7 +334,12 @@ function CoursesPage() {
             <p className="text-muted-foreground">You haven't added any courses yet — browse above.</p>
           ) : null}
           <div className="space-y-2">
-            {coursesQ.data?.map((c) => (
+            {myCourses.map((c) => {
+              const row = c as UserCourse;
+              const displaySkills = effectiveSkills(row);
+              const wrOffered = wrCreditOffered(row);
+              const wrOn = row.counts_as_wr === true || (row.counts_as_wr == null && row.skills?.includes("WR"));
+              return (
               <div
                 key={c.id}
                 className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border p-3"
@@ -319,12 +360,42 @@ function CoursesPage() {
                         {d}
                       </Badge>
                     ))}
-                    {c.skills?.map((s: string) => (
+                    {displaySkills.map((s: string) => (
                       <Badge key={s} variant="outline" className="text-[10px]">
                         {s}
                       </Badge>
                     ))}
+                    <span className="text-[10px] text-muted-foreground">
+                      {formatCourseCredits(c.credits ?? 1)}
+                    </span>
                   </div>
+                  <CreditAllocationSelect
+                    course={row}
+                    allCourses={myCourses}
+                    disabled={allocationM.isPending}
+                    onChange={(allocation) => {
+                      const wrPatch = countsAsWrForAllocation(row, allocation);
+                      allocationM.mutate({
+                        id: c.id,
+                        credit_allocation: allocation,
+                        ...(wrPatch !== undefined ? { counts_as_wr: wrPatch } : {}),
+                      });
+                    }}
+                  />
+                  {wrOffered && !courseHasExclusiveCreditChoice(row) ? (
+                    <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                      <Checkbox
+                        checked={wrOn}
+                        onCheckedChange={(checked) =>
+                          updateM.mutate({
+                            id: c.id,
+                            counts_as_wr: checked === true,
+                          })
+                        }
+                      />
+                      Count as writing (WR) credit
+                    </label>
+                  ) : null}
                 </div>
                 <Select
                   value={c.status}
@@ -345,7 +416,8 @@ function CoursesPage() {
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
               </div>
-            ))}
+            );
+            })}
           </div>
         </CardContent>
       </Card>

@@ -2,6 +2,12 @@ import { CATALOG_BY_CODE, type CatalogCourse } from "@/data/courses";
 import { DISTRIBUTIONAL_REQUIREMENTS, GRADUATION_CREDITS } from "@/data/distributional";
 import { MAJORS_BY_ID, type RequirementSlot, type MajorRequirements } from "@/data/majors";
 import { TRACKS_BY_ID } from "@/data/tracks";
+import {
+  auditDistributionalWithAllocation,
+  getEligibleCreditBuckets,
+} from "@/lib/credit-allocation";
+import { courseMatchesAny, effectiveSkills } from "@/lib/course-codes";
+import { WR_OPTIONAL_SKILL } from "@/lib/course-codes";
 
 export type UserCourse = {
   id: string;
@@ -10,10 +16,19 @@ export type UserCourse = {
   credits: number;
   distributional: string[];
   skills: string[];
+  counts_as_wr?: boolean | null;
+  /** Manual distributional/skill bucket (hu, so, sc, qr, wr, lang); null = auto-optimize */
+  credit_allocation?: string | null;
   status: "planned" | "in_progress" | "completed";
   term: string | null;
   year: number | null;
 };
+
+export function wrCreditOffered(course: UserCourse): boolean {
+  if (course.counts_as_wr != null) return true;
+  const skills = course.skills ?? [];
+  return skills.includes("WR") || skills.includes(WR_OPTIONAL_SKILL);
+}
 
 export type SlotResult = {
   slot: RequirementSlot;
@@ -23,15 +38,28 @@ export type SlotResult = {
 };
 
 function matchesSlot(course: UserCourse, slot: RequirementSlot): boolean {
-  const code = course.course_code.toUpperCase();
-  if (slot.codes?.some((c) => c.toUpperCase() === code)) return true;
-  if (slot.codePrefix?.some((p) => code.startsWith(p.toUpperCase()))) {
-    const numMatch = code.match(/(\d{3,4})/);
-    const num = numMatch ? parseInt(numMatch[1], 10) : 0;
-    if (slot.minLevel && num < slot.minLevel) return false;
-    if (slot.maxLevel && num > slot.maxLevel) return false;
-    return true;
+  const code = course.course_code;
+  const skills = effectiveSkills(course);
+  const needsSkills = slot.requiredSkills?.length;
+  if (needsSkills && !slot.requiredSkills!.every((s) => skills.includes(s))) {
+    return false;
   }
+
+  const codeMatch =
+    (slot.codes?.length && courseMatchesAny(code, slot.codes)) ||
+    (slot.codePrefix?.length &&
+      slot.codePrefix.some((p) => {
+        const upper = code.toUpperCase();
+        if (!upper.startsWith(p.toUpperCase())) return false;
+        const numMatch = upper.match(/(\d{3,4})/);
+        const num = numMatch ? parseInt(numMatch[1], 10) : 0;
+        if (slot.minLevel && num < slot.minLevel) return false;
+        if (slot.maxLevel && num > slot.maxLevel) return false;
+        return true;
+      }));
+
+  if (codeMatch) return true;
+  if (needsSkills && !slot.codes?.length && !slot.codePrefix?.length) return true;
   return false;
 }
 
@@ -110,23 +138,7 @@ export function auditTrack(courses: UserCourse[], trackId: string | null) {
 }
 
 export function auditDistributional(courses: UserCourse[]) {
-  return DISTRIBUTIONAL_REQUIREMENTS.map((req) => {
-    let count = 0;
-    const matched: UserCourse[] = [];
-    for (const c of courses) {
-      if (req.tag === "L_ANY") {
-        if (c.skills.some((s) => ["L4", "L5"].includes(s))) {
-          count++; matched.push(c); break;
-        }
-      } else if (
-        c.distributional.includes(req.tag as "Hu" | "So" | "Sc") ||
-        c.skills.includes(req.tag as "QR" | "WR")
-      ) {
-        count++; matched.push(c);
-      }
-    }
-    return { req, count, matched, satisfied: count >= req.count, remaining: Math.max(0, req.count - count) };
-  });
+  return auditDistributionalWithAllocation(courses).rows;
 }
 
 export function totalCredits(courses: UserCourse[]) {
@@ -200,16 +212,23 @@ export function suggestRoadmap(
     }
   }
 
-  const dist = auditDistributional(courses);
+  const { rows: dist } = auditDistributionalWithAllocation(courses);
   for (const d of dist) {
     if (d.satisfied) continue;
     for (const c of Object.values(catalogByCode)) {
       if (completedCodes.has(c.code.toUpperCase())) continue;
-      const matches =
-        d.req.tag === "L_ANY"
-          ? c.skills.some((s) => ["L4", "L5"].includes(s))
-          : c.distributional.includes(d.req.tag as never) || c.skills.includes(d.req.tag as never);
-      if (matches) {
+      const pseudo = {
+        id: c.code,
+        course_code: c.code,
+        course_title: c.title,
+        credits: c.credits,
+        distributional: c.distributional,
+        skills: c.skills,
+        status: "planned" as const,
+        term: null,
+        year: null,
+      };
+      if (getEligibleCreditBuckets(pseudo).includes(d.req.id)) {
         pushIf(c.code, `Distributional: ${d.req.label}`, "med");
         if (suggestions.filter((s) => s.reason.startsWith("Distributional")).length >= 6) break;
       }

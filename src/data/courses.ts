@@ -44,10 +44,10 @@ export const CATALOG: CatalogCourse[] = [
   { code: "S&DS 242", title: "Theory of Statistics", credits: 1, distributional: ["Sc"], skills: ["QR"], subject: "S&DS" },
 
   // ── Biology / MCDB / EEB ──
-  { code: "BIOL 101", title: "Biochemistry & Biophysics", credits: 1, distributional: ["Sc"], skills: ["QR"], subject: "BIOL" },
-  { code: "BIOL 102", title: "Principles of Cell Biology", credits: 1, distributional: ["Sc"], skills: ["QR"], subject: "BIOL" },
-  { code: "BIOL 103", title: "Genetics and Development", credits: 1, distributional: ["Sc"], skills: ["QR"], subject: "BIOL" },
-  { code: "BIOL 104", title: "Principles of Ecology and Evolutionary Biology", credits: 1, distributional: ["Sc"], skills: ["QR"], subject: "BIOL" },
+  { code: "BIOL 101", title: "Biochemistry & Biophysics", credits: 0.5, distributional: ["Sc"], skills: ["QR"], subject: "BIOL" },
+  { code: "BIOL 102", title: "Principles of Cell Biology", credits: 0.5, distributional: ["Sc"], skills: ["QR"], subject: "BIOL" },
+  { code: "BIOL 103", title: "Genetics and Development", credits: 0.5, distributional: ["Sc"], skills: ["QR"], subject: "BIOL" },
+  { code: "BIOL 104", title: "Principles of Ecology and Evolutionary Biology", credits: 0.5, distributional: ["Sc"], skills: ["QR"], subject: "BIOL" },
   { code: "MCDB 200", title: "Molecular Biology", credits: 1, distributional: ["Sc"], skills: ["QR"], subject: "MCDB" },
   { code: "MCDB 202", title: "Genetics", credits: 1, distributional: ["Sc"], skills: ["QR"], subject: "MCDB" },
   { code: "MCDB 205", title: "Cellular and Developmental Biology", credits: 1, distributional: ["Sc"], skills: ["QR"], subject: "MCDB" },

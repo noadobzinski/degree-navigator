@@ -1,4 +1,5 @@
 import type { CatalogCourse } from "@/data/courses";
+import { resolveCatalogCredits } from "@/lib/course-credits";
 
 export const COURSETABLE_API = "https://api.coursetable.com";
 
@@ -65,7 +66,7 @@ export function normalizeCourseTableCourse(entry: CourseTableCourse): CatalogCou
   return {
     code: listing.course_code.replace(/\s+/g, " ").trim(),
     title: entry.title.trim(),
-    credits: entry.credits || 1,
+    credits: resolveCatalogCredits(entry.credits, listing.course_code),
     distributional: entry.areas.filter((a): a is CatalogCourse["distributional"][number] =>
       DIST_TAGS.has(a),
     ),
@@ -86,7 +87,14 @@ export function dedupeCourseTableCourses(entries: CourseTableCourse[]): CatalogC
     const normalized = normalizeCourseTableCourse(entry);
     if (!normalized) continue;
     const key = normalized.code.toUpperCase();
-    if (!byKey.has(key)) byKey.set(key, normalized);
+    const existing = byKey.get(key);
+    if (!existing) {
+      byKey.set(key, normalized);
+      continue;
+    }
+    const credits =
+      normalized.credits < existing.credits ? normalized.credits : existing.credits;
+    byKey.set(key, { ...existing, credits });
   }
   return [...byKey.values()].sort((a, b) => a.code.localeCompare(b.code));
 }
