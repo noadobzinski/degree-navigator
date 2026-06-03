@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getProfile, getMyCourses } from "@/lib/audit.functions";
 import { useCourseTableCatalogMeta, useClientQueryEnabled } from "@/hooks/use-coursetable-catalog";
 import { useCrosslistLookup } from "@/hooks/use-crosslist";
+import { useAuditCatalog } from "@/hooks/use-audit-catalog";
 import { useRequirementExamples, getSlotExamples } from "@/hooks/use-requirement-examples";
 import { FilledRequirementCourses } from "@/components/filled-requirement-courses";
 import { RequirementExamples } from "@/components/requirement-examples";
@@ -69,6 +70,9 @@ function Dashboard() {
   const { lookup: crosslistLookup } = useCrosslistLookup(
     clientReady && !!profileForExamples?.major_id,
   );
+  const { catalogByCode: auditCatalog } = useAuditCatalog(
+    clientReady && !!profileForExamples?.major_id,
+  );
 
   if (!clientReady || profileQ.isLoading || coursesQ.isLoading) {
     return <div className="text-muted-foreground">Loading your audit…</div>;
@@ -113,7 +117,12 @@ function Dashboard() {
     majorAudit && secondAudit ? computeDoubleMajorOverlap(majorAudit, secondAudit) : null;
 
   const trackAudit = auditTrack(courses, profile.track_id, crosslistLookup);
-  const certificateAudits = auditCertificates(courses, profile.certificate_ids, crosslistLookup);
+  const certificateAudits = auditCertificates(
+    courses,
+    profile.certificate_ids,
+    crosslistLookup,
+    auditCatalog,
+  );
   const distAudit = auditDistributional(courses);
   const credits = totalCredits(courses);
   const gradTotal = graduationCredits();
@@ -137,6 +146,7 @@ function Dashboard() {
     secondMajorId: profile.second_major_id,
     certificateIds: profile.certificate_ids,
     crosslistLookup,
+    catalogByCode: auditCatalog,
   });
 
   return (

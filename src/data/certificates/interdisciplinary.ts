@@ -1,4 +1,5 @@
 import { y } from "../majors/course-codes";
+import { attributeElectives, YC } from "./helpers";
 import type { Certificate } from "./types";
 
 export const INTERDISCIPLINARY_CERTIFICATES: Certificate[] = [
@@ -55,41 +56,36 @@ export const INTERDISCIPLINARY_CERTIFICATES: Certificate[] = [
     description:
       "Six courses: one in each of three pillars (Basic Climate Sci, Anthropogenic Climate, Climate Solutions), plus 3 electives incl. one climate seminar; 3 must be SET focus. Max 2 overlap with major.",
     requirements: [
-      {
+      attributeElectives({
         id: "basic_climate",
-        label: "Basic climate science (1; YC Climate Basic Climate Sci)",
-        codePrefix: ["EPS", "EVST", "ENAS", "PHYS", "CHEM", "EEB", "G&G"],
-        minLevel: 100,
+        label: "Basic climate science (1)",
         needCount: 1,
-      },
-      {
+        requiredAttributes: [...YC.climateBasic],
+      }),
+      attributeElectives({
         id: "anthropogenic",
-        label: "Anthropogenic climate change (1; YC Climate Anthropogenic)",
-        codePrefix: ["EPS", "EVST", "ENAS", "ECON", "PLSC", "F&ES", "EEB"],
-        minLevel: 100,
+        label: "Anthropogenic climate change (1)",
         needCount: 1,
-      },
-      {
+        requiredAttributes: [...YC.climateAnthropogenic],
+      }),
+      attributeElectives({
         id: "solutions",
-        label: "Climate solutions (1; YC Climate Solutions)",
-        codePrefix: ["EPS", "EVST", "ENAS", "ECON", "PLSC", "F&ES", "GLBL"],
-        minLevel: 100,
+        label: "Climate solutions (1)",
         needCount: 1,
-      },
-      {
+        requiredAttributes: [...YC.climateSolutions],
+      }),
+      attributeElectives({
         id: "electives",
-        label: "Additional climate courses (2; incl. SET focus)",
-        codePrefix: ["EPS", "EVST", "ENAS", "PHYS", "CHEM", "EENG", "CENG", "ECON", "PLSC"],
-        minLevel: 100,
+        label: "Additional climate courses (2)",
         needCount: 2,
-      },
-      {
+        requiredAttributes: [...YC.climateElective],
+      }),
+      attributeElectives({
         id: "seminar",
-        label: "Climate science & solutions seminar (1; director-approved)",
-        codePrefix: ["EPS", "EVST", "ENAS", "GLBL", "F&ES"],
-        minLevel: 300,
+        label: "Climate science & solutions seminar (1)",
         needCount: 1,
-      },
+        requiredAttributes: [...YC.climateSeminar],
+      }),
     ],
   },
   {
@@ -211,27 +207,24 @@ export const INTERDISCIPLINARY_CERTIFICATES: Certificate[] = [
     description:
       "Five courses: 2 consumption (YC Food Consumption), 1 environment (YC Food Environment), 2 production (YC Food Production). Plus co-curricular summary.",
     requirements: [
-      {
+      attributeElectives({
         id: "consumption",
-        label: "Consumption / food (2; YC Food Consumption)",
-        codePrefix: ["EVST", "EEB", "F&ES", "HIST", "ANTH", "PLSC", "ECON", "ENRG"],
-        minLevel: 100,
+        label: "Consumption / food (2)",
         needCount: 2,
-      },
-      {
+        requiredAttributes: [...YC.foodConsumption],
+      }),
+      attributeElectives({
         id: "environment",
-        label: "Environment / climate change (1; YC Food Environment)",
-        codePrefix: ["EVST", "EEB", "F&ES", "ENRG", "G&G", "EPS"],
-        minLevel: 100,
+        label: "Environment / climate change (1)",
         needCount: 1,
-      },
-      {
+        requiredAttributes: [...YC.foodEnvironment],
+      }),
+      attributeElectives({
         id: "production",
-        label: "Production / agriculture (2; YC Food Production)",
-        codePrefix: ["EVST", "EEB", "F&ES", "HIST", "ANTH", "PLSC", "ECON", "AFST"],
-        minLevel: 100,
+        label: "Production / agriculture (2)",
         needCount: 2,
-      },
+        requiredAttributes: [...YC.foodProduction],
+      }),
     ],
   },
   {
@@ -250,34 +243,30 @@ export const INTERDISCIPLINARY_CERTIFICATES: Certificate[] = [
         codes: y(["HLTH 2300", "HLTH 230"]),
         needCount: 1,
       },
-      {
+      attributeElectives({
         id: "competency_1",
-        label: "Global health competency elective (1 of 6 areas; YC GLHTH attribute)",
-        codePrefix: ["HLTH", "ANTH", "ECON", "EPHD", "HIST", "PLSC", "SOCY", "WGSS", "EEB"],
-        minLevel: 100,
+        label: "Global health competency elective (1 of 6 areas)",
         needCount: 1,
-      },
-      {
+        requiredAttributes: [...YC.glhthAny],
+      }),
+      attributeElectives({
         id: "competency_2",
         label: "Global health competency elective (2 of 6 areas)",
-        codePrefix: ["HLTH", "ANTH", "ECON", "EPHD", "HIST", "PLSC", "SOCY", "WGSS", "EEB"],
-        minLevel: 100,
         needCount: 1,
-      },
-      {
+        requiredAttributes: [...YC.glhthAny],
+      }),
+      attributeElectives({
         id: "competency_3",
         label: "Global health competency elective (3 of 6 areas)",
-        codePrefix: ["HLTH", "ANTH", "ECON", "EPHD", "HIST", "PLSC", "SOCY", "WGSS", "EEB"],
-        minLevel: 100,
         needCount: 1,
-      },
-      {
+        requiredAttributes: [...YC.glhthAny],
+      }),
+      attributeElectives({
         id: "competency_4",
         label: "Global health competency elective (4 of 6 areas)",
-        codePrefix: ["HLTH", "ANTH", "ECON", "EPHD", "HIST", "PLSC", "SOCY", "WGSS", "EEB"],
-        minLevel: 100,
         needCount: 1,
-      },
+        requiredAttributes: [...YC.glhthAny],
+      }),
       {
         id: "colloquium",
         label: "Senior colloquium (HLTH 4900)",
@@ -301,24 +290,24 @@ export const INTERDISCIPLINARY_CERTIFICATES: Certificate[] = [
         codes: y(["GLBL 3102", "GLBL 3103"]),
         needCount: 1,
       },
-      {
+      attributeElectives({
         id: "domestic",
-        label: "Domestic human rights elective (1; YC Human Rights Domestic attribute)",
-        codePrefix: ["GLBL", "HIST", "PLSC", "SOCY", "AFST", "AMST", "WGSS", "LAW"],
+        label: "Domestic human rights elective (1)",
         needCount: 1,
-      },
-      {
+        requiredAttributes: [...YC.humanRightsDomestic],
+      }),
+      attributeElectives({
         id: "international",
-        label: "International human rights elective (1; YC Human Rights International attribute)",
-        codePrefix: ["GLBL", "HIST", "PLSC", "SOCY", "ANTH", "EAST", "EVST"],
+        label: "International human rights elective (1)",
         needCount: 1,
-      },
-      {
+        requiredAttributes: [...YC.humanRightsInternational],
+      }),
+      attributeElectives({
         id: "electives",
         label: "Additional human rights electives (2)",
-        codePrefix: ["GLBL", "HIST", "PLSC", "SOCY", "ANTH", "WGSS", "AFST", "LAW"],
         needCount: 2,
-      },
+        requiredAttributes: [...YC.humanRightsAny],
+      }),
     ],
   },
   {
@@ -337,24 +326,24 @@ export const INTERDISCIPLINARY_CERTIFICATES: Certificate[] = [
         codes: y(["GLBL 3102", "GLBL 3103"]),
         needCount: 1,
       },
-      {
+      attributeElectives({
         id: "domestic",
-        label: "Domestic human rights elective (1; YC Human Rights Domestic)",
-        codePrefix: ["GLBL", "HIST", "PLSC", "SOCY", "AFST", "AMST", "WGSS", "LAW"],
+        label: "Domestic human rights elective (1)",
         needCount: 1,
-      },
-      {
+        requiredAttributes: [...YC.humanRightsDomestic],
+      }),
+      attributeElectives({
         id: "international",
-        label: "International human rights elective (1; YC Human Rights International)",
-        codePrefix: ["GLBL", "HIST", "PLSC", "SOCY", "ANTH", "EAST", "EVST"],
+        label: "International human rights elective (1)",
         needCount: 1,
-      },
-      {
+        requiredAttributes: [...YC.humanRightsInternational],
+      }),
+      attributeElectives({
         id: "electives",
         label: "Additional human rights electives (3)",
-        codePrefix: ["GLBL", "HIST", "PLSC", "SOCY", "ANTH", "WGSS", "AFST", "LAW"],
         needCount: 3,
-      },
+        requiredAttributes: [...YC.humanRightsAny],
+      }),
     ],
   },
   {
@@ -366,41 +355,38 @@ export const INTERDISCIPLINARY_CERTIFICATES: Certificate[] = [
     description:
       "Five courses: one in each of four areas (Art/Architecture/Literature, History, Religion, Society) plus one elective. Max 2 overlap with major.",
     requirements: [
-      {
+      attributeElectives({
         id: "art_lit",
         label: "Islamic art, architecture, or literature (1)",
-        codePrefix: ["NELC", "HSAR", "HIST", "ENGL", "CPLT", "RLST"],
-        minLevel: 100,
         needCount: 1,
-      },
-      {
+        requiredAttributes: [...YC.islamicArt],
+      }),
+      attributeElectives({
         id: "history",
         label: "Islamic history (1)",
-        codePrefix: ["NELC", "HIST", "RLST", "PLSC"],
-        minLevel: 100,
         needCount: 1,
-      },
-      {
+        requiredAttributes: [...YC.islamicHistory],
+      }),
+      attributeElectives({
         id: "religion",
         label: "Islamic religion (1)",
-        codePrefix: ["NELC", "RLST", "HIST"],
-        minLevel: 100,
         needCount: 1,
-      },
-      {
+        requiredAttributes: [...YC.islamicReligion],
+      }),
+      attributeElectives({
         id: "society",
         label: "Islamic society (1)",
-        codePrefix: ["NELC", "SOCY", "PLSC", "ANTH", "GLBL", "WGSS"],
-        minLevel: 100,
         needCount: 1,
-      },
-      {
+        requiredAttributes: [...YC.islamicAny],
+        description:
+          "Courses with an Islamic Studies area attribute (art/history/religion) or NELC foundations.",
+      }),
+      attributeElectives({
         id: "elective",
         label: "Islamic Studies elective (any area)",
-        codePrefix: ["NELC", "HIST", "RLST", "HSAR", "PLSC", "SOCY", "ANTH"],
-        minLevel: 100,
         needCount: 1,
-      },
+        requiredAttributes: [...YC.islamicAny],
+      }),
     ],
   },
   {
@@ -412,13 +398,14 @@ export const INTERDISCIPLINARY_CERTIFICATES: Certificate[] = [
     description:
       "Five medieval-topic courses; max 3 from one geographic zone (East/SE Asia, S/C Asia, Near East/N Africa, Europe/Russia/N Atlantic). Plus 3 lecture write-ups.",
     requirements: [
-      {
+      attributeElectives({
         id: "medieval_courses",
-        label: "Medieval topic courses (5; YC MDVL attributes; max 3 per zone)",
-        codePrefix: ["MDVL", "HIST", "ENGL", "HSAR", "NELC", "EALL", "RLST", "CLCV", "GREK", "LATN"],
-        minLevel: 100,
+        label: "Medieval topic courses (5; max 3 per geographic zone)",
         needCount: 5,
-      },
+        requiredAttributes: [...YC.mdvlAny],
+        description:
+          "Courses must carry a YC MDVL attribute. Zone limits (max 3 per region) are not enforced here — confirm with the Medieval Studies director.",
+      }),
     ],
   },
   {
@@ -430,13 +417,14 @@ export const INTERDISCIPLINARY_CERTIFICATES: Certificate[] = [
     description:
       "Five Indigenous-topic courses from ≥3 of 5 focus areas (max 2 per area). Optional capstone. Apply by junior year.",
     requirements: [
-      {
+      attributeElectives({
         id: "indigenous_courses",
-        label: "Indigenous topic courses (5 from ≥3 of 5 focus areas; max 2 per area; YC NAIS attributes)",
-        codePrefix: ["AMST", "ANTH", "EEB", "ENGL", "ER&M", "EVST", "HIST", "LING", "PLSC", "SOCY", "THST", "WGSS", "EDST"],
-        minLevel: 100,
+        label: "Indigenous topic courses (5 from ≥3 of 5 focus areas; max 2 per area)",
         needCount: 5,
-      },
+        requiredAttributes: [...YC.naisAny],
+        description:
+          "Courses must carry a YC NAIS attribute. Focus-area and per-area limits are not enforced here — confirm with NAIS.",
+      }),
     ],
   },
   {
@@ -448,13 +436,12 @@ export const INTERDISCIPLINARY_CERTIFICATES: Certificate[] = [
     description:
       "Five courses: 3 content (YC Persia & Iran Content; max 2 from same dept) + 2 Persian language (L1–L5). Grade B minimum.",
     requirements: [
-      {
+      attributeElectives({
         id: "content",
-        label: "Persia & Iran content courses (3; YC Persia & Iran Content)",
-        codePrefix: ["NELC", "HIST", "HSAR", "RLST", "PLSC", "CPLT", "ANTH"],
-        minLevel: 100,
+        label: "Persia & Iran content courses (3; max 2 from same dept)",
         needCount: 3,
-      },
+        requiredAttributes: [...YC.persiaContent],
+      }),
       {
         id: "language",
         label: "Persian language courses (2; L1–L5)",

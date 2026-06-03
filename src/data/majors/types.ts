@@ -10,6 +10,8 @@ export type RequirementSlot = {
   maxLevel?: number;
   needCount: number;
   exclusive?: boolean;
+  /** Yale Course Search / CourseTable YC flags (e.g. "YC Quantum Elective"). */
+  requiredAttributes?: string[];
 };
 
 /** Breadth rule: satisfy `pickCount` of the listed slots (e.g. 4 of 7 CGSC subfields). */

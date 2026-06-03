@@ -10,6 +10,8 @@ export type CatalogCourse = {
   subject: string;
   /** Other Yale course codes for the same offering (from CourseTable listings). */
   crosslistedCodes?: string[];
+  /** YCPS course attributes from CourseTable (e.g. "YC Quantum Elective"). */
+  ycAttributes?: string[];
 };
 
 export const CATALOG: CatalogCourse[] = [

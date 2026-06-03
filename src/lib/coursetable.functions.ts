@@ -7,6 +7,7 @@ import { COURSETABLE_API, currentSeasonCode } from "@/lib/coursetable";
 import {
   buildMergedCatalog,
   fetchSeasonCatalog,
+  getAuditCatalogByCode,
   getCrosslistLookup,
 } from "@/lib/catalog-cache";
 import { buildCrosslistLookup, serializeCrosslistLookup } from "@/lib/crosslist";
@@ -210,6 +211,13 @@ export const getCrosslistMap = createServerFn({ method: "GET" }).handler(async (
   const seasons = seasonsForHistoricalCatalog(null).slice(-8);
   const lookup = await getCrosslistLookup(seasons);
   return serializeCrosslistLookup(lookup);
+});
+
+/** YC course attributes for certificate audits (CourseTable public catalog; no NetID). */
+export const getAuditCatalog = createServerFn({ method: "GET" }).handler(async () => {
+  const seasons = seasonsForHistoricalCatalog(null).slice(-8);
+  const catalogByCode = await getAuditCatalogByCode(seasons);
+  return { seasons, catalogByCode };
 });
 
 export const getCourseTableCatalogMeta = createServerFn({ method: "GET" }).handler(async () => {

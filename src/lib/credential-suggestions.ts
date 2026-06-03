@@ -10,6 +10,7 @@ import {
   computeDoubleMajorOverlap,
   type UserCourse,
 } from "@/lib/audit";
+import type { AuditCatalogByCode } from "@/lib/catalog-cache";
 import type { CrosslistLookup } from "@/lib/crosslist";
 import {
   flattenMajorAuditSections,
@@ -85,8 +86,9 @@ function buildCertSuggestion(
   cert: Certificate,
   courses: UserCourse[],
   crosslistLookup?: CrosslistLookup,
+  catalogByCode?: AuditCatalogByCode,
 ): CredentialSuggestion | null {
-  const audit = auditOneCertificate(courses, cert.id, crosslistLookup);
+  const audit = auditOneCertificate(courses, cert.id, crosslistLookup, catalogByCode);
   if (!audit) return null;
 
   const progress = progressFromSlotResults(audit.results);
@@ -120,6 +122,7 @@ export function suggestReachableCredentials(opts: {
   secondMajorId?: string | null;
   certificateIds?: string[] | null;
   crosslistLookup?: CrosslistLookup;
+  catalogByCode?: AuditCatalogByCode;
   maxResults?: number;
 }): CredentialSuggestion[] {
   const {
@@ -130,6 +133,7 @@ export function suggestReachableCredentials(opts: {
     secondMajorId,
     certificateIds = [],
     crosslistLookup,
+    catalogByCode,
     maxResults = 6,
   } = opts;
 
@@ -138,7 +142,7 @@ export function suggestReachableCredentials(opts: {
 
   for (const cert of CERTIFICATES) {
     if (activeCerts.has(cert.id)) continue;
-    const suggestion = buildCertSuggestion(cert, courses, crosslistLookup);
+    const suggestion = buildCertSuggestion(cert, courses, crosslistLookup, catalogByCode);
     if (suggestion) suggestions.push(suggestion);
   }
 

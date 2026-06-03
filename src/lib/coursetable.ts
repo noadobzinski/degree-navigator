@@ -21,6 +21,7 @@ export type CourseTableCourse = {
   listings: CourseTableListing[];
   same_course_id: number;
   description?: string;
+  course_flags?: { flag?: { flag_text?: string } }[];
 };
 
 export type CourseTableAuthCheck = {
@@ -53,6 +54,16 @@ export function casLoginUrl(redirectUrl: string): string {
 
 const DIST_TAGS = new Set(["Hu", "So", "Sc"]);
 const SKILL_TAGS = new Set(["QR", "WR", "L1", "L2", "L3", "L4", "L5"]);
+
+function ycAttributesFromFlags(entry: CourseTableCourse): string[] {
+  const attrs = new Set<string>();
+  for (const raw of entry.course_flags ?? []) {
+    const flag = raw as { flag?: { flag_text?: string } };
+    const text = flag.flag?.flag_text?.trim();
+    if (text?.startsWith("YC ")) attrs.add(text);
+  }
+  return [...attrs];
+}
 
 function normalizeSkill(raw: string): CatalogCourse["skills"][number] | null {
   if (SKILL_TAGS.has(raw)) return raw as CatalogCourse["skills"][number];
@@ -95,6 +106,7 @@ export function normalizeCourseTableCourse(entry: CourseTableCourse): CatalogCou
           .filter((s): s is CatalogCourse["skills"][number] => s !== null),
       ),
     ],
+    ycAttributes: ycAttributesFromFlags(entry),
     subject: primaryListing.subject,
   };
 }
@@ -111,6 +123,7 @@ function mergeCatalogCourses(a: CatalogCourse, b: CatalogCourse): CatalogCourse 
     credits,
     distributional: [...new Set([...a.distributional, ...b.distributional])] as CatalogCourse["distributional"],
     skills: [...new Set([...a.skills, ...b.skills])] as CatalogCourse["skills"],
+    ycAttributes: [...new Set([...(a.ycAttributes ?? []), ...(b.ycAttributes ?? [])])],
     subject: a.subject || b.subject,
   };
 }

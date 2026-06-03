@@ -109,10 +109,36 @@ export function courseMatchesCodePrefix(
   return true;
 }
 
+export function ycAttributesForCourseCodes(
+  codesToCheck: string[],
+  catalogByCode?: Record<string, { ycAttributes?: string[] }>,
+): Set<string> {
+  const attrs = new Set<string>();
+  if (!catalogByCode) return attrs;
+  for (const raw of codesToCheck) {
+    const entry =
+      catalogByCode[raw.trim()] ??
+      catalogByCode[raw.trim().toUpperCase()];
+    for (const a of entry?.ycAttributes ?? []) attrs.add(a);
+  }
+  return attrs;
+}
+
 export function courseMatchesSlotCodes(
   codesToCheck: string[],
-  slot: { codes?: string[]; codePrefix?: string[]; minLevel?: number; maxLevel?: number },
+  slot: {
+    codes?: string[];
+    codePrefix?: string[];
+    minLevel?: number;
+    maxLevel?: number;
+    requiredAttributes?: string[];
+  },
+  catalogByCode?: Record<string, { ycAttributes?: string[] }>,
 ): boolean {
+  if (slot.requiredAttributes?.length) {
+    const attrs = ycAttributesForCourseCodes(codesToCheck, catalogByCode);
+    return slot.requiredAttributes.some((req) => attrs.has(req));
+  }
   if (slot.codes?.length && codesToCheck.some((code) => courseMatchesAny(code, slot.codes!))) {
     return true;
   }

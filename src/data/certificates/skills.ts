@@ -1,4 +1,5 @@
 import { y } from "../majors/course-codes";
+import { attributeElectives, YC } from "./helpers";
 import type { Certificate } from "./types";
 
 export const SKILLS_CERTIFICATES: Certificate[] = [
@@ -121,20 +122,18 @@ export const SKILLS_CERTIFICATES: Certificate[] = [
     description:
       "Six courses: ≥4 at 3000+; ≥2 with substantial methods/practical ethnographic component (≥1 at 3000+). YC Ethnography Elective / Methods attributes. Grade C minimum.",
     requirements: [
-      {
+      attributeElectives({
         id: "upper_level",
-        label: "Upper-level ethnography electives (4 at 3000+; YC Ethnography Elective)",
-        codePrefix: ["ANTH", "SOCY", "AMST", "AFST", "ER&M", "GLBL", "HIST", "PLSC", "WGSS"],
-        minLevel: 300,
+        label: "Upper-level ethnography electives (4 at 3000+)",
         needCount: 4,
-      },
-      {
+        requiredAttributes: [...YC.ethnographyElective],
+      }),
+      attributeElectives({
         id: "methods",
-        label: "Methods courses with ethnographic component (2; ≥1 at 3000+; YC Ethnography Methods)",
-        codePrefix: ["ANTH", "SOCY", "AMST", "AFST", "ER&M", "GLBL", "PLSC", "WGSS"],
-        minLevel: 200,
+        label: "Methods courses with ethnographic component (2; ≥1 at 3000+)",
         needCount: 2,
-      },
+        requiredAttributes: [...YC.ethnographyMethods],
+      }),
     ],
   },
   {
@@ -152,13 +151,12 @@ export const SKILLS_CERTIFICATES: Certificate[] = [
         codes: y(["PHYS 345", "CPSC 447"]),
         needCount: 1,
       },
-      {
+      attributeElectives({
         id: "electives",
-        label: "Quantum electives (4; YC Quantum Elective attribute)",
-        codePrefix: ["PHYS", "CPSC", "APPH", "CHEM", "EENG", "GLBL", "MATH", "S&DS"],
-        minLevel: 200,
+        label: "Quantum electives (4)",
         needCount: 4,
-      },
+        requiredAttributes: [...YC.quantumElective],
+      }),
     ],
   },
   {

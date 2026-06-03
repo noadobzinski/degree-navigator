@@ -78,6 +78,7 @@ function matchesSlot(
   course: UserCourse,
   slot: RequirementSlot,
   crosslistLookup?: CrosslistLookup,
+  catalogByCode?: Record<string, { ycAttributes?: string[] }>,
 ): boolean {
   const skills = effectiveSkills(course);
   const needsSkills = slot.requiredSkills?.length;
@@ -90,10 +91,12 @@ function matchesSlot(
     course.crosslisted_codes,
     crosslistLookup,
   );
-  const codeMatch = courseMatchesSlotCodes(codesToCheck, slot);
+  const codeMatch = courseMatchesSlotCodes(codesToCheck, slot, catalogByCode);
 
   if (codeMatch) return true;
-  if (needsSkills && !slot.codes?.length && !slot.codePrefix?.length) return true;
+  if (needsSkills && !slot.codes?.length && !slot.codePrefix?.length && !slot.requiredAttributes?.length) {
+    return true;
+  }
   return false;
 }
 
@@ -101,7 +104,15 @@ export function catalogMatchesSlot(
   course: CatalogCourse,
   slot: RequirementSlot,
   crosslistLookup?: CrosslistLookup,
+  catalogByCode?: Record<string, { ycAttributes?: string[] }>,
 ): boolean {
+  const attrs = course.ycAttributes ?? [];
+  const enriched: Record<string, { ycAttributes?: string[] }> = { ...catalogByCode };
+  const entry = { ycAttributes: attrs.length ? attrs : catalogByCode?.[course.code.toUpperCase()]?.ycAttributes };
+  enriched[course.code.toUpperCase()] = entry;
+  for (const code of course.crosslistedCodes ?? []) {
+    enriched[code.toUpperCase()] = entry;
+  }
   return matchesSlot(
     {
       id: course.code,
@@ -117,6 +128,7 @@ export function catalogMatchesSlot(
     },
     slot,
     crosslistLookup,
+    enriched,
   );
 }
 
@@ -129,13 +141,14 @@ function fillSlots(
   courses: UserCourse[],
   consumed: Set<string>,
   crosslistLookup?: CrosslistLookup,
+  catalogByCode?: Record<string, { ycAttributes?: string[] }>,
 ): SlotResult[] {
   return slots.map((slot) => {
     const filled: UserCourse[] = [];
     for (const c of courses) {
       if (filled.length >= slot.needCount) break;
       if (consumed.has(c.id)) continue;
-      if (matchesSlot(c, slot, crosslistLookup)) {
+      if (matchesSlot(c, slot, crosslistLookup, catalogByCode)) {
         filled.push(c);
         consumed.add(c.id);
       }
@@ -154,9 +167,10 @@ function fillGroups(
   courses: UserCourse[],
   consumed: Set<string>,
   crosslistLookup?: CrosslistLookup,
+  catalogByCode?: Record<string, { ycAttributes?: string[] }>,
 ): GroupResult[] {
   return groups.map((group) => {
-    const slotResults = fillSlots(group.slots, courses, consumed, crosslistLookup);
+    const slotResults = fillSlots(group.slots, courses, consumed, crosslistLookup, catalogByCode);
     const satisfiedCount = slotResults.filter((r) => r.satisfied).length;
     const pickCount = group.pickCount;
     return {
@@ -175,14 +189,15 @@ function auditRequirementSections(
   courses: UserCourse[],
   consumed: Set<string>,
   crosslistLookup?: CrosslistLookup,
+  catalogByCode?: Record<string, { ycAttributes?: string[] }>,
 ): MajorAuditSection[] {
   const sections: MajorAuditSection[] = [];
   if (reqs.prerequisites?.length || reqs.prerequisiteGroups?.length) {
     const prereqSection: MajorAuditSection = { title: "Prerequisites", results: [] };
     if (reqs.prerequisiteGroups?.length) {
-      prereqSection.groups = fillGroups(reqs.prerequisiteGroups, courses, consumed, crosslistLookup);
+      prereqSection.groups = fillGroups(reqs.prerequisiteGroups, courses, consumed, crosslistLookup, catalogByCode);
     }
-    prereqSection.results = fillSlots(reqs.prerequisites ?? [], courses, consumed, crosslistLookup);
+    prereqSection.results = fillSlots(reqs.prerequisites ?? [], courses, consumed, crosslistLookup, catalogByCode);
     sections.push(prereqSection);
   }
   sections.push({
@@ -193,15 +208,15 @@ function auditRequirementSections(
   });
   const coreSection = sections[sections.length - 1]!;
   if (reqs.coreGroups?.length) {
-    coreSection.groups = fillGroups(reqs.coreGroups, courses, consumed, crosslistLookup);
+    coreSection.groups = fillGroups(reqs.coreGroups, courses, consumed, crosslistLookup, catalogByCode);
   }
-  coreSection.results = fillSlots(reqs.core, courses, consumed, crosslistLookup);
+  coreSection.results = fillSlots(reqs.core, courses, consumed, crosslistLookup, catalogByCode);
   if (reqs.senior?.length || reqs.seniorGroups?.length) {
     const seniorSection: MajorAuditSection = { title: "Senior requirement", results: [] };
     if (reqs.seniorGroups?.length) {
-      seniorSection.groups = fillGroups(reqs.seniorGroups, courses, consumed, crosslistLookup);
+      seniorSection.groups = fillGroups(reqs.seniorGroups, courses, consumed, crosslistLookup, catalogByCode);
     }
-    seniorSection.results = fillSlots(reqs.senior ?? [], courses, consumed, crosslistLookup);
+    seniorSection.results = fillSlots(reqs.senior ?? [], courses, consumed, crosslistLookup, catalogByCode);
     sections.push(seniorSection);
   }
   return sections;
@@ -284,6 +299,7 @@ export function auditOneCertificate(
   courses: UserCourse[],
   certificateId: string,
   crosslistLookup?: CrosslistLookup,
+  catalogByCode?: Record<string, { ycAttributes?: string[] }>,
 ): CertificateAudit | null {
   const certificate = resolveCertificate(certificateId);
   if (!certificate) return null;
@@ -295,10 +311,11 @@ export function auditOneCertificate(
       courses,
       consumed,
       crosslistLookup,
+      catalogByCode,
     );
     prerequisiteResult = prereqResults[0];
   }
-  const results = fillSlots(certificate.requirements, courses, consumed, crosslistLookup);
+  const results = fillSlots(certificate.requirements, courses, consumed, crosslistLookup, catalogByCode);
   return {
     certificate,
     prerequisiteResult,
@@ -311,11 +328,12 @@ export function auditCertificates(
   courses: UserCourse[],
   certificateIds: string[] | null | undefined,
   crosslistLookup?: CrosslistLookup,
+  catalogByCode?: Record<string, { ycAttributes?: string[] }>,
 ): CertificateAudit[] {
   if (!certificateIds?.length) return [];
   const audits: CertificateAudit[] = [];
   for (const rawId of certificateIds) {
-    const audit = auditOneCertificate(courses, rawId, crosslistLookup);
+    const audit = auditOneCertificate(courses, rawId, crosslistLookup, catalogByCode);
     if (audit) audits.push(audit);
   }
   return audits;
@@ -383,12 +401,12 @@ function suggestForSlot(
   if (remaining <= 0) return;
   (slot.codes ?? []).slice(0, remaining).forEach((code) => pushIf(code, reason, priority));
   const explicitCount = Math.min(remaining, slot.codes?.length ?? 0);
-  const prefixNeed = remaining - explicitCount;
-  if (prefixNeed > 0 && slot.codePrefix?.length) {
+  const browseNeed = remaining - explicitCount;
+  if (browseNeed > 0 && (slot.codePrefix?.length || slot.requiredAttributes?.length)) {
     let added = 0;
     for (const c of Object.values(catalogByCode)) {
-      if (added >= prefixNeed) break;
-      if (!catalogMatchesSlot(c, slot, crosslistLookup)) continue;
+      if (added >= browseNeed) break;
+      if (!catalogMatchesSlot(c, slot, crosslistLookup, catalogByCode)) continue;
       const key = c.code.toUpperCase();
       if (completedCodes.has(key) || seen.has(c.code)) continue;
       pushIf(c.code, reason, priority);
@@ -531,7 +549,7 @@ export function suggestRoadmap(
     }
   }
 
-  for (const certAudit of auditCertificates(courses, certificateIds, crosslistLookup)) {
+  for (const certAudit of auditCertificates(courses, certificateIds, crosslistLookup, catalogByCode)) {
     for (const r of certAudit.results) {
       if (r.satisfied) continue;
       suggestForSlot(

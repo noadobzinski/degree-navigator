@@ -45,6 +45,47 @@ export function buildMergedCatalog(courses: CatalogCourse[]): Record<string, Cat
   return merged;
 }
 
+export type AuditCatalogByCode = Record<string, { ycAttributes?: string[] }>;
+
+/** YC attribute lookup for certificate audits (merged static + CourseTable catalog). */
+export function buildAuditCatalogByCode(courses: CatalogCourse[]): AuditCatalogByCode {
+  const merged = buildMergedCatalog(courses);
+  const out: AuditCatalogByCode = {};
+  for (const [code, course] of Object.entries(merged)) {
+    if (course.ycAttributes?.length) {
+      out[code] = { ycAttributes: course.ycAttributes };
+    }
+  }
+  return out;
+}
+
+let auditCatalogCache: { seasons: string; catalog: AuditCatalogByCode; fetchedAt: number } | null =
+  null;
+
+export async function getAuditCatalogByCode(
+  seasons: string[] = [currentSeasonCode()],
+): Promise<AuditCatalogByCode> {
+  const key = [...seasons].sort().join(",");
+  if (
+    auditCatalogCache &&
+    auditCatalogCache.seasons === key &&
+    Date.now() - auditCatalogCache.fetchedAt < CACHE_TTL_MS
+  ) {
+    return auditCatalogCache.catalog;
+  }
+  const all: CatalogCourse[] = [];
+  for (const season of seasons) {
+    try {
+      all.push(...(await fetchSeasonCatalog(season)));
+    } catch {
+      /* skip unavailable terms */
+    }
+  }
+  const catalog = buildAuditCatalogByCode(all);
+  auditCatalogCache = { seasons: key, catalog, fetchedAt: Date.now() };
+  return catalog;
+}
+
 let crosslistCache: { seasons: string; lookup: CrosslistLookup; fetchedAt: number } | null = null;
 
 /** Cross-list groups from CourseTable catalog (cached ~1 hour). */
