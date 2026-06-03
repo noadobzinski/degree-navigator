@@ -1,18 +1,28 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { getMyCourses, addCourse, updateCourse, deleteCourse } from "@/lib/audit.functions";
+import { getMyCourses, getProfile, addCourse, updateCourse, deleteCourse } from "@/lib/audit.functions";
 import {
   useCourseTableCatalogMeta,
   useCourseTableCatalogSearch,
   useClientQueryEnabled,
 } from "@/hooks/use-coursetable-catalog";
 import { CATALOG, CATALOG_BY_CODE, type CatalogCourse } from "@/data/courses";
+import { currentSeasonCode } from "@/lib/coursetable";
+import {
+  catalogSeasonsForClassYear,
+  courseTakenKey,
+  firstFallYearForClass,
+  recentCatalogSeasons,
+  seasonToTermFields,
+  type CatalogSeason,
+} from "@/lib/coursetable-seasons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2, Plus, Search, Database, AlertCircle, ExternalLink, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
@@ -25,6 +35,7 @@ export const Route = createFileRoute("/_authenticated/courses")({
 
 function CoursesPage() {
   const fetchCourses = useServerFn(getMyCourses);
+  const fetchProfile = useServerFn(getProfile);
   const addFn = useServerFn(addCourse);
   const updateFn = useServerFn(updateCourse);
   const deleteFn = useServerFn(deleteCourse);
@@ -35,16 +46,36 @@ function CoursesPage() {
     queryFn: () => fetchCourses(),
     enabled: clientReady,
   });
+  const profileQ = useQuery({
+    queryKey: ["profile"],
+    queryFn: () => fetchProfile(),
+    enabled: clientReady,
+  });
   const metaQ = useCourseTableCatalogMeta();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [catalogSeason, setCatalogSeason] = useState(() => currentSeasonCode());
+
+  const classYear = profileQ.data?.class_year ?? null;
+  const catalogSeasons: CatalogSeason[] = useMemo(() => {
+    if (classYear) return catalogSeasonsForClassYear(classYear);
+    return recentCatalogSeasons();
+  }, [classYear]);
+
+  useEffect(() => {
+    if (!catalogSeasons.some((s) => s.code === catalogSeason)) {
+      setCatalogSeason(catalogSeasons.at(-1)?.code ?? currentSeasonCode());
+    }
+  }, [catalogSeasons, catalogSeason]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
     return () => clearTimeout(t);
   }, [search]);
 
-  const catalogQ = useCourseTableCatalogSearch(debouncedSearch, 50);
+  const catalogQ = useCourseTableCatalogSearch(debouncedSearch, 50, catalogSeason);
+  const selectedSeasonLabel =
+    catalogSeasons.find((s) => s.code === catalogSeason)?.label ?? catalogSeason;
 
   const catalogCourses: CatalogCourse[] = catalogQ.data?.courses ?? [];
   const usingLiveCatalog = !catalogQ.isError && (catalogQ.isSuccess || !!metaQ.data);
@@ -60,6 +91,8 @@ function CoursesPage() {
   }, [debouncedSearch]);
   const browseCourses = usingLiveCatalog ? catalogCourses : fallbackCourses;
 
+  const { term: addTerm, year: addYear } = seasonToTermFields(catalogSeason);
+
   const addM = useMutation({
     mutationFn: (course: CatalogCourse) =>
       addFn({
@@ -69,11 +102,13 @@ function CoursesPage() {
           credits: course.credits,
           distributional: course.distributional,
           skills: course.skills,
-          status: "completed",
+          term: addTerm,
+          year: addYear,
+          status: catalogSeason === currentSeasonCode() ? "in_progress" : "completed",
         },
       }),
     onSuccess: () => {
-      toast.success("Course added");
+      toast.success(`Added for ${selectedSeasonLabel}`);
       qc.invalidateQueries({ queryKey: ["courses"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
@@ -91,7 +126,10 @@ function CoursesPage() {
     },
   });
 
-  const taken = new Set((coursesQ.data ?? []).map((c) => c.course_code));
+  const taken = new Set(
+    (coursesQ.data ?? []).map((c) => courseTakenKey(c.course_code, c.term, c.year)),
+  );
+  const takenThisSeason = (code: string) => taken.has(courseTakenKey(code, addTerm, addYear));
 
   function resolveCourse(code: string): CatalogCourse {
     const fromBrowse = browseCourses.find((c) => c.code === code);
@@ -111,8 +149,21 @@ function CoursesPage() {
       <div>
         <h1 className="font-serif text-3xl font-bold">My Courses</h1>
         <p className="text-muted-foreground">
-          Yale courses load automatically from CourseTable — search and add them to your degree audit.
+          Search CourseTable by semester — pick the term when you took (or plan to take) each course.
         </p>
+        {classYear ? (
+          <p className="mt-1 text-sm text-muted-foreground">
+            Class of {classYear} · catalogs from Fall {firstFallYearForClass(classYear)} through today
+          </p>
+        ) : (
+          <p className="mt-1 text-sm text-muted-foreground">
+            Set your{" "}
+            <Link to="/settings" className="font-medium text-primary hover:underline">
+              class year
+            </Link>{" "}
+            in Settings to see every semester since you started at Yale.
+          </p>
+        )}
       </div>
 
       {catalogQ.isError ? (
@@ -121,8 +172,8 @@ function CoursesPage() {
             <div className="flex items-start gap-2 text-sm">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
               <p>
-                Could not reach CourseTable right now — showing a small sample instead.
-                The catalog usually loads automatically when you sign in.
+                Could not load the {selectedSeasonLabel} catalog — showing a small sample instead.
+                Retry in a moment; no Yale NetID sign-in is required.
               </p>
             </div>
             <Button variant="outline" size="sm" onClick={() => catalogQ.refetch()} disabled={catalogQ.isFetching}>
@@ -136,27 +187,48 @@ function CoursesPage() {
       <Card>
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0">
           <CardTitle className="font-serif">Browse catalog</CardTitle>
-          {usingLiveCatalog && metaQ.data ? (
+          {usingLiveCatalog && catalogQ.data ? (
             <Badge variant="secondary" className="gap-1 font-normal">
               <Database className="h-3 w-3" />
-              CourseTable · {metaQ.data.courseCount.toLocaleString()} courses
+              {selectedSeasonLabel} · {(catalogQ.data.total ?? browseCourses.length).toLocaleString()} courses
             </Badge>
           ) : (
             <Badge variant="outline" className="font-normal">Sample catalog</Badge>
           )}
         </CardHeader>
         <CardContent>
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search by code, title, or subject (e.g. CPSC, biology)"
-              className="pl-9"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+          <div className="mb-4 grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="catalog-season">Semester catalog</Label>
+              <Select value={catalogSeason} onValueChange={setCatalogSeason}>
+                <SelectTrigger id="catalog-season">
+                  <SelectValue placeholder="Choose semester" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[...catalogSeasons].reverse().map((s) => (
+                    <SelectItem key={s.code} value={s.code}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="relative space-y-1.5">
+              <Label htmlFor="course-search">Search</Label>
+              <Search className="absolute left-3 top-[2.15rem] h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id="course-search"
+                placeholder="Code, title, or subject (e.g. CPSC 323)"
+                className="pl-9"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
           </div>
           {catalogQ.isLoading ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">Loading catalog…</p>
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              Loading {selectedSeasonLabel} catalog…
+            </p>
           ) : null}
           <div className="grid max-h-[420px] gap-2 overflow-y-auto">
             {browseCourses.map((c) => (
@@ -196,10 +268,10 @@ function CoursesPage() {
                 </div>
                 <Button
                   size="sm"
-                  disabled={taken.has(c.code) || addM.isPending}
+                  disabled={takenThisSeason(c.code) || addM.isPending}
                   onClick={() => addM.mutate(resolveCourse(c.code))}
                 >
-                  {taken.has(c.code) ? (
+                  {takenThisSeason(c.code) ? (
                     "Added"
                   ) : (
                     <>
@@ -235,6 +307,11 @@ function CoursesPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold">{c.course_code}</span>
                     <span className="truncate text-sm text-muted-foreground">{c.course_title}</span>
+                    {c.term && c.year ? (
+                      <Badge variant="outline" className="text-[10px] font-normal">
+                        {c.term} {c.year}
+                      </Badge>
+                    ) : null}
                   </div>
                   <div className="mt-1 flex flex-wrap gap-1">
                     {c.distributional?.map((d: string) => (

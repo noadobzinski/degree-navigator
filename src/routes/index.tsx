@@ -23,9 +23,14 @@ function Landing() {
             <GraduationCap className="h-6 w-6 text-primary" />
             <span className="font-serif text-xl font-bold text-primary">BluePath</span>
           </div>
-          <Link to="/login" className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-            Sign in
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link to="/catalog" className="rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-accent">
+              Browse courses
+            </Link>
+            <Link to="/login" className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+              Sign in
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -41,11 +46,21 @@ function Landing() {
             Plan your major, track your distributional credits, and see exactly what's left for premed,
             prelaw, prevet, or just graduation — without a spreadsheet.
           </p>
-          <div className="mt-10 flex justify-center gap-3">
+          <div className="mt-10 flex flex-wrap justify-center gap-3">
+            <Link to="/catalog" className="rounded-md border border-border px-6 py-3 text-sm font-semibold hover:bg-accent">
+              Browse Yale courses
+            </Link>
             <Link to="/login" className="rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
               Start your audit
             </Link>
           </div>
+          <p className="mt-4 text-sm text-muted-foreground">
+            Course catalog powered by{" "}
+            <a href="https://coursetable.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+              CourseTable
+            </a>
+            — no Yale NetID required to search.
+          </p>
         </section>
 
         <section className="mx-auto grid max-w-5xl gap-6 px-6 pb-24 md:grid-cols-3">

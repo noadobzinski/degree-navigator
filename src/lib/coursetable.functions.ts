@@ -10,22 +10,18 @@ import {
   type CourseTableCourse,
 } from "@/lib/coursetable";
 
-type CatalogCache = {
-  season: string;
+type CatalogCacheEntry = {
   courses: CatalogCourse[];
   fetchedAt: number;
 };
 
-let catalogCache: CatalogCache | null = null;
+const catalogCacheBySeason = new Map<string, CatalogCacheEntry>();
 const CACHE_TTL_MS = 60 * 60 * 1000;
 
 async function fetchSeasonCatalog(season: string): Promise<CatalogCourse[]> {
-  if (
-    catalogCache &&
-    catalogCache.season === season &&
-    Date.now() - catalogCache.fetchedAt < CACHE_TTL_MS
-  ) {
-    return catalogCache.courses;
+  const cached = catalogCacheBySeason.get(season);
+  if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
+    return cached.courses;
   }
 
   const res = await fetch(`${COURSETABLE_API}/api/catalog/public/${season}`, {
@@ -37,7 +33,7 @@ async function fetchSeasonCatalog(season: string): Promise<CatalogCourse[]> {
 
   const raw = (await res.json()) as CourseTableCourse[];
   const courses = dedupeCourseTableCourses(raw);
-  catalogCache = { season, courses, fetchedAt: Date.now() };
+  catalogCacheBySeason.set(season, { courses, fetchedAt: Date.now() });
   return courses;
 }
 

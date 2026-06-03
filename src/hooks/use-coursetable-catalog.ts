@@ -5,9 +5,11 @@ import {
   getCourseTableCatalogMeta,
   searchCourseTableCatalog,
 } from "@/lib/coursetable.functions";
+import { currentSeasonCode } from "@/lib/coursetable";
 
 export const coursetableMetaKey = ["coursetable-meta"] as const;
-export const coursetableCatalogKey = (query = "") => ["coursetable-catalog", query] as const;
+export const coursetableCatalogKey = (query = "", season?: string) =>
+  ["coursetable-catalog", season ?? "current", query] as const;
 
 const isBrowser = typeof window !== "undefined";
 
@@ -25,7 +27,7 @@ export function usePrefetchCourseTableCatalog() {
       staleTime: 60 * 60 * 1000,
     });
     void qc.prefetchQuery({
-      queryKey: coursetableCatalogKey(""),
+      queryKey: coursetableCatalogKey("", undefined),
       queryFn: () => searchFn({ data: { limit: 100 } }),
       staleTime: 5 * 60 * 1000,
     });
@@ -43,11 +45,15 @@ export function useCourseTableCatalogMeta() {
   });
 }
 
-export function useCourseTableCatalogSearch(query: string, limit = 50) {
+export function useCourseTableCatalogSearch(query: string, limit = 50, season?: string) {
   const searchFn = useServerFn(searchCourseTableCatalog);
+  const seasonCode = season ?? currentSeasonCode();
   return useQuery({
-    queryKey: coursetableCatalogKey(query),
-    queryFn: () => searchFn({ data: { query: query || undefined, limit } }),
+    queryKey: coursetableCatalogKey(query, seasonCode),
+    queryFn: () =>
+      searchFn({
+        data: { query: query || undefined, limit, season: seasonCode },
+      }),
     enabled: isBrowser,
     staleTime: 5 * 60 * 1000,
     retry: 2,
