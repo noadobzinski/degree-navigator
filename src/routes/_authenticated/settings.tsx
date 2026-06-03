@@ -6,7 +6,8 @@ import { z } from "zod";
 import { getProfile, updateProfile } from "@/lib/audit.functions";
 import { unlinkCourseTable } from "@/lib/coursetable.functions";
 import { useCourseTableCatalogMeta, useClientQueryEnabled } from "@/hooks/use-coursetable-catalog";
-import { MAJORS_BY_ID } from "@/data/majors";
+import { CERTIFICATES } from "@/data/certificates";
+import { concentrationsForMajor, MAJORS_BY_ID } from "@/data/majors";
 import { TRACKS } from "@/data/tracks";
 import { MajorPicker } from "@/components/major-picker";
 import { YaleNetIdButton } from "@/components/yale-netid-button";
@@ -46,6 +47,8 @@ function SettingsPage() {
   const [doubleMajor, setDoubleMajor] = useState(false);
   const [secondMajorId, setSecondMajorId] = useState<string>("");
   const [secondDegree, setSecondDegree] = useState<"BA" | "BS">("BA");
+  const [concentrationId, setConcentrationId] = useState<string>("");
+  const [certificateIds, setCertificateIds] = useState<string[]>([]);
   const [trackId, setTrackId] = useState<string>("none");
   const [year, setYear] = useState<string>("");
 
@@ -59,6 +62,8 @@ function SettingsPage() {
     setDoubleMajor(!!second);
     setSecondMajorId(second);
     setSecondDegree(((p.second_degree_type as "BA" | "BS") ?? p.degree_type ?? "BA") as "BA" | "BS");
+    setConcentrationId(p.concentration_id ?? "");
+    setCertificateIds(p.certificate_ids ?? []);
     setTrackId(p.track_id ?? "none");
     setYear(p.class_year ? String(p.class_year) : "");
   }, [profileQ.data]);
@@ -74,6 +79,14 @@ function SettingsPage() {
   const secondMajor = secondMajorId ? MAJORS_BY_ID[secondMajorId] : null;
   const availableDegrees = major?.degrees ?? ["BA", "BS"];
   const secondDegrees = secondMajor?.degrees ?? ["BA", "BS"];
+  const concentrations = concentrationsForMajor(major ?? undefined, degree);
+
+  useEffect(() => {
+    if (!concentrationId) return;
+    if (!concentrations.some((c) => c.id === concentrationId)) {
+      setConcentrationId("");
+    }
+  }, [majorId, degree, concentrationId, concentrations]);
 
   const saveM = useMutation({
     mutationFn: () => {
@@ -88,6 +101,8 @@ function SettingsPage() {
           second_major_id: doubleMajor && secondMajorId ? secondMajorId : null,
           second_degree_type:
             doubleMajor && secondMajorId ? secondDegree : null,
+          concentration_id: concentrationId || null,
+          certificate_ids: certificateIds,
           track_id: trackId === "none" ? null : trackId,
           class_year: year ? parseInt(year, 10) : null,
         },
@@ -113,7 +128,7 @@ function SettingsPage() {
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
         <h1 className="font-serif text-3xl font-bold">Settings</h1>
-        <p className="text-muted-foreground">Choose your major, degree type, and track.</p>
+        <p className="text-muted-foreground">Choose your major, concentration, certificates, and track.</p>
       </div>
 
       <Card>
@@ -128,10 +143,43 @@ function SettingsPage() {
             <Label>Major</Label>
             <MajorPicker
               value={majorId}
-              onChange={setMajorId}
+              onChange={(id) => {
+                setMajorId(id);
+                setConcentrationId("");
+              }}
               onDegreeDefault={setDegree}
             />
           </div>
+
+          {concentrations.length > 0 ? (
+            <div className="space-y-1.5">
+              <Label>Concentration</Label>
+              <Select
+                value={concentrationId || "__none__"}
+                onValueChange={(v) => setConcentrationId(v === "__none__" ? "" : v)}
+              >
+                <SelectTrigger><SelectValue placeholder="Standard major requirements" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Standard / no concentration selected</SelectItem>
+                  {concentrations.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {concentrationId ? (
+                <p className="text-xs text-muted-foreground">
+                  {concentrations.find((c) => c.id === concentrationId)?.description ??
+                    "Audit uses this concentration’s roadmap requirements."}
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Optional. Select a concentration if your roadmap lists one (e.g. BENG, PHIL, CPLT Film).
+                </p>
+              )}
+            </div>
+          ) : null}
 
           <div className="space-y-1.5">
             <Label>Degree</Label>
@@ -197,11 +245,45 @@ function SettingsPage() {
             </div>
           ) : null}
 
+          <div className="space-y-2">
+            <Label>Certificates (optional)</Label>
+            <p className="text-xs text-muted-foreground">
+              Structured credentials audited separately from your major (YCPS certificate programs).
+            </p>
+            <div className="space-y-2 rounded-md border border-border p-3">
+              {CERTIFICATES.map((cert) => {
+                const checked = certificateIds.includes(cert.id);
+                return (
+                  <div key={cert.id} className="flex items-start gap-3">
+                    <Checkbox
+                      id={`cert-${cert.id}`}
+                      checked={checked}
+                      onCheckedChange={(v) => {
+                        if (v === true) {
+                          setCertificateIds((ids) => [...new Set([...ids, cert.id])]);
+                        } else {
+                          setCertificateIds((ids) => ids.filter((id) => id !== cert.id));
+                        }
+                      }}
+                    />
+                    <div className="space-y-0.5">
+                      <Label htmlFor={`cert-${cert.id}`} className="cursor-pointer font-medium">
+                        {cert.name}
+                      </Label>
+                      <p className="text-xs text-muted-foreground">{cert.description}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           <div className="space-y-1.5">
             <Label>Track (optional)</Label>
             <Select value={trackId} onValueChange={setTrackId}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
+                <SelectItem value="none">None</SelectItem>
                 {TRACKS.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
               </SelectContent>
             </Select>

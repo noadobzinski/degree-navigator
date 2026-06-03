@@ -16,7 +16,9 @@ export type Database = {
     Tables: {
       profiles: {
         Row: {
+          certificate_ids: string[]
           class_year: number | null
+          concentration_id: string | null
           coursetable_connected_at: string | null
           coursetable_netid: string | null
           created_at: string
@@ -31,7 +33,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          certificate_ids?: string[]
           class_year?: number | null
+          concentration_id?: string | null
           coursetable_connected_at?: string | null
           coursetable_netid?: string | null
           created_at?: string
@@ -46,7 +50,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          certificate_ids?: string[]
           class_year?: number | null
+          concentration_id?: string | null
           coursetable_connected_at?: string | null
           coursetable_netid?: string | null
           created_at?: string

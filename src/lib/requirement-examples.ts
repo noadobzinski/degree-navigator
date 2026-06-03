@@ -1,7 +1,12 @@
 import type { CatalogCourse } from "@/data/courses";
 import { CATALOG_BY_CODE } from "@/data/courses";
 import type { RequirementSlot } from "@/data/majors";
-import { MAJORS_BY_ID, mergeElectivesIntoCore, type MajorRequirements } from "@/data/majors";
+import {
+  MAJORS_BY_ID,
+  mergeElectivesIntoCore,
+  resolveMajorRequirements,
+  type MajorRequirements,
+} from "@/data/majors";
 import { TRACKS_BY_ID } from "@/data/tracks";
 import { catalogMatchesSlot } from "@/lib/audit";
 import { canonicalCourseCode } from "@/lib/course-codes";
@@ -156,10 +161,11 @@ export function getMajorExampleSections(
   seasonByCode: Map<string, string[]>,
   currentSeason: string,
   crosslistLookup?: CrosslistLookup,
+  concentrationId?: string | null,
 ): SlotExamplesGroup[] {
   const major = MAJORS_BY_ID[majorId];
   if (!major) return [];
-  const reqs = major.requirements[degree] ?? Object.values(major.requirements)[0];
+  const reqs = resolveMajorRequirements(major, degree, concentrationId);
   if (!reqs) return [];
   return buildSlotExampleGroups(
     collectSlotsFromRequirements(reqs),

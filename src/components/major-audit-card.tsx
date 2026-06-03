@@ -22,7 +22,10 @@ type MajorAuditCardProps = {
 };
 
 export function MajorAuditCard({ audit, title, examplesQ, crosslistLookup }: MajorAuditCardProps) {
-  const heading = title ?? `${audit.major.name} (${audit.degree}) requirements`;
+  const conc = audit.concentration?.label;
+  const heading =
+    title ??
+    `${audit.major.name}${conc ? ` · ${conc}` : ""} (${audit.degree}) requirements`;
 
   return (
     <Card>

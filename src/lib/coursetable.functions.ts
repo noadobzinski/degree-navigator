@@ -39,6 +39,8 @@ export const getRoadmapSuggestions = createServerFn({ method: "POST" })
         degree: z.enum(["BA", "BS"]),
         secondMajorId: z.string().nullable().optional(),
         secondDegree: z.enum(["BA", "BS"]).optional(),
+        concentrationId: z.string().nullable().optional(),
+        certificateIds: z.array(z.string()).optional(),
         trackId: z.string().nullable(),
         season: z.string().regex(/^\d{6}$/).optional(),
       })
@@ -58,6 +60,8 @@ export const getRoadmapSuggestions = createServerFn({ method: "POST" })
       data.secondMajorId ?? null,
       data.secondDegree,
       crosslistLookup,
+      data.concentrationId ?? null,
+      data.certificateIds ?? null,
     );
     return {
       season,
@@ -107,6 +111,7 @@ export const getRequirementExamples = createServerFn({ method: "POST" })
       .object({
         majorId: z.string().min(1),
         degree: z.enum(["BA", "BS"]),
+        concentrationId: z.string().optional().nullable(),
         trackId: z.string().optional().nullable(),
         classYear: z.number().int().min(2020).max(2035).optional().nullable(),
       })
@@ -177,6 +182,7 @@ export const getRequirementExamples = createServerFn({ method: "POST" })
       seasonByCode,
       currentSeason,
       crosslistLookup,
+      data.concentrationId,
     );
     const track = getTrackExampleSections(
       data.trackId,

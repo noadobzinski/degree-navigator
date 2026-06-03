@@ -36,6 +36,19 @@ export type MajorRequirements = {
 /** Yale College: at most two term courses may overlap between two majors. */
 export const YALE_DOUBLE_MAJOR_MAX_OVERLAP = 2;
 
+/** Variant within a major (roadmap track, B.S. concentration, etc.). */
+export type MajorConcentration = {
+  id: string;
+  label: string;
+  description?: string;
+  /** If set, only shown for these degrees. */
+  degrees?: ("BA" | "BS")[];
+  requirements: {
+    BA?: MajorRequirements;
+    BS?: MajorRequirements;
+  };
+};
+
 export type Major = {
   id: string;
   /** Yale subject code from the official Major Roadmaps (e.g. "CPSC", "EP&E"). */
@@ -48,6 +61,8 @@ export type Major = {
     BA?: MajorRequirements;
     BS?: MajorRequirements;
   };
+  /** Roadmap concentrations / tracks; when set, user picks one in Settings. */
+  concentrations?: MajorConcentration[];
   notes?: string;
 };
 

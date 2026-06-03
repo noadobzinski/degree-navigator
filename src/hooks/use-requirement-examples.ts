@@ -6,24 +6,28 @@ import type { CourseExample } from "@/lib/requirement-examples";
 export const requirementExamplesKey = (
   majorId: string,
   degree: string,
+  concentrationId: string | null | undefined,
   trackId: string | null | undefined,
   classYear: number | null | undefined,
-) => ["requirement-examples", majorId, degree, trackId ?? "none", classYear ?? ""] as const;
+) =>
+  ["requirement-examples", majorId, degree, concentrationId ?? "", trackId ?? "none", classYear ?? ""] as const;
 
 export function useRequirementExamples(
   majorId: string | null | undefined,
   degree: "BA" | "BS" | null | undefined,
   trackId: string | null | undefined,
   classYear: number | null | undefined,
+  concentrationId?: string | null,
 ) {
   const fn = useServerFn(getRequirementExamples);
   return useQuery({
-    queryKey: requirementExamplesKey(majorId ?? "", degree ?? "BA", trackId, classYear),
+    queryKey: requirementExamplesKey(majorId ?? "", degree ?? "BA", concentrationId, trackId, classYear),
     queryFn: () =>
       fn({
         data: {
           majorId: majorId!,
           degree: degree!,
+          concentrationId: concentrationId ?? null,
           trackId: trackId ?? null,
           classYear: classYear ?? null,
         },

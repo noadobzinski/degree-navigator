@@ -1,12 +1,15 @@
 import { CATALOG_BY_CODE, type CatalogCourse } from "@/data/courses";
 import { DISTRIBUTIONAL_REQUIREMENTS, GRADUATION_CREDITS } from "@/data/distributional";
+import { CERTIFICATES_BY_ID } from "@/data/certificates";
 import {
   MAJORS_BY_ID,
   mergeElectivesIntoCore,
+  resolveMajorRequirements,
   YALE_DOUBLE_MAJOR_MAX_OVERLAP,
   type RequirementGroup,
   type RequirementSlot,
   type MajorRequirements,
+  type MajorConcentration,
 } from "@/data/majors";
 import { TRACKS_BY_ID } from "@/data/tracks";
 import {
@@ -238,6 +241,7 @@ export function coursesUsedInMajorAudit(sections: MajorAuditSection[]): UserCour
 export type MajorAudit = {
   major: (typeof MAJORS_BY_ID)[string];
   degree: "BA" | "BS";
+  concentration?: MajorConcentration;
   reqs: MajorRequirements;
   sections: MajorAuditSection[];
   satisfiedCount: number;
@@ -249,16 +253,49 @@ export function auditMajor(
   majorId: string,
   degree: "BA" | "BS",
   crosslistLookup?: CrosslistLookup,
+  concentrationId?: string | null,
 ): MajorAudit | null {
   const major = MAJORS_BY_ID[majorId];
   if (!major) return null;
-  const rawReqs = major.requirements[degree] ?? Object.values(major.requirements)[0];
+  const rawReqs = resolveMajorRequirements(major, degree, concentrationId);
   if (!rawReqs) return null;
   const reqs = mergeElectivesIntoCore(rawReqs);
+  const concentration = concentrationId
+    ? major.concentrations?.find((c) => c.id === concentrationId)
+    : undefined;
   const consumed = new Set<string>();
   const sections = auditRequirementSections(reqs, courses, consumed, crosslistLookup);
   const { satisfiedCount, totalCount } = countMajorAuditUnits(sections);
-  return { major, degree, reqs, sections, satisfiedCount, totalCount };
+  return { major, degree, concentration, reqs, sections, satisfiedCount, totalCount };
+}
+
+export type CertificateAudit = {
+  certificate: (typeof CERTIFICATES_BY_ID)[string];
+  results: SlotResult[];
+  satisfiedCount: number;
+  totalCount: number;
+};
+
+export function auditCertificates(
+  courses: UserCourse[],
+  certificateIds: string[] | null | undefined,
+  crosslistLookup?: CrosslistLookup,
+): CertificateAudit[] {
+  if (!certificateIds?.length) return [];
+  const audits: CertificateAudit[] = [];
+  for (const id of certificateIds) {
+    const certificate = CERTIFICATES_BY_ID[id];
+    if (!certificate) continue;
+    const consumed = new Set<string>();
+    const results = fillSlots(certificate.requirements, courses, consumed, crosslistLookup);
+    audits.push({
+      certificate,
+      results,
+      satisfiedCount: results.filter((r) => r.satisfied).length,
+      totalCount: results.length,
+    });
+  }
+  return audits;
 }
 
 export type DoubleMajorOverlap = {
@@ -394,6 +431,8 @@ export function suggestRoadmap(
   secondMajorId?: string | null,
   secondDegree?: "BA" | "BS",
   crosslistLookup?: CrosslistLookup,
+  concentrationId?: string | null,
+  certificateIds?: string[] | null,
 ): { priority: "high" | "med" | "low"; code: string; title: string; reason: string }[] {
   const completedCodes = new Set(courses.map((c) => c.course_code.toUpperCase()));
   const suggestions: { priority: "high" | "med" | "low"; code: string; title: string; reason: string }[] = [];
@@ -408,11 +447,18 @@ export function suggestRoadmap(
   };
 
   if (majorId) {
-    const audit = auditMajor(courses.map((c) => ({ ...c })), majorId, degree, crosslistLookup);
+    const audit = auditMajor(
+      courses.map((c) => ({ ...c })),
+      majorId,
+      degree,
+      crosslistLookup,
+      concentrationId,
+    );
     if (audit) {
+      const label = audit.concentration ? `Major (${audit.concentration.label})` : "Major";
       suggestFromMajorAudit(
         audit,
-        "Major",
+        label,
         completedCodes,
         seen,
         suggestions,
@@ -459,6 +505,24 @@ export function suggestRoadmap(
           crosslistLookup,
         );
       }
+    }
+  }
+
+  for (const certAudit of auditCertificates(courses, certificateIds, crosslistLookup)) {
+    for (const r of certAudit.results) {
+      if (r.satisfied) continue;
+      suggestForSlot(
+        r.slot,
+        r.remaining,
+        `${certAudit.certificate.name}: ${r.slot.label}`,
+        "med",
+        completedCodes,
+        seen,
+        suggestions,
+        catalogByCode,
+        pushIf,
+        crosslistLookup,
+      );
     }
   }
 

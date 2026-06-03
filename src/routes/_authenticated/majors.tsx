@@ -4,6 +4,7 @@ import {
   MAJORS,
   MAJOR_DEPARTMENTS,
   YALE_ROADMAP_PDF,
+  concentrationsForMajor,
   majorCourseCount,
   mergeElectivesIntoCore,
   type Major,
@@ -200,6 +201,16 @@ function MajorsPage() {
                     {selected.notes}
                   </p>
                 )}
+                {concentrationsForMajor(selected, previewDegree).length > 0 ? (
+                  <div>
+                    <p className="text-sm font-medium">Concentrations</p>
+                    <ul className="mt-1 list-inside list-disc text-sm text-muted-foreground">
+                      {concentrationsForMajor(selected, previewDegree).map((c) => (
+                        <li key={c.id}>{c.label}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
                 <RequirementSummary major={selected} degree={previewDegree} />
                 {selected.degrees.length > 1 && selected.degrees.includes("BS") && previewDegree === "BA" && (
                   <p className="text-xs text-muted-foreground">

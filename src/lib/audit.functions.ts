@@ -34,6 +34,8 @@ export const updateProfile = createServerFn({ method: "POST" })
         major_id: z.string().max(50).optional().nullable(),
         second_major_id: z.string().max(50).optional().nullable(),
         second_degree_type: z.enum(["BA", "BS"]).optional().nullable(),
+        concentration_id: z.string().max(50).optional().nullable(),
+        certificate_ids: z.array(z.string().max(50)).max(8).optional(),
         track_id: z.string().max(50).optional().nullable(),
         degree_type: z.enum(["BA", "BS"]).optional().nullable(),
         class_year: z.number().int().min(2020).max(2035).optional().nullable(),

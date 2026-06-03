@@ -170,31 +170,52 @@ export const DETAILED_MAJORS: Major[] = [
         core: [
           { id: "intro", label: "2 introductory PLSC courses", codePrefix: ["PLSC"], maxLevel: 1999, needCount: 2 },
           { id: "lectures", label: "2 non-intro core lecture courses", codePrefix: ["PLSC"], minLevel: 200, needCount: 2 },
-          {
-            id: "methods",
-            label: "1 methodology and formal theory course",
-            codePrefix: ["PLSC"],
-            needCount: 1,
-          },
-          {
-            id: "subfields",
-            label: "2 courses each in 2 of 4 subfields (IR, American, philosophy, comparative)",
-            codePrefix: ["PLSC"],
-            needCount: 4,
-          },
+          { id: "methods", label: "1 methodology and formal theory course", codePrefix: ["PLSC"], needCount: 1 },
+          { id: "subfields", label: "2 courses each in 2 of 4 subfields", codePrefix: ["PLSC"], needCount: 4 },
           { id: "seminars", label: "2 departmental seminars (1 in senior year)", codePrefix: ["PLSC"], minLevel: 300, needCount: 2 },
-          {
-            id: "outside",
-            label: "2 courses in other departments (DUS approval)",
-            codePrefix: ["PLSC", "ECON", "HIST", "PHIL", "SOCY", "GLBL"],
-            needCount: 2,
-          },
+          { id: "outside", label: "2 courses in other departments (DUS approval)", codePrefix: ["PLSC", "ECON", "HIST", "PHIL", "SOCY", "GLBL"], needCount: 2 },
         ],
-        senior: [
-          { id: "senior", label: "Senior essay (seminar or PLSC 4900)", codePrefix: ["PLSC"], minLevel: 490, needCount: 1 },
-        ],
+        senior: [{ id: "senior", label: "Senior essay (seminar or PLSC 4900)", codePrefix: ["PLSC"], minLevel: 490, needCount: 1 }],
       },
     },
+    concentrations: [
+      {
+        id: "intensive",
+        label: "Intensive major",
+        requirements: {
+          BA: {
+            totalCourses: 15,
+            core: [
+              { id: "intro", label: "2 introductory PLSC courses", codePrefix: ["PLSC"], maxLevel: 1999, needCount: 2 },
+              { id: "lectures", label: "2 non-intro core lecture courses", codePrefix: ["PLSC"], minLevel: 200, needCount: 2 },
+              { id: "methods", label: "1 methodology and formal theory course", codePrefix: ["PLSC"], needCount: 1 },
+              { id: "subfields", label: "2 courses each in 2 of 4 subfields", codePrefix: ["PLSC"], needCount: 4 },
+              { id: "concentration", label: "7 courses relating to chosen concentration", codePrefix: ["PLSC"], needCount: 7 },
+              { id: "seminars", label: "2 departmental seminars (1 in senior year)", codePrefix: ["PLSC"], minLevel: 300, needCount: 2 },
+            ],
+            senior: [{ id: "senior", label: "PLSC 4900 junior year + senior essay", codePrefix: ["PLSC"], minLevel: 490, needCount: 1 }],
+          },
+        },
+      },
+      {
+        id: "interdisciplinary",
+        label: "Interdisciplinary major",
+        requirements: {
+          BA: {
+            totalCourses: 12,
+            core: [
+              { id: "intro", label: "2 introductory PLSC courses", codePrefix: ["PLSC"], maxLevel: 1999, needCount: 2 },
+              { id: "lectures", label: "2 non-intro core lecture courses", codePrefix: ["PLSC"], minLevel: 200, needCount: 2 },
+              { id: "methods", label: "1 methodology and formal theory course", codePrefix: ["PLSC"], needCount: 1 },
+              { id: "subfields", label: "2 courses each in 2 of 4 subfields", codePrefix: ["PLSC"], needCount: 4 },
+              { id: "outside", label: "3 courses from other departments (DUS approval)", codePrefix: ["ECON", "HIST", "PHIL", "SOCY", "GLBL", "ANTH"], needCount: 3 },
+              { id: "seminars", label: "2 departmental seminars", codePrefix: ["PLSC"], minLevel: 300, needCount: 2 },
+            ],
+            senior: [{ id: "senior", label: "Two-term essay (PLSC 4901/4903)", codePrefix: ["PLSC"], minLevel: 490, needCount: 2 }],
+          },
+        },
+      },
+    ],
   },
   {
     id: "engl",
@@ -238,6 +259,26 @@ export const DETAILED_MAJORS: Major[] = [
         ],
       },
     },
+    concentrations: [
+      {
+        id: "creative-writing",
+        label: "Creative Writing concentration",
+        requirements: {
+          BA: {
+            totalCourses: 15,
+            core: [
+              { id: "foundational", label: "3 foundational courses (ENGL 1025–1028)", codes: ["ENGL 1025", "ENGL 1026", "ENGL 1027", "ENGL 1028"], needCount: 3 },
+              { id: "cw", label: "4 creative writing courses (2 advanced 4000+)", codePrefix: ["ENGL"], minLevel: 400, needCount: 4 },
+              { id: "literature", label: "At least 11 literature courses total", codePrefix: ["ENGL"], needCount: 7 },
+            ],
+            senior: [
+              { id: "senior_sem", label: "2 senior seminars or ENGL 4100/4101", codePrefix: ["ENGL"], minLevel: 400, needCount: 2 },
+              { id: "cw_project", label: "Creative writing senior project (ENGL 4400)", codes: ["ENGL 4400"], needCount: 1 },
+            ],
+          },
+        },
+      },
+    ],
   },
   {
     id: "math",

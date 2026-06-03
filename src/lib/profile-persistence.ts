@@ -12,10 +12,19 @@ export type ProfileUpdateInput = {
   major_id?: string | null;
   second_major_id?: string | null;
   second_degree_type?: "BA" | "BS" | null;
+  concentration_id?: string | null;
+  certificate_ids?: string[];
   track_id?: string | null;
   degree_type?: "BA" | "BS" | null;
   class_year?: number | null;
 };
+
+const CONCENTRATION_COLUMN = "concentration_id";
+const CERTIFICATES_COLUMN = "certificate_ids";
+
+function isMissingProfileColumn(message: string, column: string): boolean {
+  return message.includes(column) || (message.includes("schema cache") && message.includes(column));
+}
 
 function isMissingSecondDegreeColumn(message: string): boolean {
   return (
@@ -50,12 +59,28 @@ export function decodeProfileFromDb(row: ProfileRow | null): ProfileRow | null {
     track_id = null;
   }
 
-  return { ...row, track_id, second_degree_type };
+  const certificate_ids = row.certificate_ids ?? [];
+  const concentration_id = row.concentration_id ?? null;
+
+  return { ...row, track_id, second_degree_type, certificate_ids, concentration_id };
 }
 
-function buildUpdatePayload(data: ProfileUpdateInput, omitSecondDegreeColumn: boolean): Record<string, unknown> {
-  const { second_degree_type, track_id, second_major_id, ...rest } = data;
+type ProfileColumnOmit = {
+  secondDegree?: boolean;
+  concentration?: boolean;
+  certificates?: boolean;
+};
+
+function buildUpdatePayload(data: ProfileUpdateInput, omit: ProfileColumnOmit): Record<string, unknown> {
+  const { second_degree_type, track_id, second_major_id, concentration_id, certificate_ids, ...rest } = data;
   const payload: Record<string, unknown> = { ...rest };
+
+  if (!omit.concentration && concentration_id !== undefined) {
+    payload.concentration_id = concentration_id;
+  }
+  if (!omit.certificates && certificate_ids !== undefined) {
+    payload.certificate_ids = certificate_ids;
+  }
 
   if (second_major_id !== undefined) payload.second_major_id = second_major_id;
 
@@ -65,7 +90,7 @@ function buildUpdatePayload(data: ProfileUpdateInput, omitSecondDegreeColumn: bo
       ? null
       : track_id;
 
-  if (omitSecondDegreeColumn) {
+  if (omit.secondDegree) {
     if (clearingDoubleMajor) {
       payload.track_id = effectiveTrack ?? null;
     } else {
@@ -87,12 +112,19 @@ export async function updateProfileRow(
   userId: string,
   data: ProfileUpdateInput,
 ): Promise<void> {
-  let payload = buildUpdatePayload(data, false);
+  let omit: ProfileColumnOmit = {};
+  let payload = buildUpdatePayload(data, omit);
   let { error } = await supabase.from("profiles").update(payload).eq("id", userId);
 
-  if (error && isMissingSecondDegreeColumn(error.message)) {
-    payload = buildUpdatePayload(data, true);
-    ({ error } = await supabase.from("profiles").update(payload).eq("id", userId));
+  if (error) {
+    const msg = error.message;
+    if (isMissingSecondDegreeColumn(msg)) omit.secondDegree = true;
+    if (isMissingProfileColumn(msg, CONCENTRATION_COLUMN)) omit.concentration = true;
+    if (isMissingProfileColumn(msg, CERTIFICATES_COLUMN)) omit.certificates = true;
+    if (omit.secondDegree || omit.concentration || omit.certificates) {
+      payload = buildUpdatePayload(data, omit);
+      ({ error } = await supabase.from("profiles").update(payload).eq("id", userId));
+    }
   }
 
   if (error) throw new Error(error.message);

@@ -9,6 +9,7 @@ import { FilledRequirementCourses } from "@/components/filled-requirement-course
 import { RequirementExamples } from "@/components/requirement-examples";
 import { MajorAuditCard } from "@/components/major-audit-card";
 import {
+  auditCertificates,
   auditMajor,
   auditTrack,
   auditDistributional,
@@ -50,6 +51,7 @@ function Dashboard() {
     degreeForExamples,
     profileForExamples?.track_id,
     profileForExamples?.class_year,
+    profileForExamples?.concentration_id,
   );
   const secondMajorId = profileForExamples?.second_major_id;
   const secondDegree = (profileForExamples?.second_degree_type ??
@@ -90,7 +92,13 @@ function Dashboard() {
 
   const major = MAJORS_BY_ID[profile.major_id];
   const degree = (profile.degree_type ?? major?.defaultDegree ?? "BA") as "BA" | "BS";
-  const majorAudit = auditMajor(courses, profile.major_id, degree, crosslistLookup);
+  const majorAudit = auditMajor(
+    courses,
+    profile.major_id,
+    degree,
+    crosslistLookup,
+    profile.concentration_id,
+  );
   const secondMajor = secondMajorId ? MAJORS_BY_ID[secondMajorId] : null;
   const degree2 = (profile.second_degree_type ?? degree) as "BA" | "BS";
   const secondAudit =
@@ -101,6 +109,7 @@ function Dashboard() {
     majorAudit && secondAudit ? computeDoubleMajorOverlap(majorAudit, secondAudit) : null;
 
   const trackAudit = auditTrack(courses, profile.track_id, crosslistLookup);
+  const certificateAudits = auditCertificates(courses, profile.certificate_ids, crosslistLookup);
   const distAudit = auditDistributional(courses);
   const credits = totalCredits(courses);
   const gradTotal = graduationCredits();
@@ -279,6 +288,33 @@ function Dashboard() {
           </CardContent>
         </Card>
       )}
+
+      {certificateAudits.map((certAudit) => (
+        <Card key={certAudit.certificate.id}>
+          <CardHeader>
+            <CardTitle className="font-serif">{certAudit.certificate.name} certificate</CardTitle>
+            <p className="text-sm text-muted-foreground">{certAudit.certificate.description}</p>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {certAudit.results.map((r) => (
+              <div key={r.slot.id} className="flex items-start gap-3 rounded-md border border-border p-3">
+                {r.satisfied ? <CheckCircle2 className="mt-0.5 h-5 w-5 text-success" /> : <AlertCircle className="mt-0.5 h-5 w-5 text-warning" />}
+                <div className="flex-1">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-medium">{r.slot.label}</p>
+                    <Badge variant={r.satisfied ? "default" : "secondary"}>{r.filled.length}/{r.slot.needCount}</Badge>
+                  </div>
+                  <FilledRequirementCourses
+                    courses={r.filled}
+                    crosslistLookup={crosslistLookup}
+                    complete={r.satisfied}
+                  />
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }

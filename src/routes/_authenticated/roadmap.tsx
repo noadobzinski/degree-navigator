@@ -40,6 +40,8 @@ function RoadmapPage() {
       profileQ.data?.second_major_id,
       profileQ.data?.second_degree_type,
       profileQ.data?.track_id,
+      profileQ.data?.concentration_id,
+      profileQ.data?.certificate_ids,
       coursesQ.data,
     ],
     enabled: clientReady && !!profileQ.data?.major_id && coursesQ.data !== undefined,
@@ -54,6 +56,8 @@ function RoadmapPage() {
             profileQ.data!.degree_type ??
             "BA") as "BA" | "BS",
           trackId: profileQ.data!.track_id,
+          concentrationId: profileQ.data!.concentration_id,
+          certificateIds: profileQ.data!.certificate_ids ?? [],
         },
       }),
   });
