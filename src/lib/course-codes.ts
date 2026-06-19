@@ -1,7 +1,9 @@
 /** Marker stored in skills[] when WR is optional and not yet claimed (no DB column needed). */
 export const WR_OPTIONAL_SKILL = "_wr_optional";
 
-/** Normalize Yale / CourseTable codes for requirement matching (2200 → 220, etc.). */
+export type CatalogRenumberingGroups = string[][];
+
+/** Normalize Yale / CourseTable codes (2200 → 220 when trailing-zero migration). */
 export function canonicalCourseCode(code: string): string {
   const normalized = code.trim().toUpperCase().replace(/\s+/g, " ");
   const match = normalized.match(/^([A-Z&]+)\s+(\d{3,4})(L?)$/);
@@ -14,14 +16,61 @@ export function canonicalCourseCode(code: string): string {
   return `${subject} ${base}${labSuffix}`;
 }
 
-/** Yale course identity — same for 3- and 4-digit forms (e.g. CHEM 220 / CHEM 2200). */
-export function courseIdentityKey(code: string): string {
-  return canonicalCourseCode(code);
+/** Manual equivalents that title matching cannot infer (lab clusters, cross-dept aliases). */
+const MANUAL_EQUIVALENT_GROUPS: string[][] = [
+  ["CHEM 174", "CHEM 175", "CHEM 1340L", "CHEM 1360L", "CHEM 134L", "CHEM 136L", "CHEM 1710L"],
+  ["ENAS 1300", "CPSC 100"],
+];
+
+const staticMatchGroupId = new Map<string, string>();
+const staticGroupCodes = new Map<string, string[]>();
+
+let catalogMatchGroupId = new Map<string, string>();
+let catalogGroupCodes = new Map<string, string[]>();
+
+function registerGroups(
+  groups: string[][],
+  idMap: Map<string, string>,
+  membersMap: Map<string, string[]>,
+) {
+  for (const group of groups) {
+    const codes = [...new Set(group.map((c) => c.trim().toUpperCase()))];
+    if (codes.length < 2) continue;
+    const id = codes.map((c) => canonicalCourseCode(c)).sort().join("|");
+    membersMap.set(id, codes);
+    for (const code of codes) {
+      idMap.set(canonicalCourseCode(code), id);
+      idMap.set(code, id);
+    }
+  }
+}
+
+registerGroups(MANUAL_EQUIVALENT_GROUPS, staticMatchGroupId, staticGroupCodes);
+
+export function registerCatalogRenumberingGroups(groups: CatalogRenumberingGroups) {
+  catalogMatchGroupId = new Map();
+  catalogGroupCodes = new Map();
+  registerGroups(groups, catalogMatchGroupId, catalogGroupCodes);
+}
+
+function groupIdForCode(code: string): string | undefined {
+  const upper = code.trim().toUpperCase();
+  const canon = canonicalCourseCode(upper);
+  return catalogMatchGroupId.get(canon) ?? catalogMatchGroupId.get(upper) ?? staticMatchGroupId.get(canon) ?? staticMatchGroupId.get(upper);
+}
+
+function codesInGroup(groupId: string): string[] {
+  return catalogGroupCodes.get(groupId) ?? staticGroupCodes.get(groupId) ?? [];
 }
 
 /**
- * Numeric Yale renumbering only (3↔4 digits). Does not consult equivalent groups.
+ * Stable identity for deduping and audits.
+ * Uses CourseTable-derived renumbering groups when loaded (e.g. CHEM 220 ≡ CHEM 2200, AFAM 186 ≡ AFAM 1986).
  */
+export function courseIdentityKey(code: string): string {
+  return groupIdForCode(code) ?? canonicalCourseCode(code);
+}
+
 function numericCodeVariants(code: string): string[] {
   const normalized = code.trim().toUpperCase().replace(/\s+/g, " ");
   const out = new Set<string>([normalized, canonicalCourseCode(normalized)]);
@@ -42,89 +91,37 @@ function numericCodeVariants(code: string): string[] {
   return [...out];
 }
 
-/**
- * All string forms for a course code: raw, canonical, 3↔4 digit Yale renumbering,
- * and manual equivalent-group members (e.g. CHEM 174 / CHEM 175).
- */
 export function codeVariants(code: string): string[] {
   const out = new Set(numericCodeVariants(code));
-  const groupId = matchGroupId.get(canonicalCourseCode(code));
-  if (groupId) {
-    for (const [key, id] of matchGroupId) {
-      if (id === groupId) out.add(key);
+  const gid = groupIdForCode(code);
+  if (gid) {
+    for (const c of codesInGroup(gid)) {
+      out.add(c);
+      out.add(canonicalCourseCode(c));
     }
   }
   return [...out];
 }
 
-/** Map keys for catalog / season lookups (all equivalent spellings). */
 export function codeLookupKeys(code: string): string[] {
   return [...new Set(codeVariants(code).map((v) => v.toUpperCase()))];
 }
 
-/** Known equivalents beyond simple trailing-zero renumbering. */
-const EQUIVALENT_GROUPS: string[][] = [
-  ["CHEM 161", "CHEM 1610"],
-  ["CHEM 165", "CHEM 1650"],
-  ["CHEM 220", "CHEM 2200"],
-  ["CHEM 221", "CHEM 2210"],
-  ["CHEM 222", "CHEM 2220", "CHEM 2220L"],
-  ["CHEM 174", "CHEM 175", "CHEM 1340L", "CHEM 1360L", "CHEM 134L", "CHEM 136L", "CHEM 1710L"],
-  ["MATH 112", "MATH 1120"],
-  ["MATH 115", "MATH 1150"],
-  ["MATH 120", "MATH 1200"],
-  ["BIOL 101", "BIOL 1010"],
-  ["BIOL 102", "BIOL 1020"],
-  ["BIOL 103", "BIOL 1030"],
-  ["BIOL 104", "BIOL 1040"],
-  ["MCDB 310", "MCDB 3100"],
-  ["PHYS 170", "PHYS 1700"],
-  ["PHYS 171", "PHYS 1710"],
-  ["PHYS 180", "PHYS 1800"],
-  ["PHYS 181", "PHYS 1810"],
-  ["PSYC 110", "PSYC 1100"],
-  ["SOCY 126", "SOCY 1260"],
-  ["SOCY 151", "SOCY 1510"],
-  ["ENGL 114", "ENGL 1140"],
-  ["ENGL 115", "ENGL 1150"],
-  ["CPSC 202", "CPSC 2020"],
-  ["AMTH 244", "AMTH 2440"],
-  ["APHY 151", "APHY 1510"],
-  ["APHY 322", "APHY 3220"],
-  ["APHY 420", "APHY 4200"],
-  ["APHY 439", "APHY 4390"],
-  ["CGSC 110", "CGSC 1100"],
-  ["ENAS 1300", "CPSC 100"],
-];
-
-const matchGroupId = new Map<string, string>();
-
-for (const group of EQUIVALENT_GROUPS) {
-  const id = group.map((c) => canonicalCourseCode(c)).sort().join("|");
-  for (const code of group) {
-    for (const variant of numericCodeVariants(code)) {
-      matchGroupId.set(courseIdentityKey(variant), id);
-    }
-  }
-}
-
 export function courseCodesMatch(a: string, b: string): boolean {
   if (courseIdentityKey(a) === courseIdentityKey(b)) return true;
-  const ga = matchGroupId.get(courseIdentityKey(a));
-  const gb = matchGroupId.get(courseIdentityKey(b));
-  return !!ga && ga === gb;
+  return codeVariants(a).some((va) => codeVariants(b).some((vb) => va === vb));
 }
 
 export function courseMatchesAny(code: string, candidates: string[]): boolean {
   return candidates.some((c) => courseCodesMatch(code, c));
 }
 
-/** Identity keys for courses the student has already taken/planned (merges 220 ↔ 2200). */
 export function buildCompletedCourseIdentitySet(
   courses: Iterable<{ course_code: string }>,
 ): Set<string> {
   const set = new Set<string>();
   for (const course of courses) {
+    set.add(courseIdentityKey(course.course_code));
     for (const variant of codeVariants(course.course_code)) {
       set.add(courseIdentityKey(variant));
     }
@@ -150,7 +147,6 @@ export function isMandatoryWritingCourse(code: string): boolean {
   return courseMatchesAny(code, MANDATORY_WR_CODES);
 }
 
-/** CourseTable lists WR when a section may be taken with writing credit. */
 export function isOptionalWritingOffered(catalogSkills: string[], code: string): boolean {
   return catalogSkills.includes("WR") && !isMandatoryWritingCourse(code);
 }
@@ -160,7 +156,6 @@ export type UserCourseSkillsFields = {
   counts_as_wr?: boolean | null;
 };
 
-/** Skills that count toward distributional / track audits. */
 export function effectiveSkills(course: UserCourseSkillsFields): string[] {
   const skills = [...(course.skills ?? [])].filter((s) => s !== WR_OPTIONAL_SKILL);
   if (course.counts_as_wr === true) {
@@ -173,7 +168,6 @@ export function effectiveSkills(course: UserCourseSkillsFields): string[] {
   return skills;
 }
 
-/** Strip optional WR from stored skills when first adding a course. */
 export function skillsForNewCourse(
   catalogSkills: string[],
   code: string,
@@ -190,7 +184,6 @@ export function skillsForNewCourse(
   };
 }
 
-/** Expand Yale roadmap codes to include CourseTable 4-digit variants. */
 export function expandCourseCodeVariants(codes: string[]): string[] {
   const out = new Set<string>();
   for (const code of codes) {

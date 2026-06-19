@@ -6,9 +6,11 @@ import { suggestRoadmap, type UserCourse } from "@/lib/audit";
 import { COURSETABLE_API, currentSeasonCode } from "@/lib/coursetable";
 import {
   buildMergedCatalog,
+  ensureRenumberingRegistered,
   fetchSeasonCatalog,
   getAuditCatalogByCode,
   getCrosslistLookup,
+  getRenumberingGroups,
 } from "@/lib/catalog-cache";
 import { buildCrosslistLookup, serializeCrosslistLookup } from "@/lib/crosslist";
 import {
@@ -50,6 +52,7 @@ export const getRoadmapSuggestions = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const season = data.season ?? currentSeasonCode();
+    await ensureRenumberingRegistered();
     const catalog = await fetchSeasonCatalog(season);
     const catalogByCode = buildMergedCatalog(catalog);
     const crosslistLookup = await getCrosslistLookup([season]);
@@ -104,6 +107,7 @@ export const getDegreeSchedule = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => scheduleInputSchema.parse(d))
   .handler(async ({ data }) => {
     const season = data.season ?? currentSeasonCode();
+    await ensureRenumberingRegistered();
     const catalog = await fetchSeasonCatalog(season);
     const catalogByCode = buildMergedCatalog(catalog);
     const crosslistLookup = await getCrosslistLookup([season]);
@@ -270,6 +274,11 @@ export const getCrosslistMap = createServerFn({ method: "GET" }).handler(async (
   const seasons = seasonsForHistoricalCatalog(null).slice(-8);
   const lookup = await getCrosslistLookup(seasons);
   return serializeCrosslistLookup(lookup);
+});
+
+/** CourseTable-derived Yale renumbering groups (subject + title across semesters). */
+export const getRenumberingMap = createServerFn({ method: "GET" }).handler(async () => {
+  return getRenumberingGroups();
 });
 
 /** YC course attributes for certificate audits (CourseTable public catalog; no NetID). */

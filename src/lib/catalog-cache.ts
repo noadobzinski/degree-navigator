@@ -5,21 +5,34 @@ import {
   dedupeCourseTableCourses,
   type CourseTableCourse,
 } from "@/lib/coursetable";
-import { codeLookupKeys } from "@/lib/course-codes";
+import { codeLookupKeys, registerCatalogRenumberingGroups } from "@/lib/course-codes";
+import {
+  buildRenumberingGroups,
+  seasonRecordsFromCourseTable,
+  serializeRenumberingGroups,
+  type SeasonCourseRecord,
+} from "@/lib/course-renumbering";
 import { buildCrosslistLookup, type CrosslistLookup } from "@/lib/crosslist";
+import { recentCatalogSeasons } from "@/lib/coursetable-seasons";
 
 type CatalogCacheEntry = {
   courses: CatalogCourse[];
+  records: SeasonCourseRecord[];
   fetchedAt: number;
 };
 
 const catalogCacheBySeason = new Map<string, CatalogCacheEntry>();
 const CACHE_TTL_MS = 60 * 60 * 1000;
 
-export async function fetchSeasonCatalog(season: string): Promise<CatalogCourse[]> {
+/** Enough semesters to span Yale's 3→4 digit catalog migration (~2024–2025). */
+export function renumberingCatalogSeasons(now = new Date()): string[] {
+  return recentCatalogSeasons(14, now).map((s) => s.code);
+}
+
+async function fetchSeasonCatalogBundle(season: string): Promise<CatalogCacheEntry> {
   const cached = catalogCacheBySeason.get(season);
   if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
-    return cached.courses;
+    return cached;
   }
 
   const res = await fetch(`${COURSETABLE_API}/api/catalog/public/${season}`, {
@@ -30,9 +43,17 @@ export async function fetchSeasonCatalog(season: string): Promise<CatalogCourse[
   }
 
   const raw = (await res.json()) as CourseTableCourse[];
-  const courses = dedupeCourseTableCourses(raw);
-  catalogCacheBySeason.set(season, { courses, fetchedAt: Date.now() });
-  return courses;
+  const bundle: CatalogCacheEntry = {
+    courses: dedupeCourseTableCourses(raw),
+    records: seasonRecordsFromCourseTable(season, raw),
+    fetchedAt: Date.now(),
+  };
+  catalogCacheBySeason.set(season, bundle);
+  return bundle;
+}
+
+export async function fetchSeasonCatalog(season: string): Promise<CatalogCourse[]> {
+  return (await fetchSeasonCatalogBundle(season)).courses;
 }
 
 export function buildMergedCatalog(courses: CatalogCourse[]): Record<string, CatalogCourse> {
@@ -48,7 +69,6 @@ export function buildMergedCatalog(courses: CatalogCourse[]): Record<string, Cat
 
 export type AuditCatalogByCode = Record<string, { ycAttributes?: string[] }>;
 
-/** YC attribute lookup for certificate audits (merged static + CourseTable catalog). */
 export function buildAuditCatalogByCode(courses: CatalogCourse[]): AuditCatalogByCode {
   const merged = buildMergedCatalog(courses);
   const out: AuditCatalogByCode = {};
@@ -88,8 +108,44 @@ export async function getAuditCatalogByCode(
 }
 
 let crosslistCache: { seasons: string; lookup: CrosslistLookup; fetchedAt: number } | null = null;
+let renumberingCache: { seasons: string; groups: string[][]; fetchedAt: number } | null = null;
 
-/** Cross-list groups from CourseTable catalog (cached ~1 hour). */
+async function loadSeasonBundles(seasons: string[]): Promise<CatalogCacheEntry[]> {
+  const bundles: CatalogCacheEntry[] = [];
+  for (const season of seasons) {
+    try {
+      bundles.push(await fetchSeasonCatalogBundle(season));
+    } catch {
+      /* skip unavailable terms */
+    }
+  }
+  return bundles;
+}
+
+export async function getRenumberingGroups(
+  seasons: string[] = renumberingCatalogSeasons(),
+): Promise<string[][]> {
+  const key = [...seasons].sort().join(",");
+  if (
+    renumberingCache &&
+    renumberingCache.seasons === key &&
+    Date.now() - renumberingCache.fetchedAt < CACHE_TTL_MS
+  ) {
+    return renumberingCache.groups;
+  }
+
+  const bundles = await loadSeasonBundles(seasons);
+  const records = bundles.flatMap((b) => b.records);
+  const groups = serializeRenumberingGroups(buildRenumberingGroups(records));
+  renumberingCache = { seasons: key, groups, fetchedAt: Date.now() };
+  registerCatalogRenumberingGroups(groups);
+  return groups;
+}
+
+export async function ensureRenumberingRegistered(seasons?: string[]): Promise<void> {
+  await getRenumberingGroups(seasons ?? renumberingCatalogSeasons());
+}
+
 export async function getCrosslistLookup(
   seasons: string[] = [currentSeasonCode()],
 ): Promise<CrosslistLookup> {
@@ -101,6 +157,7 @@ export async function getCrosslistLookup(
   ) {
     return crosslistCache.lookup;
   }
+  await ensureRenumberingRegistered(renumberingCatalogSeasons());
   const all: CatalogCourse[] = [];
   for (const season of seasons) {
     try {

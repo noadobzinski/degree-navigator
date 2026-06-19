@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { GraduationCap, LayoutDashboard, BookOpen, Map, Settings, LogOut, BookOpenCheck, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePrefetchCourseTableCatalog, useCourseTableCatalogMeta } from "@/hooks/use-coursetable-catalog";
+import { useCourseRenumbering } from "@/hooks/use-course-renumbering";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ context, location }) => {
@@ -25,6 +26,7 @@ function AuthLayout() {
   const router = useRouter();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   usePrefetchCourseTableCatalog();
+  useCourseRenumbering(true);
   const catalogMeta = useCourseTableCatalogMeta();
 
   async function signOut() {

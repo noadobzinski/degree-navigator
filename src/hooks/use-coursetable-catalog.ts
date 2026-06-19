@@ -6,6 +6,8 @@ import {
   searchCourseTableCatalog,
 } from "@/lib/coursetable.functions";
 import { currentSeasonCode } from "@/lib/coursetable";
+import { renumberingMapKey } from "@/hooks/use-course-renumbering";
+import { getRenumberingMap } from "@/lib/coursetable.functions";
 
 export const coursetableMetaKey = ["coursetable-meta"] as const;
 export const coursetableCatalogKey = (query = "", season?: string) =>
@@ -18,6 +20,7 @@ export function usePrefetchCourseTableCatalog() {
   const qc = useQueryClient();
   const metaFn = useServerFn(getCourseTableCatalogMeta);
   const searchFn = useServerFn(searchCourseTableCatalog);
+  const renumberingFn = useServerFn(getRenumberingMap);
 
   useEffect(() => {
     if (!isBrowser) return;
@@ -31,7 +34,12 @@ export function usePrefetchCourseTableCatalog() {
       queryFn: () => searchFn({ data: { limit: 100 } }),
       staleTime: 5 * 60 * 1000,
     });
-  }, [qc, metaFn, searchFn]);
+    void qc.prefetchQuery({
+      queryKey: renumberingMapKey,
+      queryFn: () => renumberingFn(),
+      staleTime: 60 * 60 * 1000,
+    });
+  }, [qc, metaFn, searchFn, renumberingFn]);
 }
 
 export function useCourseTableCatalogMeta() {

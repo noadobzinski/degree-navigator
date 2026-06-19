@@ -9,7 +9,14 @@ import {
   useClientQueryEnabled,
 } from "@/hooks/use-coursetable-catalog";
 import { CATALOG, CATALOG_BY_CODE, type CatalogCourse } from "@/data/courses";
-import { currentSeasonCode } from "@/lib/coursetable";
+import { courseTableSearchUrl, currentSeasonCode } from "@/lib/coursetable";
+import {
+  lookupCatalogEntry,
+  skillsForNewCourse,
+  effectiveSkills,
+  isOptionalWritingOffered,
+  courseIdentityKey,
+} from "@/lib/course-codes";
 import {
   catalogSeasonsForClassYear,
   courseTakenKey,
@@ -26,7 +33,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2, Plus, Search, Database, AlertCircle, ExternalLink, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { currentSeasonCode } from "@/lib/coursetable";
 import { formatCourseCredits, isHalfCreditCourse } from "@/lib/course-credits";
 import { wrCreditOffered, type UserCourse } from "@/lib/audit";
 import { formatCrosslistNote } from "@/lib/crosslist";
@@ -165,7 +171,9 @@ function CoursesPage() {
   const allocationM = useCourseCreditAllocation();
 
   const taken = new Set(myCourses.map((c) => courseTakenKey(c.course_code, c.term, c.year)));
+  const takenIdentities = new Set(myCourses.map((c) => courseIdentityKey(c.course_code)));
   const takenThisSeason = (code: string) => taken.has(courseTakenKey(code, addTerm, addYear));
+  const courseAlreadyOnList = (code: string) => takenIdentities.has(courseIdentityKey(code));
 
   function addAllocationForCatalog(course: CatalogCourse): CreditBucketId | null {
     return addAllocations[course.code] ?? null;
@@ -178,14 +186,16 @@ function CoursesPage() {
   function resolveCourse(code: string): CatalogCourse {
     const fromBrowse = browseCourses.find((c) => c.code === code);
     if (fromBrowse) return fromBrowse;
-    return CATALOG_BY_CODE[code] ?? {
-      code,
-      title: code,
-      credits: 1,
-      distributional: [],
-      skills: [],
-      subject: code.split(" ")[0] ?? code,
-    };
+    return (
+      lookupCatalogEntry(code, CATALOG_BY_CODE) ?? {
+        code,
+        title: code,
+        credits: 1,
+        distributional: [],
+        skills: [],
+        subject: code.split(" ")[0] ?? code,
+      }
+    );
   }
 
   return (
@@ -348,7 +358,7 @@ function CoursesPage() {
                 </div>
                 <Button
                   size="sm"
-                  disabled={takenThisSeason(c.code) || addM.isPending}
+                  disabled={takenThisSeason(c.code) || courseAlreadyOnList(c.code) || addM.isPending}
                   onClick={() =>
                     addM.mutate({
                       course: resolveCourse(c.code),
@@ -356,7 +366,7 @@ function CoursesPage() {
                     })
                   }
                 >
-                  {takenThisSeason(c.code) ? (
+                  {takenThisSeason(c.code) || courseAlreadyOnList(c.code) ? (
                     "Added"
                   ) : (
                     <>
