@@ -17,6 +17,7 @@ import {
   seasonsForHistoricalCatalog,
   type SlotExamplesGroup,
 } from "@/lib/requirement-examples";
+import { buildDegreeSchedule } from "@/lib/schedule-planner";
 
 export const getRoadmapSuggestions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -68,6 +69,64 @@ export const getRoadmapSuggestions = createServerFn({ method: "POST" })
       season,
       catalogSize: catalog.length,
       suggestions,
+      source: "coursetable" as const,
+    };
+  });
+
+const scheduleInputSchema = z.object({
+  courses: z.array(
+    z.object({
+      id: z.string(),
+      course_code: z.string(),
+      course_title: z.string().nullable(),
+      credits: z.number(),
+      distributional: z.array(z.string()),
+      skills: z.array(z.string()),
+      status: z.enum(["planned", "in_progress", "completed"]),
+      term: z.string().nullable(),
+      year: z.number().nullable(),
+    }),
+  ),
+  majorId: z.string().min(1),
+  degree: z.enum(["BA", "BS"]),
+  secondMajorId: z.string().nullable().optional(),
+  secondDegree: z.enum(["BA", "BS"]).optional(),
+  concentrationId: z.string().nullable().optional(),
+  certificateIds: z.array(z.string()).optional(),
+  trackId: z.string().nullable().optional(),
+  classYear: z.number().int().min(2020).max(2035).nullable().optional(),
+  exploreMajorId: z.string().nullable().optional(),
+  season: z.string().regex(/^\d{6}$/).optional(),
+});
+
+export const getDegreeSchedule = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => scheduleInputSchema.parse(d))
+  .handler(async ({ data }) => {
+    const season = data.season ?? currentSeasonCode();
+    const catalog = await fetchSeasonCatalog(season);
+    const catalogByCode = buildMergedCatalog(catalog);
+    const crosslistLookup = await getCrosslistLookup([season]);
+
+    const schedule = buildDegreeSchedule({
+      courses: data.courses as UserCourse[],
+      majorId: data.majorId,
+      degree: data.degree,
+      secondMajorId: data.secondMajorId ?? null,
+      secondDegree: data.secondDegree,
+      trackId: data.trackId ?? null,
+      concentrationId: data.concentrationId ?? null,
+      certificateIds: data.certificateIds ?? [],
+      classYear: data.classYear ?? null,
+      exploreMajorId: data.exploreMajorId ?? null,
+      catalogByCode,
+      crosslistLookup,
+    });
+
+    return {
+      season,
+      catalogSize: catalog.length,
+      schedule,
       source: "coursetable" as const,
     };
   });

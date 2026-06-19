@@ -474,6 +474,7 @@ export function suggestRoadmap(
   crosslistLookup?: CrosslistLookup,
   concentrationId?: string | null,
   certificateIds?: string[] | null,
+  maxSuggestions = 18,
 ): { priority: "high" | "med" | "low"; code: string; title: string; reason: string }[] {
   const completedCodes = new Set(courses.map((c) => c.course_code.toUpperCase()));
   const suggestions: { priority: "high" | "med" | "low"; code: string; title: string; reason: string }[] = [];
@@ -590,5 +591,12 @@ export function suggestRoadmap(
     }
   }
 
-  return suggestions.slice(0, 18);
+  return suggestions.slice(0, maxSuggestions);
 }
+
+export type RoadmapSuggestion = {
+  priority: "high" | "med" | "low";
+  code: string;
+  title: string;
+  reason: string;
+};
