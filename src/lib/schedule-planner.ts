@@ -13,6 +13,7 @@ import {
   type YaleTerm,
 } from "@/lib/coursetable-seasons";
 import { currentSeasonCode } from "@/lib/coursetable";
+import { courseIdentityKey, lookupCatalogEntry } from "@/lib/course-codes";
 import type { CrosslistLookup } from "@/lib/crosslist";
 
 export type ScheduledCourse = {
@@ -69,7 +70,7 @@ const PRIORITY_RANK: Record<RoadmapSuggestion["priority"], number> = {
 };
 
 function catalogCredits(code: string, catalogByCode: Record<string, CatalogCourse>): number {
-  return catalogByCode[code.toUpperCase()]?.credits ?? catalogByCode[code]?.credits ?? 1;
+  return lookupCatalogEntry(code, catalogByCode)?.credits ?? 1;
 }
 
 function toScheduled(
@@ -81,7 +82,7 @@ function toScheduled(
 ): ScheduledCourse {
   return {
     code: course.course_code,
-    title: course.course_title ?? catalogByCode[course.course_code.toUpperCase()]?.title ?? course.course_code,
+    title: course.course_title ?? lookupCatalogEntry(course.course_code, catalogByCode)?.title ?? course.course_code,
     reason,
     priority,
     credits: course.credits || catalogCredits(course.course_code, catalogByCode),
@@ -179,7 +180,7 @@ function plannedCoursesBySeason(
 
     if (!season || !seasonSet.has(season)) continue;
 
-    const key = course.course_code.toUpperCase();
+    const key = courseIdentityKey(course.course_code);
     if (seenCodes.has(key)) continue;
     seenCodes.add(key);
 
@@ -204,11 +205,11 @@ function assignSuggestionsToTerms(
   });
 
   const alreadyScheduled = new Set(
-    terms.flatMap((t) => t.courses.map((c) => c.code.toUpperCase())),
+    terms.flatMap((t) => t.courses.map((c) => courseIdentityKey(c.code))),
   );
 
   const sorted = [...suggestions]
-    .filter((s) => !alreadyScheduled.has(s.code.toUpperCase()))
+    .filter((s) => !alreadyScheduled.has(courseIdentityKey(s.code)))
     .sort((a, b) => PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority]);
 
   const unscheduled: ScheduledCourse[] = [];
@@ -289,9 +290,9 @@ export function buildDegreeSchedule(input: SchedulePlannerInput): DegreeSchedule
 /** Course codes present in `b` but not in `a` (by code, case-insensitive). */
 export function scheduleDiffCodes(a: DegreeSchedule, b: DegreeSchedule): string[] {
   const codesA = new Set(
-    [...a.terms.flatMap((t) => t.courses), ...a.unscheduled].map((c) => c.code.toUpperCase()),
+    [...a.terms.flatMap((t) => t.courses), ...a.unscheduled].map((c) => courseIdentityKey(c.code)),
   );
   return [...b.terms.flatMap((t) => t.courses), ...b.unscheduled]
-    .filter((c) => !codesA.has(c.code.toUpperCase()))
+    .filter((c) => !codesA.has(courseIdentityKey(c.code)))
     .map((c) => c.code);
 }

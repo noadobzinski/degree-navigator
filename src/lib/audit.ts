@@ -20,8 +20,14 @@ import {
   auditDistributionalWithAllocation,
   getEligibleCreditBuckets,
 } from "@/lib/credit-allocation";
-import { effectiveSkills } from "@/lib/course-codes";
-import { WR_OPTIONAL_SKILL } from "@/lib/course-codes";
+import {
+  effectiveSkills,
+  WR_OPTIONAL_SKILL,
+  buildCompletedCourseIdentitySet,
+  courseIdentityKey,
+  hasCompletedCourseCode,
+  lookupCatalogEntry,
+} from "@/lib/course-codes";
 import {
   codesForRequirementMatch,
   courseMatchesSlotCodes,
@@ -133,7 +139,7 @@ export function catalogMatchesSlot(
 }
 
 function lookupCatalog(code: string, catalogByCode: Record<string, CatalogCourse>): CatalogCourse | undefined {
-  return catalogByCode[code] ?? catalogByCode[code.toUpperCase()];
+  return lookupCatalogEntry(code, catalogByCode);
 }
 
 function fillSlots(
@@ -407,8 +413,8 @@ function suggestForSlot(
     for (const c of Object.values(catalogByCode)) {
       if (added >= browseNeed) break;
       if (!catalogMatchesSlot(c, slot, crosslistLookup, catalogByCode)) continue;
-      const key = c.code.toUpperCase();
-      if (completedCodes.has(key) || seen.has(c.code)) continue;
+      const key = courseIdentityKey(c.code);
+      if (completedCodes.has(key) || seen.has(key)) continue;
       pushIf(c.code, reason, priority);
       added++;
     }
@@ -476,15 +482,16 @@ export function suggestRoadmap(
   certificateIds?: string[] | null,
   maxSuggestions = 18,
 ): { priority: "high" | "med" | "low"; code: string; title: string; reason: string }[] {
-  const completedCodes = new Set(courses.map((c) => c.course_code.toUpperCase()));
+  const completedCodes = buildCompletedCourseIdentitySet(courses);
   const suggestions: { priority: "high" | "med" | "low"; code: string; title: string; reason: string }[] = [];
   const seen = new Set<string>();
   const pushIf = (code: string, reason: string, priority: "high" | "med" | "low") => {
     const c = lookupCatalog(code, catalogByCode);
     if (!c) return;
-    if (completedCodes.has(code.toUpperCase())) return;
-    if (seen.has(code)) return;
-    seen.add(code);
+    if (hasCompletedCourseCode(code, completedCodes)) return;
+    const key = courseIdentityKey(code);
+    if (seen.has(key)) return;
+    seen.add(key);
     suggestions.push({ code, title: c.title, reason, priority });
   };
 
@@ -572,7 +579,7 @@ export function suggestRoadmap(
   for (const d of dist) {
     if (d.satisfied) continue;
     for (const c of Object.values(catalogByCode)) {
-      if (completedCodes.has(c.code.toUpperCase())) continue;
+      if (hasCompletedCourseCode(c.code, completedCodes)) continue;
       const pseudo = {
         id: c.code,
         course_code: c.code,

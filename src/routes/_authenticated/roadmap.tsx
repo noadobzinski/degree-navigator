@@ -8,6 +8,7 @@ import { useCourseTableCatalogMeta, useClientQueryEnabled } from "@/hooks/use-co
 import type { UserCourse } from "@/lib/audit";
 import { MAJORS_BY_ID } from "@/data/majors";
 import { scheduleDiffCodes } from "@/lib/schedule-planner";
+import { courseIdentityKey } from "@/lib/course-codes";
 import { MajorPicker } from "@/components/major-picker";
 import { ScheduleView } from "@/components/schedule-view";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -103,7 +104,7 @@ function RoadmapPage() {
     const baseline = baselineQ.data?.schedule;
     const explore = exploreQ.data?.schedule;
     if (!baseline || !explore) return new Set<string>();
-    return new Set(scheduleDiffCodes(baseline, explore).map((c) => c.toUpperCase()));
+    return new Set(scheduleDiffCodes(baseline, explore).map((c) => courseIdentityKey(c)));
   }, [baselineQ.data?.schedule, exploreQ.data?.schedule]);
 
   if (!clientReady || profileQ.isLoading || coursesQ.isLoading) {

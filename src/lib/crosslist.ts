@@ -1,5 +1,5 @@
 import type { CatalogCourse } from "@/data/courses";
-import { canonicalCourseCode, courseCodesMatch, courseMatchesAny } from "@/lib/course-codes";
+import { canonicalCourseCode, codeLookupKeys, courseCodesMatch, courseMatchesAny, lookupCatalogEntry } from "@/lib/course-codes";
 
 /** All Yale course codes for one offering (including cross-listings). */
 export function allListingCodes(entry: { code: string; crosslistedCodes?: string[] }): string[] {
@@ -116,9 +116,7 @@ export function ycAttributesForCourseCodes(
   const attrs = new Set<string>();
   if (!catalogByCode) return attrs;
   for (const raw of codesToCheck) {
-    const entry =
-      catalogByCode[raw.trim()] ??
-      catalogByCode[raw.trim().toUpperCase()];
+    const entry = lookupCatalogEntry(raw, catalogByCode);
     for (const a of entry?.ycAttributes ?? []) attrs.add(a);
   }
   return attrs;

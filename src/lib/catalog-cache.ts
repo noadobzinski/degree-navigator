@@ -5,6 +5,7 @@ import {
   dedupeCourseTableCourses,
   type CourseTableCourse,
 } from "@/lib/coursetable";
+import { codeLookupKeys } from "@/lib/course-codes";
 import { buildCrosslistLookup, type CrosslistLookup } from "@/lib/crosslist";
 
 type CatalogCacheEntry = {
@@ -37,9 +38,9 @@ export async function fetchSeasonCatalog(season: string): Promise<CatalogCourse[
 export function buildMergedCatalog(courses: CatalogCourse[]): Record<string, CatalogCourse> {
   const merged: Record<string, CatalogCourse> = { ...CATALOG_BY_CODE };
   for (const c of courses) {
-    const keys = [c.code, ...(c.crosslistedCodes ?? [])];
-    for (const code of keys) {
-      merged[code.toUpperCase()] = c;
+    const keys = [c.code, ...(c.crosslistedCodes ?? [])].flatMap((code) => codeLookupKeys(code));
+    for (const key of keys) {
+      merged[key] = c;
     }
   }
   return merged;

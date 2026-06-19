@@ -1,4 +1,5 @@
 import type { CatalogCourse } from "@/data/courses";
+import { codeLookupKeys, courseIdentityKey } from "@/lib/course-codes";
 import { resolveCatalogCredits } from "@/lib/course-credits";
 
 export const COURSETABLE_API = "https://api.coursetable.com";
@@ -130,30 +131,37 @@ function mergeCatalogCourses(a: CatalogCourse, b: CatalogCourse): CatalogCourse 
 
 export function dedupeCourseTableCourses(entries: CourseTableCourse[]): CatalogCourse[] {
   const byKey = new Map<string, CatalogCourse>();
+
+  function findExisting(normalized: CatalogCourse): CatalogCourse | undefined {
+    const lookupKeys = [normalized.code, ...(normalized.crosslistedCodes ?? [])].flatMap((c) =>
+      codeLookupKeys(c),
+    );
+    for (const key of lookupKeys) {
+      const hit = byKey.get(key);
+      if (hit) return hit;
+    }
+    return undefined;
+  }
+
+  function indexCourse(course: CatalogCourse) {
+    const keys = [course.code, ...(course.crosslistedCodes ?? [])].flatMap((c) => codeLookupKeys(c));
+    for (const key of keys) byKey.set(key, course);
+  }
+
   for (const entry of entries) {
     const normalized = normalizeCourseTableCourse(entry);
     if (!normalized) continue;
-    const keys = [normalized.code, ...(normalized.crosslistedCodes ?? [])].map((c) => c.toUpperCase());
-    let existing: CatalogCourse | undefined;
-    for (const key of keys) {
-      const hit = byKey.get(key);
-      if (hit) {
-        existing = hit;
-        break;
-      }
-    }
+    const existing = findExisting(normalized);
     if (!existing) {
-      for (const key of keys) byKey.set(key, normalized);
+      indexCourse(normalized);
       continue;
     }
-    const merged = mergeCatalogCourses(existing, normalized);
-    for (const key of [merged.code, ...(merged.crosslistedCodes ?? [])].map((c) => c.toUpperCase())) {
-      byKey.set(key, merged);
-    }
+    indexCourse(mergeCatalogCourses(existing, normalized));
   }
+
   const unique = new Map<string, CatalogCourse>();
   for (const c of byKey.values()) {
-    unique.set(c.code.toUpperCase(), c);
+    unique.set(courseIdentityKey(c.code), c);
   }
   return [...unique.values()].sort((a, b) => a.code.localeCompare(b.code));
 }

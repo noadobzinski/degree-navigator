@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { courseTableSearchUrl } from "@/lib/coursetable";
+import { courseIdentityKey } from "@/lib/course-codes";
 import type { DegreeSchedule, ScheduledCourse } from "@/lib/schedule-planner";
 import { Calendar, ExternalLink } from "lucide-react";
 
@@ -94,7 +95,7 @@ export function ScheduleView({ schedule, highlightCodes, emptyMessage }: Schedul
               <CourseRow
                 key={`${term.seasonCode}-${course.code}`}
                 course={course}
-                highlighted={highlightCodes?.has(course.code.toUpperCase())}
+                highlighted={highlightCodes?.has(courseIdentityKey(course.code))}
               />
             ))}
           </CardContent>
@@ -114,7 +115,7 @@ export function ScheduleView({ schedule, highlightCodes, emptyMessage }: Schedul
               <CourseRow
                 key={course.code}
                 course={course}
-                highlighted={highlightCodes?.has(course.code.toUpperCase())}
+                highlighted={highlightCodes?.has(courseIdentityKey(course.code))}
               />
             ))}
           </CardContent>

@@ -9,7 +9,7 @@ import {
 } from "@/data/majors";
 import { TRACKS_BY_ID } from "@/data/tracks";
 import { catalogMatchesSlot } from "@/lib/audit";
-import { canonicalCourseCode } from "@/lib/course-codes";
+import { canonicalCourseCode, lookupCatalogEntry } from "@/lib/course-codes";
 import { formatCrosslistNote, type CrosslistLookup } from "@/lib/crosslist";
 import { currentSeasonCode } from "@/lib/coursetable";
 import { recentCatalogSeasons, formatSeasonLabel } from "@/lib/coursetable-seasons";
@@ -114,7 +114,7 @@ export function examplesForSlot(
       const key = exampleGroupKey(code, crosslistLookup);
       if (seen.has(key)) continue;
       const staticCourse =
-        CATALOG_BY_CODE[code] ?? CATALOG_BY_CODE[code.toUpperCase()] ?? CATALOG_BY_CODE[canonicalCourseCode(code)];
+        lookupCatalogEntry(code, CATALOG_BY_CODE);
       if (staticCourse && catalogMatchesSlot(staticCourse, slot, crosslistLookup)) {
         seen.add(key);
         examples.push({

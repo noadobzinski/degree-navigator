@@ -1,4 +1,5 @@
 import { currentSeasonCode } from "@/lib/coursetable";
+import { courseIdentityKey } from "@/lib/course-codes";
 
 export type YaleTerm = "Fall" | "Spring" | "Summer";
 
@@ -97,7 +98,7 @@ export function recentCatalogSeasons(count = 8, now = new Date()): CatalogSeason
 }
 
 export function courseTakenKey(courseCode: string, term: string | null, year: number | null): string {
-  return `${courseCode.toUpperCase()}|${term ?? ""}|${year ?? ""}`;
+  return `${courseIdentityKey(courseCode)}|${term ?? ""}|${year ?? ""}`;
 }
 
 export function termFieldsToSeasonCode(term: YaleTerm, calendarYear: number): string {
