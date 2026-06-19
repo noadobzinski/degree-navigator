@@ -24,7 +24,7 @@ function CourseTableCallbackPage() {
             Decree loads the full Yale course catalog from CourseTable automatically — no Yale CAS
             sign-in needed.
           </p>
-          <p>Sign in with Google or email to save your degree audit.</p>
+          <p>Sign in with email to save your degree audit.</p>
           <div className="flex flex-wrap justify-center gap-2 pt-2">
             <Button asChild>
               <Link to="/login">Sign in</Link>

@@ -14,7 +14,6 @@ import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CoursetableCallbackRouteImport } from './routes/coursetable.callback'
-import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedRoadmapRouteImport } from './routes/_authenticated/roadmap'
 import { Route as AuthenticatedMajorsRouteImport } from './routes/_authenticated/majors'
@@ -43,11 +42,6 @@ const IndexRoute = IndexRouteImport.update({
 const CoursetableCallbackRoute = CoursetableCallbackRouteImport.update({
   id: '/coursetable/callback',
   path: '/coursetable/callback',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthCallbackRoute = AuthCallbackRouteImport.update({
-  id: '/auth/callback',
-  path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
@@ -85,7 +79,6 @@ export interface FileRoutesByFullPath {
   '/majors': typeof AuthenticatedMajorsRoute
   '/roadmap': typeof AuthenticatedRoadmapRoute
   '/settings': typeof AuthenticatedSettingsRoute
-  '/auth/callback': typeof AuthCallbackRoute
   '/coursetable/callback': typeof CoursetableCallbackRoute
 }
 export interface FileRoutesByTo {
@@ -97,7 +90,6 @@ export interface FileRoutesByTo {
   '/majors': typeof AuthenticatedMajorsRoute
   '/roadmap': typeof AuthenticatedRoadmapRoute
   '/settings': typeof AuthenticatedSettingsRoute
-  '/auth/callback': typeof AuthCallbackRoute
   '/coursetable/callback': typeof CoursetableCallbackRoute
 }
 export interface FileRoutesById {
@@ -111,7 +103,6 @@ export interface FileRoutesById {
   '/_authenticated/majors': typeof AuthenticatedMajorsRoute
   '/_authenticated/roadmap': typeof AuthenticatedRoadmapRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
-  '/auth/callback': typeof AuthCallbackRoute
   '/coursetable/callback': typeof CoursetableCallbackRoute
 }
 export interface FileRouteTypes {
@@ -125,7 +116,6 @@ export interface FileRouteTypes {
     | '/majors'
     | '/roadmap'
     | '/settings'
-    | '/auth/callback'
     | '/coursetable/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -137,7 +127,6 @@ export interface FileRouteTypes {
     | '/majors'
     | '/roadmap'
     | '/settings'
-    | '/auth/callback'
     | '/coursetable/callback'
   id:
     | '__root__'
@@ -150,7 +139,6 @@ export interface FileRouteTypes {
     | '/_authenticated/majors'
     | '/_authenticated/roadmap'
     | '/_authenticated/settings'
-    | '/auth/callback'
     | '/coursetable/callback'
   fileRoutesById: FileRoutesById
 }
@@ -159,7 +147,6 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   CatalogRoute: typeof CatalogRoute
   LoginRoute: typeof LoginRoute
-  AuthCallbackRoute: typeof AuthCallbackRoute
   CoursetableCallbackRoute: typeof CoursetableCallbackRoute
 }
 
@@ -198,13 +185,6 @@ declare module '@tanstack/react-router' {
       path: '/coursetable/callback'
       fullPath: '/coursetable/callback'
       preLoaderRoute: typeof CoursetableCallbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/callback': {
-      id: '/auth/callback'
-      path: '/auth/callback'
-      fullPath: '/auth/callback'
-      preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/settings': {
@@ -270,7 +250,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   CatalogRoute: CatalogRoute,
   LoginRoute: LoginRoute,
-  AuthCallbackRoute: AuthCallbackRoute,
   CoursetableCallbackRoute: CoursetableCallbackRoute,
 }
 export const routeTree = rootRouteImport
