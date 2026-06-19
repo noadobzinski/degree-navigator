@@ -9,6 +9,7 @@ import { useRequirementExamples, getSlotExamples } from "@/hooks/use-requirement
 import { FilledRequirementCourses } from "@/components/filled-requirement-courses";
 import { RequirementExamples } from "@/components/requirement-examples";
 import { CredentialSuggestionsCard } from "@/components/credential-suggestions-card";
+import { MultiCreditCoursesCard } from "@/components/multi-credit-courses-card";
 import { CatalogLink, RequirementSlotRows } from "@/components/requirement-slot-rows";
 import { slotResultsToRows } from "@/lib/credential-progress";
 import { MajorAuditCard } from "@/components/major-audit-card";
@@ -248,7 +249,8 @@ function Dashboard() {
         <CardHeader>
           <CardTitle className="font-serif">Distributional & skills requirements</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Each course counts toward one credit only. Assignments are optimized automatically; override on My Courses.
+            Each course counts toward one credit only. For courses with multiple tags, choose which credit you
+            used below or on My Courses.
           </p>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2">
@@ -271,6 +273,8 @@ function Dashboard() {
           ))}
         </CardContent>
       </Card>
+
+      <MultiCreditCoursesCard courses={courses} />
 
       {majorAudit && (
         <MajorAuditCard audit={majorAudit} examplesQ={examplesQ} crosslistLookup={crosslistLookup} />

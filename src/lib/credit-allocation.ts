@@ -2,8 +2,9 @@ import {
   DISTRIBUTIONAL_REQUIREMENTS,
   type DistributionalCode,
 } from "@/data/distributional";
+import type { CatalogCourse } from "@/data/courses";
 import type { UserCourse } from "@/lib/audit";
-import { effectiveSkills, WR_OPTIONAL_SKILL } from "@/lib/course-codes";
+import { effectiveSkills, skillsForNewCourse, WR_OPTIONAL_SKILL } from "@/lib/course-codes";
 
 function wrOffered(course: UserCourse): boolean {
   if (course.counts_as_wr != null) return true;
@@ -64,6 +65,31 @@ export function getEligibleCreditOptions(course: UserCourse): CreditBucketOption
 
 export function courseHasExclusiveCreditChoice(course: UserCourse): boolean {
   return getEligibleCreditBuckets(course).length > 1;
+}
+
+/** Build a UserCourse-shaped object from catalog data (for add-flow / browse UI). */
+export function userCoursePreviewFromCatalog(
+  course: CatalogCourse,
+  overrides?: Partial<UserCourse>,
+): UserCourse {
+  const { skills, counts_as_wr } = skillsForNewCourse(course.skills, course.code);
+  return {
+    id: course.code,
+    course_code: course.code,
+    course_title: course.title,
+    credits: course.credits,
+    distributional: course.distributional ?? [],
+    skills,
+    counts_as_wr,
+    status: "planned",
+    term: null,
+    year: null,
+    ...overrides,
+  };
+}
+
+export function catalogCourseHasCreditChoice(course: CatalogCourse): boolean {
+  return courseHasExclusiveCreditChoice(userCoursePreviewFromCatalog(course));
 }
 
 function manualAllocationsFromCourses(courses: UserCourse[]): Map<string, CreditBucketId> {

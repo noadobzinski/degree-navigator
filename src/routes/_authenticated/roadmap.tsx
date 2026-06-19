@@ -1,26 +1,47 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import { getProfile, getMyCourses } from "@/lib/audit.functions";
-import { getRoadmapSuggestions } from "@/lib/coursetable.functions";
+import { getDegreeSchedule } from "@/lib/coursetable.functions";
 import { useCourseTableCatalogMeta, useClientQueryEnabled } from "@/hooks/use-coursetable-catalog";
-import { courseTableSearchUrl } from "@/lib/coursetable";
 import type { UserCourse } from "@/lib/audit";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MAJORS_BY_ID } from "@/data/majors";
+import { scheduleDiffCodes } from "@/lib/schedule-planner";
+import { MajorPicker } from "@/components/major-picker";
+import { ScheduleView } from "@/components/schedule-view";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Map, ExternalLink } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Map, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/roadmap")({
   head: () => ({ meta: [{ title: "Roadmap — Decree" }] }),
   component: RoadmapPage,
 });
 
+function profileScheduleInput(profile: NonNullable<Awaited<ReturnType<typeof getProfile>>>, courses: UserCourse[]) {
+  return {
+    courses,
+    majorId: profile.major_id!,
+    degree: (profile.degree_type ?? "BA") as "BA" | "BS",
+    secondMajorId: profile.second_major_id,
+    secondDegree: (profile.second_degree_type ?? profile.degree_type ?? "BA") as "BA" | "BS",
+    trackId: profile.track_id,
+    concentrationId: profile.concentration_id,
+    certificateIds: profile.certificate_ids ?? [],
+    classYear: profile.class_year,
+  };
+}
+
 function RoadmapPage() {
   const fetchProfile = useServerFn(getProfile);
   const fetchCourses = useServerFn(getMyCourses);
   const clientReady = useClientQueryEnabled();
-  const roadmapFn = useServerFn(getRoadmapSuggestions);
+  const scheduleFn = useServerFn(getDegreeSchedule);
   const metaQ = useCourseTableCatalogMeta();
+  const [exploreMajorId, setExploreMajorId] = useState("");
+
   const profileQ = useQuery({
     queryKey: ["profile"],
     queryFn: () => fetchProfile(),
@@ -32,65 +53,86 @@ function RoadmapPage() {
     enabled: clientReady,
   });
 
-  const roadmapQ = useQuery({
+  const profile = profileQ.data;
+  const courses = (coursesQ.data ?? []) as UserCourse[];
+  const scheduleBase = profile?.major_id ? profileScheduleInput(profile, courses) : null;
+
+  const baselineQ = useQuery({
     queryKey: [
-      "roadmap",
-      profileQ.data?.major_id,
-      profileQ.data?.degree_type,
-      profileQ.data?.second_major_id,
-      profileQ.data?.second_degree_type,
-      profileQ.data?.track_id,
-      profileQ.data?.concentration_id,
-      profileQ.data?.certificate_ids,
-      coursesQ.data,
+      "degree-schedule",
+      "baseline",
+      profile?.major_id,
+      profile?.degree_type,
+      profile?.second_major_id,
+      profile?.second_degree_type,
+      profile?.track_id,
+      profile?.concentration_id,
+      profile?.certificate_ids,
+      profile?.class_year,
+      courses,
     ],
-    enabled: clientReady && !!profileQ.data?.major_id && coursesQ.data !== undefined,
+    enabled: clientReady && !!scheduleBase,
+    queryFn: () => scheduleFn({ data: scheduleBase! }),
+  });
+
+  const exploreQ = useQuery({
+    queryKey: [
+      "degree-schedule",
+      "explore",
+      exploreMajorId,
+      profile?.major_id,
+      profile?.degree_type,
+      profile?.second_major_id,
+      profile?.track_id,
+      profile?.concentration_id,
+      profile?.certificate_ids,
+      profile?.class_year,
+      courses,
+    ],
+    enabled: clientReady && !!scheduleBase && !!exploreMajorId,
     queryFn: () =>
-      roadmapFn({
+      scheduleFn({
         data: {
-          courses: (coursesQ.data ?? []) as UserCourse[],
-          majorId: profileQ.data!.major_id,
-          degree: (profileQ.data!.degree_type ?? "BA") as "BA" | "BS",
-          secondMajorId: profileQ.data!.second_major_id,
-          secondDegree: (profileQ.data!.second_degree_type ??
-            profileQ.data!.degree_type ??
-            "BA") as "BA" | "BS",
-          trackId: profileQ.data!.track_id,
-          concentrationId: profileQ.data!.concentration_id,
-          certificateIds: profileQ.data!.certificate_ids ?? [],
+          ...scheduleBase!,
+          exploreMajorId,
         },
       }),
   });
 
+  const highlightCodes = useMemo(() => {
+    const baseline = baselineQ.data?.schedule;
+    const explore = exploreQ.data?.schedule;
+    if (!baseline || !explore) return new Set<string>();
+    return new Set(scheduleDiffCodes(baseline, explore).map((c) => c.toUpperCase()));
+  }, [baselineQ.data?.schedule, exploreQ.data?.schedule]);
+
   if (!clientReady || profileQ.isLoading || coursesQ.isLoading) {
     return <p className="text-muted-foreground">Loading…</p>;
   }
-  const profile = profileQ.data;
+
   if (!profile?.major_id) {
     return (
       <p className="text-muted-foreground">
         Set up your major in{" "}
-        <a className="text-primary underline" href="/settings">
+        <Link className="text-primary underline" to="/settings">
           Settings
-        </a>{" "}
+        </Link>{" "}
         first.
       </p>
     );
   }
 
-  const suggestions = roadmapQ.data?.suggestions ?? [];
-  const grouped = {
-    high: suggestions.filter((s) => s.priority === "high"),
-    med: suggestions.filter((s) => s.priority === "med"),
-    low: suggestions.filter((s) => s.priority === "low"),
-  };
+  const major = MAJORS_BY_ID[profile.major_id];
+  const secondMajor = profile.second_major_id ? MAJORS_BY_ID[profile.second_major_id] : null;
+  const baselineSchedule = baselineQ.data?.schedule;
+  const exploreSchedule = exploreQ.data?.schedule;
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <header>
         <div className="flex flex-wrap items-center gap-2">
           <Map className="h-6 w-6 text-primary" />
-          <h1 className="font-serif text-3xl font-bold">Your suggested roadmap</h1>
+          <h1 className="font-serif text-3xl font-bold">Degree roadmap</h1>
           {metaQ.data ? (
             <Badge variant="secondary" className="font-normal">
               CourseTable · {metaQ.data.courseCount.toLocaleString()} courses
@@ -98,70 +140,136 @@ function RoadmapPage() {
           ) : null}
         </div>
         <p className="text-muted-foreground">
-          Suggestions pulled from the live Yale catalog via CourseTable.
+          Semester-by-semester plan based on your majors, certificates, and courses — pulled from the live Yale
+          catalog.
         </p>
+        <div className="mt-2 flex flex-wrap gap-2 text-sm text-muted-foreground">
+          <span>
+            {major?.name}
+            {secondMajor ? ` + ${secondMajor.name}` : ""}
+          </span>
+          {profile.class_year ? <span>· Class of {profile.class_year}</span> : null}
+          {!profile.class_year ? (
+            <span>
+              ·{" "}
+              <Link className="text-primary underline" to="/settings">
+                Add class year
+              </Link>{" "}
+              for a more accurate timeline
+            </span>
+          ) : null}
+        </div>
       </header>
 
-      {roadmapQ.isLoading ? (
-        <p className="text-muted-foreground">Building your roadmap from CourseTable…</p>
-      ) : null}
+      <Tabs defaultValue="plan">
+        <TabsList>
+          <TabsTrigger value="plan">Your schedule</TabsTrigger>
+          <TabsTrigger value="explore">Explore a major</TabsTrigger>
+        </TabsList>
 
-      {roadmapQ.isError ? (
-        <Card>
-          <CardContent className="py-6 text-sm text-muted-foreground">
-            Could not load suggestions from CourseTable. Try again later or browse courses manually.
-          </CardContent>
-        </Card>
-      ) : null}
+        <TabsContent value="plan" className="space-y-4">
+          {baselineQ.isLoading ? (
+            <p className="text-muted-foreground">Building your semester plan…</p>
+          ) : null}
 
-      {!roadmapQ.isLoading && suggestions.length === 0 && (
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
-            You've satisfied all the requirements we can suggest. Talk to your DUS to confirm.
-          </CardContent>
-        </Card>
-      )}
-
-      {(["high", "med"] as const).map(
-        (p) =>
-          grouped[p].length > 0 && (
-            <Card key={p}>
-              <CardHeader>
-                <CardTitle className="font-serif">
-                  {p === "high" ? "Take soon — major & track gaps" : "Distributional gaps"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {grouped[p].map((s) => (
-                  <div
-                    key={s.code}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border p-3"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-semibold">{s.code}</span>
-                        <span className="text-sm text-muted-foreground">{s.title}</span>
-                        <a
-                          href={courseTableSearchUrl(s.code)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-muted-foreground hover:text-primary"
-                          title="View on CourseTable"
-                        >
-                          <ExternalLink className="h-3.5 w-3.5" />
-                        </a>
-                      </div>
-                      <p className="mt-1 text-xs text-muted-foreground">{s.reason}</p>
-                    </div>
-                    <Badge variant={p === "high" ? "default" : "secondary"}>
-                      {p === "high" ? "Priority" : "Suggested"}
-                    </Badge>
-                  </div>
-                ))}
+          {baselineQ.isError ? (
+            <Card>
+              <CardContent className="py-6 text-sm text-muted-foreground">
+                Could not build your schedule from CourseTable. Try again later.
               </CardContent>
             </Card>
-          ),
-      )}
+          ) : null}
+
+          {baselineSchedule ? (
+            <>
+              <Card className="border-primary/20 bg-primary/5">
+                <CardHeader className="pb-2">
+                  <CardTitle className="font-serif text-lg">{baselineSchedule.scenarioLabel}</CardTitle>
+                  <CardDescription>
+                    ~{baselineSchedule.summary.termsRemaining} semesters remaining ·{" "}
+                    {baselineSchedule.summary.plannedCount} courses already on your list · up to{" "}
+                    {baselineSchedule.summary.suggestedCount} still needed
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+              <ScheduleView schedule={baselineSchedule} />
+            </>
+          ) : null}
+        </TabsContent>
+
+        <TabsContent value="explore" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 font-serif text-lg">
+                <Sparkles className="h-5 w-5 text-primary" />
+                What if you added another major?
+              </CardTitle>
+              <CardDescription>
+                Pick a major to preview a semester plan. This does not change your saved profile — use Settings to
+                update your actual majors.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <MajorPicker
+                value={exploreMajorId}
+                onChange={setExploreMajorId}
+                excludeId={profile.major_id}
+              />
+              {exploreMajorId && exploreMajorId === profile.second_major_id ? (
+                <p className="text-sm text-muted-foreground">
+                  This is already your second major — switch to &ldquo;Your schedule&rdquo; to see your current plan.
+                </p>
+              ) : null}
+            </CardContent>
+          </Card>
+
+          {exploreMajorId && exploreMajorId !== profile.second_major_id ? (
+            exploreQ.isLoading ? (
+              <p className="text-muted-foreground">Building what-if schedule…</p>
+            ) : exploreQ.isError ? (
+              <Card>
+                <CardContent className="py-6 text-sm text-muted-foreground">
+                  Could not build the what-if schedule. Try again later.
+                </CardContent>
+              </Card>
+            ) : exploreSchedule && baselineSchedule ? (
+              <>
+                <Card className="border-primary/20 bg-primary/5">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="font-serif text-lg">{exploreSchedule.scenarioLabel}</CardTitle>
+                    <CardDescription>
+                      {highlightCodes.size > 0
+                        ? `${highlightCodes.size} additional course${highlightCodes.size === 1 ? "" : "s"} compared to your current plan`
+                        : "No extra courses beyond your current plan — lots of overlap with courses you've taken or planned"}
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+
+                {baselineSchedule && highlightCodes.size > 0 ? (
+                  <div className="grid gap-6 lg:grid-cols-2">
+                    <div className="space-y-2">
+                      <h2 className="font-serif text-lg font-semibold">Your current plan</h2>
+                      <ScheduleView schedule={baselineSchedule} />
+                    </div>
+                    <div className="space-y-2">
+                      <h2 className="font-serif text-lg font-semibold">With the new major</h2>
+                      <ScheduleView schedule={exploreSchedule} highlightCodes={highlightCodes} />
+                    </div>
+                  </div>
+                ) : (
+                  <ScheduleView
+                    schedule={exploreSchedule}
+                    highlightCodes={highlightCodes}
+                    emptyMessage="This major path looks fully covered by your current courses and requirements."
+                  />
+                )}
+              </>
+            ) : null
+          ) : (
+            <p className="text-sm text-muted-foreground">Choose a major above to see how your schedule would change.</p>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

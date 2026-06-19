@@ -33,10 +33,13 @@ import { wrCreditOffered, type UserCourse } from "@/lib/audit";
 import { formatCrosslistNote } from "@/lib/crosslist";
 import {
   countsAsWrForAllocation,
+  catalogCourseHasCreditChoice,
   courseHasExclusiveCreditChoice,
+  userCoursePreviewFromCatalog,
   type CreditBucketId,
 } from "@/lib/credit-allocation";
 import { CreditAllocationSelect } from "@/components/credit-allocation-select";
+import { useCourseCreditAllocation } from "@/hooks/use-course-credit-allocation";
 import { Checkbox } from "@/components/ui/checkbox";
 
 export const Route = createFileRoute("/_authenticated/courses")({
@@ -66,6 +69,8 @@ function CoursesPage() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [catalogSeason, setCatalogSeason] = useState(() => currentSeasonCode());
+  /** Credit choice when adding multi-tag courses from browse (code → bucket or null = auto). */
+  const [addAllocations, setAddAllocations] = useState<Record<string, CreditBucketId | null>>({});
 
   const classYear = profileQ.data?.class_year ?? null;
   const catalogSeasons: CatalogSeason[] = useMemo(() => {
@@ -105,8 +110,20 @@ function CoursesPage() {
   const { term: addTerm, year: addYear } = seasonToTermFields(catalogSeason);
 
   const addM = useMutation({
-    mutationFn: (course: CatalogCourse) => {
+    mutationFn: ({
+      course,
+      credit_allocation,
+    }: {
+      course: CatalogCourse;
+      credit_allocation?: CreditBucketId | null;
+    }) => {
       const { skills, counts_as_wr } = skillsForNewCourse(course.skills, course.code);
+      const preview = userCoursePreviewFromCatalog(course, {
+        skills,
+        counts_as_wr,
+        credit_allocation: credit_allocation ?? null,
+      });
+      const wrPatch = countsAsWrForAllocation(preview, credit_allocation ?? null);
       return addFn({
         data: {
           course_code: course.code,
@@ -114,7 +131,8 @@ function CoursesPage() {
           credits: course.credits,
           distributional: course.distributional,
           skills,
-          counts_as_wr,
+          counts_as_wr: wrPatch !== undefined ? wrPatch : counts_as_wr,
+          credit_allocation: credit_allocation ?? null,
           term: addTerm,
           year: addYear,
           status: catalogSeason === currentSeasonCode() ? "in_progress" : "completed",
@@ -145,18 +163,18 @@ function CoursesPage() {
 
   const myCourses = (coursesQ.data ?? []) as UserCourse[];
 
+  const allocationM = useCourseCreditAllocation();
+
   const taken = new Set(myCourses.map((c) => courseTakenKey(c.course_code, c.term, c.year)));
   const takenThisSeason = (code: string) => taken.has(courseTakenKey(code, addTerm, addYear));
 
-  const allocationM = useMutation({
-    mutationFn: (vars: {
-      id: string;
-      credit_allocation: CreditBucketId | null;
-      counts_as_wr?: boolean | null;
-    }) => updateFn({ data: vars }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["courses"] }),
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
-  });
+  function addAllocationForCatalog(course: CatalogCourse): CreditBucketId | null {
+    return addAllocations[course.code] ?? null;
+  }
+
+  function setAddAllocation(course: CatalogCourse, allocation: CreditBucketId | null) {
+    setAddAllocations((prev) => ({ ...prev, [course.code]: allocation }));
+  }
 
   function resolveCourse(code: string): CatalogCourse {
     const fromBrowse = browseCourses.find((c) => c.code === code);
@@ -176,7 +194,9 @@ function CoursesPage() {
       <div>
         <h1 className="font-serif text-3xl font-bold">My Courses</h1>
         <p className="text-muted-foreground">
-          Search CourseTable by semester — pick the term when you took (or plan to take) each course.
+          Search CourseTable by semester — pick the term when you took (or plan to take) each course. Courses with
+          multiple distributional tags (e.g. Hu + WR) need a credit choice — Yale counts each toward one requirement
+          only.
         </p>
         {classYear ? (
           <p className="mt-1 text-sm text-muted-foreground">
@@ -258,7 +278,12 @@ function CoursesPage() {
             </p>
           ) : null}
           <div className="grid max-h-[420px] gap-2 overflow-y-auto">
-            {browseCourses.map((c) => (
+            {browseCourses.map((c) => {
+              const hasCreditChoice = catalogCourseHasCreditChoice(c);
+              const preview = userCoursePreviewFromCatalog(c, {
+                credit_allocation: addAllocationForCatalog(c),
+              });
+              return (
               <div
                 key={c.code}
                 className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border p-3"
@@ -277,6 +302,11 @@ function CoursesPage() {
                       >
                         <ExternalLink className="h-3.5 w-3.5" />
                       </a>
+                    ) : null}
+                    {hasCreditChoice ? (
+                      <Badge variant="outline" className="text-[10px] font-normal">
+                        Pick one credit
+                      </Badge>
                     ) : null}
                   </div>
                   <div className="mt-1 flex flex-wrap gap-1">
@@ -302,6 +332,14 @@ function CoursesPage() {
                       </Badge>
                     ) : null}
                   </div>
+                  {hasCreditChoice ? (
+                    <CreditAllocationSelect
+                      compact
+                      course={preview}
+                      allCourses={myCourses}
+                      onChange={(allocation) => setAddAllocation(c, allocation)}
+                    />
+                  ) : null}
                   {c.crosslistedCodes?.length ? (
                     <p className="mt-1 text-[10px] text-muted-foreground">
                       {formatCrosslistNote(c.code, c.crosslistedCodes) ??
@@ -312,7 +350,12 @@ function CoursesPage() {
                 <Button
                   size="sm"
                   disabled={takenThisSeason(c.code) || addM.isPending}
-                  onClick={() => addM.mutate(resolveCourse(c.code))}
+                  onClick={() =>
+                    addM.mutate({
+                      course: resolveCourse(c.code),
+                      credit_allocation: hasCreditChoice ? addAllocationForCatalog(c) : null,
+                    })
+                  }
                 >
                   {takenThisSeason(c.code) ? (
                     "Added"
@@ -323,7 +366,8 @@ function CoursesPage() {
                   )}
                 </Button>
               </div>
-            ))}
+            );
+            })}
             {!catalogQ.isLoading && browseCourses.length === 0 ? (
               <p className="py-8 text-center text-sm text-muted-foreground">No courses match your search.</p>
             ) : null}
@@ -386,14 +430,7 @@ function CoursesPage() {
                     course={row}
                     allCourses={myCourses}
                     disabled={allocationM.isPending}
-                    onChange={(allocation) => {
-                      const wrPatch = countsAsWrForAllocation(row, allocation);
-                      allocationM.mutate({
-                        id: c.id,
-                        credit_allocation: allocation,
-                        ...(wrPatch !== undefined ? { counts_as_wr: wrPatch } : {}),
-                      });
-                    }}
+                    onChange={(allocation) => allocationM.mutate({ course: row, allocation })}
                   />
                   {wrOffered && !courseHasExclusiveCreditChoice(row) ? (
                     <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">

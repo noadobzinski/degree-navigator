@@ -7,6 +7,7 @@ import {
 } from "@/lib/credit-allocation";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 const AUTO_VALUE = "__auto__";
 
@@ -15,6 +16,8 @@ type CreditAllocationSelectProps = {
   allCourses: UserCourse[];
   onChange: (allocation: CreditBucketId | null) => void;
   disabled?: boolean;
+  /** Tighter layout for catalog browse rows. */
+  compact?: boolean;
 };
 
 export function CreditAllocationSelect({
@@ -22,6 +25,7 @@ export function CreditAllocationSelect({
   allCourses,
   onChange,
   disabled,
+  compact,
 }: CreditAllocationSelectProps) {
   const options = getEligibleCreditOptions(course);
   if (options.length < 2) return null;
@@ -32,10 +36,21 @@ export function CreditAllocationSelect({
   const currentValue = manual && course.credit_allocation ? course.credit_allocation : AUTO_VALUE;
 
   return (
-    <div className="mt-2 space-y-1">
-      <Label className="text-xs text-muted-foreground">
-        Counts toward (one credit only)
-      </Label>
+    <div className={compact ? "mt-2 space-y-1.5" : "mt-2 space-y-1.5 rounded-md border border-dashed border-primary/30 bg-primary/5 p-2.5"}>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <Label className={compact ? "text-xs text-muted-foreground" : "text-xs font-medium text-foreground"}>
+          Counts as one credit only — choose:
+        </Label>
+        {!compact ? (
+          <span className="flex flex-wrap gap-1">
+            {options.map((o) => (
+              <Badge key={o.id} variant="outline" className="text-[10px] font-normal">
+                {o.label}
+              </Badge>
+            ))}
+          </span>
+        ) : null}
+      </div>
       <Select
         value={currentValue}
         disabled={disabled}
@@ -44,8 +59,8 @@ export function CreditAllocationSelect({
           else onChange(v as CreditBucketId);
         }}
       >
-        <SelectTrigger className="h-8 text-xs">
-          <SelectValue placeholder="Choose credit" />
+        <SelectTrigger className={compact ? "h-8 text-xs" : "h-9 text-sm"}>
+          <SelectValue placeholder="Choose which credit this counts for" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value={AUTO_VALUE}>
@@ -62,9 +77,12 @@ export function CreditAllocationSelect({
           ))}
         </SelectContent>
       </Select>
-      <p className="text-[10px] text-muted-foreground">
-        Currently: {allocationLabel(course, autoMap)}
-      </p>
+      {!compact ? (
+        <p className="text-[10px] text-muted-foreground">
+          Currently counting toward: <span className="font-medium text-foreground">{allocationLabel(course, autoMap)}</span>
+          {!manual ? " — pick manually to override" : ""}
+        </p>
+      ) : null}
     </div>
   );
 }
