@@ -32,14 +32,18 @@ function LoginPage() {
   async function handleGoogle() {
     setLoading(true);
     try {
+      const callbackUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(afterSignIn)}`;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}${afterSignIn}`,
+          redirectTo: callbackUrl,
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
+          },
         },
       });
       if (error) throw error;
-      // Browser redirects to Google; loading state stays until return.
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Sign-in failed");
       setLoading(false);
