@@ -10,6 +10,14 @@ export function concentrationsForMajor(
   );
 }
 
+export function resolveConcentrationLabel(
+  major: Major | undefined,
+  concentrationId: string | null | undefined,
+): string | undefined {
+  if (!major || !concentrationId) return undefined;
+  return major.concentrations?.find((c) => c.id === concentrationId)?.label;
+}
+
 export function resolveMajorRequirements(
   major: Major | undefined,
   degree: "BA" | "BS",

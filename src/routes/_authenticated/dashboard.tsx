@@ -136,7 +136,9 @@ function Dashboard() {
   const majorTotal =
     (majorAudit?.totalCount ?? 0) + (secondAudit?.totalCount ?? 0);
 
-  const titleParts = [`${major?.name} · ${degree}`];
+  const titleParts = [
+    `${major?.name}${majorAudit?.concentration ? ` · ${majorAudit.concentration.label}` : ""} · ${degree}`,
+  ];
   if (secondAudit && secondMajor) titleParts.push(`${secondMajor.name} · ${degree2}`);
 
   const reachableCredentials = suggestReachableCredentials({
@@ -156,6 +158,11 @@ function Dashboard() {
         <div>
           <p className="text-sm text-muted-foreground">Welcome back{profile.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}</p>
           <h1 className="font-serif text-3xl font-bold">{titleParts.join(" & ")}</h1>
+          {majorAudit?.concentration?.description ? (
+            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+              {majorAudit.concentration.description}
+            </p>
+          ) : null}
           {profile.class_year && <p className="text-sm text-muted-foreground">Class of {profile.class_year}</p>}
         </div>
         <Link to="/settings" className="text-sm font-medium text-primary hover:underline">Edit profile</Link>

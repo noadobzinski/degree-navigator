@@ -11,7 +11,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { MAJORS } from "@/data/majors";
+import { MAJORS, concentrationsForMajor } from "@/data/majors";
 
 type MajorPickerProps = {
   value: string;
@@ -68,6 +68,9 @@ export function MajorPicker({ value, onChange, onDegreeDefault, excludeId }: Maj
                     <div className="truncate font-medium">{m.name}</div>
                     <div className="truncate text-xs text-muted-foreground">
                       {m.roadmapCode} · {m.department} · {m.degrees.join("/")}
+                      {concentrationsForMajor(m, m.defaultDegree).length > 0
+                        ? ` · ${concentrationsForMajor(m, m.defaultDegree).length} concentrations`
+                        : ""}
                     </div>
                   </div>
                 </CommandItem>
