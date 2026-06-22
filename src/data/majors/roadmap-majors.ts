@@ -1,4 +1,5 @@
 import type { Major, RequirementGroup, RequirementSlot } from "./types";
+import { EEB_CONCENTRATIONS, EVST_CONCENTRATIONS, SOCY_CONCENTRATIONS } from "./concentration-defs";
 
 /** Expand Yale roadmap codes to include CourseTable 4-digit variants. */
 function y(codes: string[]): string[] {
@@ -511,7 +512,7 @@ export const ROADMAP_MAJORS: Major[] = [
     department: "Ecology & Evolutionary Biology",
     degrees: ["BA", "BS"],
     defaultDegree: "BS",
-    notes: "Choose Biodiversity or Organismal concentration; cognates with DUS approval.",
+    notes: "Choose Biodiversity and the Environment or Organismal Biology concentration; cognates with DUS approval.",
     requirements: {
       BA: {
         totalCourses: 14,
@@ -570,6 +571,7 @@ export const ROADMAP_MAJORS: Major[] = [
         ],
       },
     },
+    concentrations: EEB_CONCENTRATIONS,
   },
   {
     id: "evst",
@@ -578,7 +580,7 @@ export const ROADMAP_MAJORS: Major[] = [
     department: "Environmental Studies",
     degrees: ["BA", "BS"],
     defaultDegree: "BA",
-    notes: "Interdisciplinary core across humanities, social sciences, and natural sciences.",
+    notes: "Interdisciplinary core plus a 6-course concentration (choose a named area or customize with DUS).",
     requirements: {
       BA: {
         totalCourses: 13,
@@ -617,6 +619,7 @@ export const ROADMAP_MAJORS: Major[] = [
         senior: [{ id: "senior", label: "Two-term senior project (EVST 4960)", codes: y(["EVST 4960"]), needCount: 2 }],
       },
     },
+    concentrations: EVST_CONCENTRATIONS,
   },
   {
     id: "glbl",
@@ -878,7 +881,7 @@ export const ROADMAP_MAJORS: Major[] = [
     department: "Sociology",
     degrees: ["BA"],
     defaultDegree: "BA",
-    notes: "Standard major; optional concentrations (Economy & Society, Health & Society, etc.) have alternate requirements.",
+    notes: "Standard major or concentrations in Economy & Society, Health & Society, Data & Society, Inequality/Race & Society, or student-designed.",
     requirements: {
       BA: {
         totalCourses: 13,
@@ -892,6 +895,7 @@ export const ROADMAP_MAJORS: Major[] = [
         senior: [{ id: "senior", label: "Senior requirement", codePrefix: ["SOCY"], minLevel: 400, needCount: 1 }],
       },
     },
+    concentrations: SOCY_CONCENTRATIONS,
   },
   {
     id: "sds",

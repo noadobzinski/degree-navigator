@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   MAJORS,
   MAJOR_DEPARTMENTS,
@@ -7,6 +7,7 @@ import {
   concentrationsForMajor,
   majorCourseCount,
   mergeElectivesIntoCore,
+  resolveMajorRequirements,
   type Major,
 } from "@/data/majors";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,8 +28,16 @@ export const Route = createFileRoute("/_authenticated/majors")({
   component: MajorsPage,
 });
 
-function RequirementSummary({ major, degree }: { major: Major; degree: "BA" | "BS" }) {
-  const raw = major.requirements[degree] ?? Object.values(major.requirements)[0];
+function RequirementSummary({
+  major,
+  degree,
+  concentrationId,
+}: {
+  major: Major;
+  degree: "BA" | "BS";
+  concentrationId?: string;
+}) {
+  const raw = resolveMajorRequirements(major, degree, concentrationId || null);
   if (!raw) return null;
   const reqs = mergeElectivesIntoCore(raw);
   const sections = [
@@ -64,6 +73,7 @@ function MajorsPage() {
   const [department, setDepartment] = useState<string>("all");
   const [degreeFilter, setDegreeFilter] = useState<string>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [previewConcentrationId, setPreviewConcentrationId] = useState<string>("");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -82,6 +92,11 @@ function MajorsPage() {
 
   const selected = selectedId ? MAJORS.find((m) => m.id === selectedId) ?? null : null;
   const previewDegree = selected?.defaultDegree ?? "BA";
+  const previewConcentrations = selected ? concentrationsForMajor(selected, previewDegree) : [];
+
+  useEffect(() => {
+    setPreviewConcentrationId("");
+  }, [selectedId]);
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -172,6 +187,11 @@ function MajorsPage() {
                     {d} · {majorCourseCount(m, d)} cr
                   </Badge>
                 ))}
+                {concentrationsForMajor(m, m.defaultDegree).length > 0 ? (
+                  <Badge variant="outline" className="text-xs">
+                    {concentrationsForMajor(m, m.defaultDegree).length} concentrations
+                  </Badge>
+                ) : null}
               </div>
             </button>
           ))}
@@ -201,17 +221,44 @@ function MajorsPage() {
                     {selected.notes}
                   </p>
                 )}
-                {concentrationsForMajor(selected, previewDegree).length > 0 ? (
-                  <div>
-                    <p className="text-sm font-medium">Concentrations</p>
-                    <ul className="mt-1 list-inside list-disc text-sm text-muted-foreground">
-                      {concentrationsForMajor(selected, previewDegree).map((c) => (
-                        <li key={c.id}>{c.label}</li>
-                      ))}
-                    </ul>
+                {previewConcentrations.length > 0 ? (
+                  <div className="space-y-1.5">
+                    <p className="text-sm font-medium">Concentration (optional)</p>
+                    <Select
+                      value={previewConcentrationId || "__none__"}
+                      onValueChange={(v) => setPreviewConcentrationId(v === "__none__" ? "" : v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Standard major requirements" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">Standard / no concentration</SelectItem>
+                        {previewConcentrations.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {previewConcentrationId ? (
+                      <p className="text-xs text-muted-foreground">
+                        {previewConcentrations.find((c) => c.id === previewConcentrationId)?.description ??
+                          "Requirements below reflect this concentration track."}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        {previewConcentrations.length} concentration
+                        {previewConcentrations.length === 1 ? "" : "s"} available — pick one to preview
+                        requirements or leave as standard.
+                      </p>
+                    )}
                   </div>
                 ) : null}
-                <RequirementSummary major={selected} degree={previewDegree} />
+                <RequirementSummary
+                  major={selected}
+                  degree={previewDegree}
+                  concentrationId={previewConcentrationId || undefined}
+                />
                 {selected.degrees.length > 1 && selected.degrees.includes("BS") && previewDegree === "BA" && (
                   <p className="text-xs text-muted-foreground">
                     B.S. track requires {majorCourseCount(selected, "BS")} courses — see official roadmap for full details.
@@ -219,7 +266,13 @@ function MajorsPage() {
                 )}
                 <div className="flex flex-wrap gap-2 pt-2">
                   <Button asChild>
-                    <Link to="/settings" search={{ major: selected.id }}>
+                    <Link
+                      to="/settings"
+                      search={{
+                        major: selected.id,
+                        ...(previewConcentrationId ? { concentration: previewConcentrationId } : {}),
+                      }}
+                    >
                       Set as my major
                     </Link>
                   </Button>

@@ -1,4 +1,5 @@
 import type { Major } from "./types";
+import { MCDB_BASE_REQUIREMENTS, MCDB_CONCENTRATIONS } from "./concentration-defs";
 
 /** Majors with detailed slot-level requirements aligned to Yale roadmaps. */
 export const DETAILED_MAJORS: Major[] = [
@@ -68,49 +69,10 @@ export const DETAILED_MAJORS: Major[] = [
     department: "MCDB",
     degrees: ["BA", "BS"],
     defaultDegree: "BS",
-    requirements: {
-      BS: {
-        totalCourses: 13,
-        prerequisites: [
-          { id: "gen_chem", label: "General Chemistry (CHEM 161 & 165)", codes: ["CHEM 161", "CHEM 165"], needCount: 2 },
-          { id: "ochem", label: "Organic Chemistry (CHEM 220 & 221)", codes: ["CHEM 220", "CHEM 221"], needCount: 2 },
-          { id: "math", label: "Calculus or Statistics", codes: ["MATH 112", "MATH 115", "MATH 120", "S&DS 100", "EEB 225"], needCount: 1 },
-        ],
-        core: [
-          { id: "bio_intro", label: "Intro Biology (BIOL 101–104, 2 of)", codes: ["BIOL 101", "BIOL 102", "BIOL 103", "BIOL 104"], needCount: 2 },
-          { id: "molbio", label: "Molecular Biology (MCDB 200)", codes: ["MCDB 200"], needCount: 1 },
-          { id: "genetics", label: "Genetics (MCDB 202)", codes: ["MCDB 202"], needCount: 1 },
-          { id: "cell", label: "Cellular & Developmental (MCDB 205)", codes: ["MCDB 205"], needCount: 1 },
-          { id: "biochem", label: "Biochemistry (MCDB 310)", codes: ["MCDB 310"], needCount: 1 },
-          {
-            id: "mcdb_electives",
-            label: "2 general elective MCDB courses (2500+), or approved substitutions",
-            codePrefix: ["MCDB"],
-            minLevel: 250,
-            needCount: 2,
-          },
-        ],
-      },
-      BA: {
-        totalCourses: 11,
-        prerequisites: [
-          { id: "gen_chem", label: "General Chemistry I & II", codes: ["CHEM 161", "CHEM 165"], needCount: 2 },
-        ],
-        core: [
-          { id: "bio_intro", label: "Intro Biology (2 of BIOL 101–104)", codes: ["BIOL 101", "BIOL 102", "BIOL 103", "BIOL 104"], needCount: 2 },
-          { id: "molbio", label: "Molecular Biology (MCDB 200)", codes: ["MCDB 200"], needCount: 1 },
-          { id: "genetics", label: "Genetics (MCDB 202)", codes: ["MCDB 202"], needCount: 1 },
-          { id: "cell", label: "Cellular & Developmental (MCDB 205)", codes: ["MCDB 205"], needCount: 1 },
-          {
-            id: "mcdb_electives",
-            label: "3 MCDB or related electives (DUS approval)",
-            codePrefix: ["MCDB", "EEB", "BIOL"],
-            minLevel: 200,
-            needCount: 3,
-          },
-        ],
-      },
-    },
+    notes:
+      "Optional concentrations in Biotechnology, Neurobiology, or Quantitative Biology replace general electives with a required course plus one approved concentration elective.",
+    requirements: MCDB_BASE_REQUIREMENTS,
+    concentrations: MCDB_CONCENTRATIONS,
   },
   {
     id: "econ",

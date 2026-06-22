@@ -22,13 +22,16 @@ import { Database } from "lucide-react";
 import { YALE_DOUBLE_MAJOR_MAX_OVERLAP } from "@/data/majors";
 
 export const Route = createFileRoute("/_authenticated/settings")({
-  validateSearch: z.object({ major: z.string().optional() }),
+  validateSearch: z.object({
+    major: z.string().optional(),
+    concentration: z.string().optional(),
+  }),
   head: () => ({ meta: [{ title: "Settings — Decree" }] }),
   component: SettingsPage,
 });
 
 function SettingsPage() {
-  const { major: majorFromUrl } = Route.useSearch();
+  const { major: majorFromUrl, concentration: concentrationFromUrl } = Route.useSearch();
   const fetchProfile = useServerFn(getProfile);
   const updateFn = useServerFn(updateProfile);
   const unlinkFn = useServerFn(unlinkCourseTable);
@@ -73,7 +76,13 @@ function SettingsPage() {
     const m = MAJORS_BY_ID[majorFromUrl];
     setMajorId(majorFromUrl);
     setDegree(m.defaultDegree);
-  }, [majorFromUrl]);
+    if (concentrationFromUrl) {
+      const valid = concentrationsForMajor(m, m.defaultDegree).some(
+        (c) => c.id === concentrationFromUrl,
+      );
+      if (valid) setConcentrationId(concentrationFromUrl);
+    }
+  }, [majorFromUrl, concentrationFromUrl]);
 
   const major = majorId ? MAJORS_BY_ID[majorId] : null;
   const secondMajor = secondMajorId ? MAJORS_BY_ID[secondMajorId] : null;
