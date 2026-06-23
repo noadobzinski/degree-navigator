@@ -1,6 +1,6 @@
 import { createFileRoute, redirect, Outlet, Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { GraduationCap, LayoutDashboard, BookOpen, Map, Settings, LogOut, BookOpenCheck, Database } from "lucide-react";
+import { GraduationCap, LayoutDashboard, BookOpen, Map, Settings, LogOut, BookOpenCheck, Database, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePrefetchCourseTableCatalog, useCourseTableCatalogMeta } from "@/hooks/use-coursetable-catalog";
 import { useCourseRenumbering } from "@/hooks/use-course-renumbering";
@@ -17,6 +17,7 @@ export const Route = createFileRoute("/_authenticated")({
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/courses", label: "My Courses", icon: BookOpen },
+  { to: "/planner", label: "Planner", icon: CalendarDays },
   { to: "/majors", label: "Majors", icon: BookOpenCheck },
   { to: "/roadmap", label: "Roadmap", icon: Map },
   { to: "/settings", label: "Settings", icon: Settings },

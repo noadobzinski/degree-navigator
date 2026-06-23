@@ -49,6 +49,8 @@ export type UserCourse = {
   status: "planned" | "in_progress" | "completed";
   term: string | null;
   year: number | null;
+  /** Synthetic row: satisfies reqs but adds no credits (e.g. MATH 1120 implied by MATH 1200). */
+  implied_prerequisite?: boolean;
 };
 
 export function wrCreditOffered(course: UserCourse): boolean {
@@ -385,7 +387,9 @@ export function auditDistributional(courses: UserCourse[]) {
 }
 
 export function totalCredits(courses: UserCourse[]) {
-  return courses.reduce((sum, c) => sum + (c.credits || 1), 0);
+  return courses
+    .filter((c) => !c.implied_prerequisite)
+    .reduce((sum, c) => sum + (c.credits || 1), 0);
 }
 
 export function graduationCredits() {

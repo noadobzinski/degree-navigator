@@ -178,6 +178,10 @@ function Dashboard() {
             Search courses
           </Link>
           <span className="text-muted-foreground">·</span>
+          <Link to="/planner" className="font-medium text-primary hover:underline">
+            Plan schedule
+          </Link>
+          <span className="text-muted-foreground">·</span>
           <Link to="/roadmap" className="font-medium text-primary hover:underline">
             View roadmap
           </Link>

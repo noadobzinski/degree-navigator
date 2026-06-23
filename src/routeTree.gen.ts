@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CoursetableCallbackRouteImport } from './routes/coursetable.callback'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedRoadmapRouteImport } from './routes/_authenticated/roadmap'
+import { Route as AuthenticatedPlannerRouteImport } from './routes/_authenticated/planner'
 import { Route as AuthenticatedMajorsRouteImport } from './routes/_authenticated/majors'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCoursesRouteImport } from './routes/_authenticated/courses'
@@ -54,6 +55,11 @@ const AuthenticatedRoadmapRoute = AuthenticatedRoadmapRouteImport.update({
   path: '/roadmap',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedPlannerRoute = AuthenticatedPlannerRouteImport.update({
+  id: '/planner',
+  path: '/planner',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedMajorsRoute = AuthenticatedMajorsRouteImport.update({
   id: '/majors',
   path: '/majors',
@@ -77,6 +83,7 @@ export interface FileRoutesByFullPath {
   '/courses': typeof AuthenticatedCoursesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/majors': typeof AuthenticatedMajorsRoute
+  '/planner': typeof AuthenticatedPlannerRoute
   '/roadmap': typeof AuthenticatedRoadmapRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/coursetable/callback': typeof CoursetableCallbackRoute
@@ -88,6 +95,7 @@ export interface FileRoutesByTo {
   '/courses': typeof AuthenticatedCoursesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/majors': typeof AuthenticatedMajorsRoute
+  '/planner': typeof AuthenticatedPlannerRoute
   '/roadmap': typeof AuthenticatedRoadmapRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/coursetable/callback': typeof CoursetableCallbackRoute
@@ -101,6 +109,7 @@ export interface FileRoutesById {
   '/_authenticated/courses': typeof AuthenticatedCoursesRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/majors': typeof AuthenticatedMajorsRoute
+  '/_authenticated/planner': typeof AuthenticatedPlannerRoute
   '/_authenticated/roadmap': typeof AuthenticatedRoadmapRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/coursetable/callback': typeof CoursetableCallbackRoute
@@ -114,6 +123,7 @@ export interface FileRouteTypes {
     | '/courses'
     | '/dashboard'
     | '/majors'
+    | '/planner'
     | '/roadmap'
     | '/settings'
     | '/coursetable/callback'
@@ -125,6 +135,7 @@ export interface FileRouteTypes {
     | '/courses'
     | '/dashboard'
     | '/majors'
+    | '/planner'
     | '/roadmap'
     | '/settings'
     | '/coursetable/callback'
@@ -137,6 +148,7 @@ export interface FileRouteTypes {
     | '/_authenticated/courses'
     | '/_authenticated/dashboard'
     | '/_authenticated/majors'
+    | '/_authenticated/planner'
     | '/_authenticated/roadmap'
     | '/_authenticated/settings'
     | '/coursetable/callback'
@@ -201,6 +213,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRoadmapRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/planner': {
+      id: '/_authenticated/planner'
+      path: '/planner'
+      fullPath: '/planner'
+      preLoaderRoute: typeof AuthenticatedPlannerRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/majors': {
       id: '/_authenticated/majors'
       path: '/majors'
@@ -229,6 +248,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCoursesRoute: typeof AuthenticatedCoursesRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedMajorsRoute: typeof AuthenticatedMajorsRoute
+  AuthenticatedPlannerRoute: typeof AuthenticatedPlannerRoute
   AuthenticatedRoadmapRoute: typeof AuthenticatedRoadmapRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
 }
@@ -237,6 +257,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCoursesRoute: AuthenticatedCoursesRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedMajorsRoute: AuthenticatedMajorsRoute,
+  AuthenticatedPlannerRoute: AuthenticatedPlannerRoute,
   AuthenticatedRoadmapRoute: AuthenticatedRoadmapRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
 }
