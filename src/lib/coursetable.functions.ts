@@ -99,6 +99,7 @@ const scheduleInputSchema = z.object({
   trackId: z.string().nullable().optional(),
   classYear: z.number().int().min(2020).max(2035).nullable().optional(),
   exploreMajorId: z.string().nullable().optional(),
+  exploreMode: z.enum(["second-major", "switch-major"]).optional(),
   season: z.string().regex(/^\d{6}$/).optional(),
 });
 
@@ -123,6 +124,7 @@ export const getDegreeSchedule = createServerFn({ method: "POST" })
       certificateIds: data.certificateIds ?? [],
       classYear: data.classYear ?? null,
       exploreMajorId: data.exploreMajorId ?? null,
+      exploreMode: data.exploreMode ?? "second-major",
       catalogByCode,
       crosslistLookup,
     });

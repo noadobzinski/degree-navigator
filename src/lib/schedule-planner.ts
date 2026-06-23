@@ -44,6 +44,13 @@ export type DegreeSchedule = {
   scenarioLabel: string;
 };
 
+/**
+ * How a hypothetical "explore" major is folded into the what-if schedule:
+ * - `second-major`: add it alongside the current major(s) (default, legacy behavior).
+ * - `switch-major`: replace the current primary major entirely with it.
+ */
+export type ExploreMode = "second-major" | "switch-major";
+
 export type SchedulePlannerInput = {
   courses: UserCourse[];
   majorId: string;
@@ -54,8 +61,10 @@ export type SchedulePlannerInput = {
   concentrationId?: string | null;
   certificateIds?: string[];
   classYear?: number | null;
-  /** Hypothetical second major for what-if planning (does not mutate saved profile). */
+  /** Hypothetical major for what-if planning (does not mutate saved profile). */
   exploreMajorId?: string | null;
+  /** Whether the explore major is added as a second major or swapped in as the primary. */
+  exploreMode?: ExploreMode;
   catalogByCode: Record<string, CatalogCourse>;
   crosslistLookup?: CrosslistLookup;
 };
@@ -104,57 +113,88 @@ function suggestionToScheduled(
   };
 }
 
-function resolveSecondMajor(input: SchedulePlannerInput): {
+/** Effective major configuration after applying a what-if explore scenario. */
+type ResolvedScenario = {
+  majorId: string;
+  degree: "BA" | "BS";
+  trackId: string | null;
+  concentrationId: string | null;
   secondMajorId: string | null;
   secondDegree: "BA" | "BS";
   scenarioLabel: string;
-} {
+};
+
+function resolveScenario(input: SchedulePlannerInput): ResolvedScenario {
   const primary = MAJORS_BY_ID[input.majorId];
   const primaryName = primary?.name ?? "your major";
+  const baseTrackId = input.trackId ?? null;
+  const baseConcentrationId = input.concentrationId ?? null;
+  const baseSecondDegree = input.secondDegree ?? input.degree;
 
-  if (input.exploreMajorId && input.exploreMajorId !== input.majorId) {
-    const explore = MAJORS_BY_ID[input.exploreMajorId];
-    const exploreName = explore?.name ?? input.exploreMajorId;
-    const exploreDegree = explore?.defaultDegree ?? input.degree;
+  const baseline: ResolvedScenario = {
+    majorId: input.majorId,
+    degree: input.degree,
+    trackId: baseTrackId,
+    concentrationId: baseConcentrationId,
+    secondMajorId: input.secondMajorId ?? null,
+    secondDegree: baseSecondDegree,
+    scenarioLabel: input.secondMajorId
+      ? `${primaryName} + ${MAJORS_BY_ID[input.secondMajorId]?.name ?? "second major"}`
+      : primaryName,
+  };
 
-    if (!input.secondMajorId) {
-      return {
-        secondMajorId: input.exploreMajorId,
-        secondDegree: exploreDegree,
-        scenarioLabel: `If you added ${exploreName} as a second major alongside ${primaryName}`,
-      };
-    }
+  const exploreId =
+    input.exploreMajorId && input.exploreMajorId !== input.majorId ? input.exploreMajorId : null;
+  if (!exploreId) return baseline;
 
-    if (input.secondMajorId === input.exploreMajorId) {
-      const second = MAJORS_BY_ID[input.secondMajorId];
-      return {
-        secondMajorId: input.secondMajorId,
-        secondDegree: input.secondDegree ?? input.degree,
-        scenarioLabel: `Your current plan (${primaryName} + ${second?.name ?? "second major"})`,
-      };
-    }
+  const explore = MAJORS_BY_ID[exploreId];
+  const exploreName = explore?.name ?? exploreId;
+  const exploreDegree = explore?.defaultDegree ?? input.degree;
+  const mode: ExploreMode = input.exploreMode ?? "second-major";
 
-    const currentSecond = MAJORS_BY_ID[input.secondMajorId];
+  // Switch the primary major entirely. Track/concentration belong to the old
+  // major, so drop them. An existing, distinct second major is kept.
+  if (mode === "switch-major") {
+    const keepSecondId =
+      input.secondMajorId && input.secondMajorId !== exploreId ? input.secondMajorId : null;
+    const keepSecond = keepSecondId ? MAJORS_BY_ID[keepSecondId] : null;
     return {
-      secondMajorId: input.exploreMajorId,
-      secondDegree: exploreDegree,
-      scenarioLabel: `If your second major were ${exploreName} instead of ${currentSecond?.name ?? "your current second major"}`,
+      majorId: exploreId,
+      degree: exploreDegree,
+      trackId: null,
+      concentrationId: null,
+      secondMajorId: keepSecondId,
+      secondDegree: keepSecondId ? baseSecondDegree : exploreDegree,
+      scenarioLabel: keepSecond
+        ? `If you switched your major to ${exploreName} (keeping ${keepSecond.name})`
+        : `If you switched your major to ${exploreName} instead of ${primaryName}`,
     };
   }
 
-  if (input.secondMajorId) {
+  // Add the explore major as a second major alongside the current primary.
+  if (!input.secondMajorId) {
+    return {
+      ...baseline,
+      secondMajorId: exploreId,
+      secondDegree: exploreDegree,
+      scenarioLabel: `If you added ${exploreName} as a second major alongside ${primaryName}`,
+    };
+  }
+
+  if (input.secondMajorId === exploreId) {
     const second = MAJORS_BY_ID[input.secondMajorId];
     return {
-      secondMajorId: input.secondMajorId,
-      secondDegree: input.secondDegree ?? input.degree,
-      scenarioLabel: `${primaryName} + ${second?.name ?? "second major"}`,
+      ...baseline,
+      scenarioLabel: `Your current plan (${primaryName} + ${second?.name ?? "second major"})`,
     };
   }
 
+  const currentSecond = MAJORS_BY_ID[input.secondMajorId];
   return {
-    secondMajorId: null,
-    secondDegree: input.degree,
-    scenarioLabel: primaryName,
+    ...baseline,
+    secondMajorId: exploreId,
+    secondDegree: exploreDegree,
+    scenarioLabel: `If your second major were ${exploreName} instead of ${currentSecond?.name ?? "your current second major"}`,
   };
 }
 
@@ -235,18 +275,19 @@ function assignSuggestionsToTerms(
 export function buildDegreeSchedule(input: SchedulePlannerInput): DegreeSchedule {
   const currentSeason = currentSeasonCode();
   const seasons = futureSeasonsUntilGraduation(input.classYear ?? null);
-  const { secondMajorId, secondDegree, scenarioLabel } = resolveSecondMajor(input);
+  const { majorId, degree, trackId, concentrationId, secondMajorId, secondDegree, scenarioLabel } =
+    resolveScenario(input);
 
   const suggestions = suggestRoadmap(
     input.courses,
-    input.majorId,
-    input.degree,
-    input.trackId ?? null,
+    majorId,
+    degree,
+    trackId,
     input.catalogByCode,
     secondMajorId,
     secondDegree,
     input.crosslistLookup,
-    input.concentrationId ?? null,
+    concentrationId,
     input.certificateIds ?? null,
     SCHEDULE_SUGGESTION_LIMIT,
   );
