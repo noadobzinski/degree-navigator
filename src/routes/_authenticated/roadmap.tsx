@@ -14,6 +14,8 @@ import { ScheduleView } from "@/components/schedule-view";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import type { ExploreMode } from "@/lib/schedule-planner";
 import { Map, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/roadmap")({
@@ -42,6 +44,7 @@ function RoadmapPage() {
   const scheduleFn = useServerFn(getDegreeSchedule);
   const metaQ = useCourseTableCatalogMeta();
   const [exploreMajorId, setExploreMajorId] = useState("");
+  const [exploreMode, setExploreMode] = useState<ExploreMode>("second-major");
 
   const profileQ = useQuery({
     queryKey: ["profile"],
@@ -81,6 +84,7 @@ function RoadmapPage() {
       "degree-schedule",
       "explore",
       exploreMajorId,
+      exploreMode,
       profile?.major_id,
       profile?.degree_type,
       profile?.second_major_id,
@@ -96,6 +100,7 @@ function RoadmapPage() {
         data: {
           ...scheduleBase!,
           exploreMajorId,
+          exploreMode,
         },
       }),
   });
@@ -127,6 +132,8 @@ function RoadmapPage() {
   const secondMajor = profile.second_major_id ? MAJORS_BY_ID[profile.second_major_id] : null;
   const baselineSchedule = baselineQ.data?.schedule;
   const exploreSchedule = exploreQ.data?.schedule;
+  const isSwitchMode = exploreMode === "switch-major";
+  const isRedundantSecond = !isSwitchMode && !!exploreMajorId && exploreMajorId === profile.second_major_id;
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -203,20 +210,40 @@ function RoadmapPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 font-serif text-lg">
                 <Sparkles className="h-5 w-5 text-primary" />
-                What if you added another major?
+                {isSwitchMode ? "What if you switched majors?" : "What if you added another major?"}
               </CardTitle>
               <CardDescription>
-                Pick a major to preview a semester plan. This does not change your saved profile — use Settings to
-                update your actual majors.
+                {isSwitchMode
+                  ? "Preview a semester plan as if this major replaced your current one. This does not change your saved profile — use Settings to update your actual major."
+                  : "Pick a major to preview a semester plan alongside your current one. This does not change your saved profile — use Settings to update your actual majors."}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
+              <div className="space-y-1.5">
+                <p className="text-sm font-medium">How do you want to explore?</p>
+                <ToggleGroup
+                  type="single"
+                  variant="outline"
+                  value={exploreMode}
+                  onValueChange={(value) => {
+                    if (value) setExploreMode(value as ExploreMode);
+                  }}
+                  className="justify-start"
+                >
+                  <ToggleGroupItem value="second-major" className="px-3">
+                    Add as second major
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="switch-major" className="px-3">
+                    Switch to a new major
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              </div>
               <MajorPicker
                 value={exploreMajorId}
                 onChange={setExploreMajorId}
                 excludeId={profile.major_id}
               />
-              {exploreMajorId && exploreMajorId === profile.second_major_id ? (
+              {isRedundantSecond ? (
                 <p className="text-sm text-muted-foreground">
                   This is already your second major — switch to &ldquo;Your schedule&rdquo; to see your current plan.
                 </p>
@@ -224,7 +251,7 @@ function RoadmapPage() {
             </CardContent>
           </Card>
 
-          {exploreMajorId && exploreMajorId !== profile.second_major_id ? (
+          {exploreMajorId && !isRedundantSecond ? (
             exploreQ.isLoading ? (
               <p className="text-muted-foreground">Building what-if schedule…</p>
             ) : exploreQ.isError ? (
@@ -253,7 +280,9 @@ function RoadmapPage() {
                       <ScheduleView schedule={baselineSchedule} />
                     </div>
                     <div className="space-y-2">
-                      <h2 className="font-serif text-lg font-semibold">With the new major</h2>
+                      <h2 className="font-serif text-lg font-semibold">
+                        {isSwitchMode ? "With the new major" : "With the added major"}
+                      </h2>
                       <ScheduleView schedule={exploreSchedule} highlightCodes={highlightCodes} />
                     </div>
                   </div>
