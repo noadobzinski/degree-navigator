@@ -7,13 +7,20 @@ import { getProfile, updateProfile } from "@/lib/audit.functions";
 import { useCourseTableCatalogMeta, useClientQueryEnabled } from "@/hooks/use-coursetable-catalog";
 import { CERTIFICATE_CATEGORIES, CERTIFICATES, resolveCertificateId } from "@/data/certificates";
 import { concentrationsForMajor, MAJORS_BY_ID } from "@/data/majors";
-import { TRACKS } from "@/data/tracks";
+import { TRACKS, TRACKS_BY_ID } from "@/data/tracks";
 import { MajorPicker } from "@/components/major-picker";
+import { TrackMilestonesCard } from "@/components/track-milestones-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Database } from "lucide-react";
@@ -57,11 +64,13 @@ function SettingsPage() {
     if (!p) return;
     setName(p.full_name ?? "");
     setMajorId(p.major_id ?? "");
-    setDegree(((p.degree_type as "BA" | "BS") ?? "BA"));
+    setDegree((p.degree_type as "BA" | "BS") ?? "BA");
     const second = p.second_major_id ?? "";
     setDoubleMajor(!!second);
     setSecondMajorId(second);
-    setSecondDegree(((p.second_degree_type as "BA" | "BS") ?? p.degree_type ?? "BA") as "BA" | "BS");
+    setSecondDegree(
+      ((p.second_degree_type as "BA" | "BS") ?? p.degree_type ?? "BA") as "BA" | "BS",
+    );
     setConcentrationId(p.concentration_id ?? "");
     setCertificateIds((p.certificate_ids ?? []).map(resolveCertificateId));
     setTrackId(p.track_id ?? "none");
@@ -105,8 +114,7 @@ function SettingsPage() {
           major_id: majorId || null,
           degree_type: degree,
           second_major_id: doubleMajor && secondMajorId ? secondMajorId : null,
-          second_degree_type:
-            doubleMajor && secondMajorId ? secondDegree : null,
+          second_degree_type: doubleMajor && secondMajorId ? secondDegree : null,
           concentration_id: concentrationId || null,
           certificate_ids: certificateIds,
           track_id: trackId === "none" ? null : trackId,
@@ -114,7 +122,10 @@ function SettingsPage() {
         },
       });
     },
-    onSuccess: () => { toast.success("Saved"); qc.invalidateQueries({ queryKey: ["profile"] }); },
+    onSuccess: () => {
+      toast.success("Saved");
+      qc.invalidateQueries({ queryKey: ["profile"] });
+    },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
   });
 
@@ -122,15 +133,24 @@ function SettingsPage() {
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
         <h1 className="font-serif text-3xl font-bold">Settings</h1>
-        <p className="text-muted-foreground">Choose your major, concentration, certificates, and track.</p>
+        <p className="text-muted-foreground">
+          Choose your major, concentration, certificates, and track.
+        </p>
       </div>
 
       <Card>
-        <CardHeader><CardTitle className="font-serif">Your degree</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="font-serif">Your degree</CardTitle>
+        </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="name">Name</Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Jane Doe" />
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Jane Doe"
+            />
           </div>
 
           <div className="space-y-1.5">
@@ -152,7 +172,9 @@ function SettingsPage() {
                 value={concentrationId || "__none__"}
                 onValueChange={(v) => setConcentrationId(v === "__none__" ? "" : v)}
               >
-                <SelectTrigger><SelectValue placeholder="Standard major requirements" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Standard major requirements" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">Standard / no concentration selected</SelectItem>
                   {concentrations.map((c) => (
@@ -169,7 +191,8 @@ function SettingsPage() {
                 </p>
               ) : (
                 <p className="text-xs text-muted-foreground">
-                  Optional. Select a concentration if your roadmap lists one (e.g. BENG, PHIL, CPLT Film).
+                  Optional. Select a concentration if your roadmap lists one (e.g. BENG, PHIL, CPLT
+                  Film).
                 </p>
               )}
             </div>
@@ -178,9 +201,15 @@ function SettingsPage() {
           <div className="space-y-1.5">
             <Label>Degree</Label>
             <Select value={degree} onValueChange={(v) => setDegree(v as "BA" | "BS")}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
-                {availableDegrees.map((d) => <SelectItem key={d} value={d}>{d === "BA" ? "Bachelor of Arts (B.A.)" : "Bachelor of Science (B.S.)"}</SelectItem>)}
+                {availableDegrees.map((d) => (
+                  <SelectItem key={d} value={d}>
+                    {d === "BA" ? "Bachelor of Arts (B.A.)" : "Bachelor of Science (B.S.)"}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             {major && <p className="text-xs text-muted-foreground">{major.notes}</p>}
@@ -224,8 +253,13 @@ function SettingsPage() {
               </div>
               <div className="space-y-1.5">
                 <Label>Second major degree</Label>
-                <Select value={secondDegree} onValueChange={(v) => setSecondDegree(v as "BA" | "BS")}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={secondDegree}
+                  onValueChange={(v) => setSecondDegree(v as "BA" | "BS")}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {secondDegrees.map((d) => (
                       <SelectItem key={d} value={d}>
@@ -234,7 +268,9 @@ function SettingsPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                {secondMajor && <p className="text-xs text-muted-foreground">{secondMajor.notes}</p>}
+                {secondMajor && (
+                  <p className="text-xs text-muted-foreground">{secondMajor.notes}</p>
+                )}
               </div>
             </div>
           ) : null}
@@ -275,7 +311,10 @@ function SettingsPage() {
                             }}
                           />
                           <div className="space-y-0.5">
-                            <Label htmlFor={`cert-${cert.id}`} className="cursor-pointer font-medium">
+                            <Label
+                              htmlFor={`cert-${cert.id}`}
+                              className="cursor-pointer font-medium"
+                            >
                               {cert.name}
                               {cert.requiresApplication ? (
                                 <span className="ml-1.5 text-xs font-normal text-muted-foreground">
@@ -297,17 +336,36 @@ function SettingsPage() {
           <div className="space-y-1.5">
             <Label>Track (optional)</Label>
             <Select value={trackId} onValueChange={setTrackId}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">None</SelectItem>
-                {TRACKS.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                {TRACKS.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
+            {trackId !== "none" && TRACKS_BY_ID[trackId]?.description ? (
+              <p className="text-xs text-muted-foreground">{TRACKS_BY_ID[trackId].description}</p>
+            ) : null}
           </div>
+
+          {trackId !== "none" && TRACKS_BY_ID[trackId]?.milestones?.length ? (
+            <TrackMilestonesCard track={TRACKS_BY_ID[trackId]} className="bg-muted/30" />
+          ) : null}
 
           <div className="space-y-1.5">
             <Label htmlFor="year">Class year</Label>
-            <Input id="year" inputMode="numeric" value={year} onChange={(e) => setYear(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} placeholder="2028" />
+            <Input
+              id="year"
+              inputMode="numeric"
+              value={year}
+              onChange={(e) => setYear(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))}
+              placeholder="2028"
+            />
           </div>
 
           <Button
@@ -331,15 +389,16 @@ function SettingsPage() {
                 <>
                   <p className="font-medium">Connected to CourseTable</p>
                   <p className="mt-1 text-muted-foreground">
-                    {catalogMeta.data.courseCount.toLocaleString()} Yale courses are available across My Courses,
-                    Roadmap, and your degree audit. No extra sign-in required.
+                    {catalogMeta.data.courseCount.toLocaleString()} Yale courses are available
+                    across My Courses, Roadmap, and your degree audit. No extra sign-in required.
                   </p>
                 </>
               ) : catalogMeta.isLoading ? (
                 <p className="text-muted-foreground">Loading catalog from CourseTable…</p>
               ) : (
                 <p className="text-muted-foreground">
-                  CourseTable catalog is unavailable right now. Course search will retry automatically.
+                  CourseTable catalog is unavailable right now. Course search will retry
+                  automatically.
                 </p>
               )}
             </div>
