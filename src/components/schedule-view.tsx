@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { courseTableSearchUrl } from "@/lib/coursetable";
 import { courseIdentityKey } from "@/lib/course-codes";
 import type { DegreeSchedule, ScheduledCourse } from "@/lib/schedule-planner";
-import { Calendar, ExternalLink } from "lucide-react";
+import { Calendar, ExternalLink, Lock } from "lucide-react";
 
 type ScheduleViewProps = {
   schedule: DegreeSchedule;
@@ -48,6 +48,12 @@ function CourseRow({
             ) : null}
           </div>
           <p className="mt-1 text-xs text-muted-foreground">{course.reason}</p>
+          {course.prereqNote ? (
+            <p className="mt-1 flex items-center gap-1 text-xs font-medium text-warning">
+              <Lock className="h-3 w-3 shrink-0" />
+              {course.prereqNote}
+            </p>
+          ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <span className="text-xs text-muted-foreground">{course.credits} cr</span>
