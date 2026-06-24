@@ -8,29 +8,7 @@ import { useCourseTableCatalogMeta, useClientQueryEnabled } from "@/hooks/use-co
 import type { UserCourse } from "@/lib/audit";
 import { MAJORS_BY_ID } from "@/data/majors";
 import { TRACKS, TRACKS_BY_ID } from "@/data/tracks";
-import { scheduleDiffCodes } from "@/lib/schedule-planner";
-import { futureSeasonsUntilGraduation } from "@/lib/coursetable-seasons";
-import { courseIdentityKey } from "@/lib/course-codes";
-import { MajorPicker } from "@/components/major-picker";
-import { ScheduleView } from "@/components/schedule-view";
-import {
-  RoadmapSkeletonEditor,
-  DEFAULT_COURSES_PER_TERM,
-} from "@/components/roadmap-skeleton-editor";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import type { ExploreMode } from "@/lib/schedule-planner";
-import type { ExploreMode, PlanSkeleton } from "@/lib/schedule-planner";
+import { scheduleDiffCodes, type ExploreMode, type PlanSkeleton } from "@/lib/schedule-planner";
 import { Map, Sparkles } from "lucide-react";
 
 const SKELETON_STORAGE_KEY = "decree:roadmap-skeleton:v1";
