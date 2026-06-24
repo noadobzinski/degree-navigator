@@ -12,6 +12,15 @@ export type CatalogCourse = {
   crosslistedCodes?: string[];
   /** YCPS course attributes from CourseTable (e.g. "YC Quantum Elective"). */
   ycAttributes?: string[];
+  /**
+   * Course prerequisites parsed from the CourseTable `requirements`/description
+   * text. A list of AND-groups, each holding OR alternatives — satisfied when
+   * at least one code in every group has been taken/planned. See
+   * `@/lib/prerequisites`.
+   */
+  prerequisites?: string[][];
+  /** Raw prerequisite/requirements text from CourseTable, for display. */
+  requirementsText?: string;
 };
 
 export const CATALOG: CatalogCourse[] = [

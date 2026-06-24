@@ -1,6 +1,7 @@
 import type { CatalogCourse } from "@/data/courses";
 import { codeLookupKeys, courseIdentityKey } from "@/lib/course-codes";
 import { resolveCatalogCredits } from "@/lib/course-credits";
+import { cleanPrerequisites, parsePrerequisites } from "@/lib/prerequisites";
 
 export const COURSETABLE_API = "https://api.coursetable.com";
 
@@ -22,6 +23,8 @@ export type CourseTableCourse = {
   listings: CourseTableListing[];
   same_course_id: number;
   description?: string;
+  /** CourseTable's dedicated prerequisite/requirements text (when present). */
+  requirements?: string;
   course_flags?: { flag?: { flag_text?: string } }[];
 };
 
@@ -92,6 +95,9 @@ export function normalizeCourseTableCourse(entry: CourseTableCourse): CatalogCou
   const primary = codes[0];
   const primaryListing = entry.listings!.find((l) => l.course_code?.replace(/\s+/g, " ").trim() === primary)!;
   const crosslistedCodes = codes.length > 1 ? codes.slice(1) : undefined;
+  const requirementsText = entry.requirements?.trim() || undefined;
+  const prereqSource = entry.requirements ?? entry.description ?? "";
+  const prerequisites = cleanPrerequisites(parsePrerequisites(prereqSource), primary);
   return {
     code: primary,
     crosslistedCodes,
@@ -109,6 +115,8 @@ export function normalizeCourseTableCourse(entry: CourseTableCourse): CatalogCou
     ],
     ycAttributes: ycAttributesFromFlags(entry),
     subject: primaryListing.subject,
+    prerequisites: prerequisites.length ? prerequisites : undefined,
+    requirementsText,
   };
 }
 
@@ -126,6 +134,8 @@ function mergeCatalogCourses(a: CatalogCourse, b: CatalogCourse): CatalogCourse 
     skills: [...new Set([...a.skills, ...b.skills])] as CatalogCourse["skills"],
     ycAttributes: [...new Set([...(a.ycAttributes ?? []), ...(b.ycAttributes ?? [])])],
     subject: a.subject || b.subject,
+    prerequisites: a.prerequisites ?? b.prerequisites,
+    requirementsText: a.requirementsText ?? b.requirementsText,
   };
 }
 
