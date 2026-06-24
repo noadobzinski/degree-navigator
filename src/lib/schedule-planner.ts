@@ -1,10 +1,7 @@
 import type { CatalogCourse } from "@/data/courses";
 import { MAJORS_BY_ID } from "@/data/majors";
-import {
-  suggestRoadmap,
-  type RoadmapSuggestion,
-  type UserCourse,
-} from "@/lib/audit";
+import { TRACKS_BY_ID } from "@/data/tracks";
+import { suggestRoadmap, type RoadmapSuggestion, type UserCourse } from "@/lib/audit";
 import {
   compareSeasonCodes,
   futureSeasonsUntilGraduation,
@@ -81,6 +78,12 @@ export type SchedulePlannerInput = {
   exploreMajorId?: string | null;
   /** Whether the explore major is added as a second major or swapped in as the primary. */
   exploreMode?: ExploreMode;
+  /**
+   * Hypothetical career track (premed/prelaw/etc.) for what-if planning.
+   * `undefined` keeps the saved track; a string (including `"none"`) previews
+   * that track instead. Does not mutate the saved profile.
+   */
+  exploreTrackId?: string | null;
   /** Optional rough plan the user sketched out; the planner fills in around it. */
   skeleton?: PlanSkeleton | null;
   catalogByCode: Record<string, CatalogCourse>;
@@ -128,7 +131,10 @@ function toScheduled(
 ): ScheduledCourse {
   return {
     code: course.course_code,
-    title: course.course_title ?? lookupCatalogEntry(course.course_code, catalogByCode)?.title ?? course.course_code,
+    title:
+      course.course_title ??
+      lookupCatalogEntry(course.course_code, catalogByCode)?.title ??
+      course.course_code,
     reason,
     priority,
     credits: course.credits || catalogCredits(course.course_code, catalogByCode),
@@ -161,23 +167,43 @@ type ResolvedScenario = {
   scenarioLabel: string;
 };
 
-function resolveScenario(input: SchedulePlannerInput): ResolvedScenario {
+/** Normalize a track id: treat empty/`"none"` as "no track". */
+function normalizeTrackId(id: string | null | undefined): string | null {
+  return !id || id === "none" ? null : id;
+}
+
+function trackName(id: string | null): string {
+  if (!id) return "no track";
+  return TRACKS_BY_ID[id]?.name ?? id;
+}
+
+/** Resolution of just the major portion of a scenario (track applied separately). */
+type MajorScenario = {
+  majorId: string;
+  degree: "BA" | "BS";
+  concentrationId: string | null;
+  secondMajorId: string | null;
+  secondDegree: "BA" | "BS";
+  majorLabel: string;
+  majorChanged: boolean;
+};
+
+function resolveMajorScenario(input: SchedulePlannerInput): MajorScenario {
   const primary = MAJORS_BY_ID[input.majorId];
   const primaryName = primary?.name ?? "your major";
-  const baseTrackId = input.trackId ?? null;
   const baseConcentrationId = input.concentrationId ?? null;
   const baseSecondDegree = input.secondDegree ?? input.degree;
 
-  const baseline: ResolvedScenario = {
+  const baseline: MajorScenario = {
     majorId: input.majorId,
     degree: input.degree,
-    trackId: baseTrackId,
     concentrationId: baseConcentrationId,
     secondMajorId: input.secondMajorId ?? null,
     secondDegree: baseSecondDegree,
-    scenarioLabel: input.secondMajorId
+    majorLabel: input.secondMajorId
       ? `${primaryName} + ${MAJORS_BY_ID[input.secondMajorId]?.name ?? "second major"}`
       : primaryName,
+    majorChanged: false,
   };
 
   const exploreId =
@@ -189,8 +215,9 @@ function resolveScenario(input: SchedulePlannerInput): ResolvedScenario {
   const exploreDegree = explore?.defaultDegree ?? input.degree;
   const mode: ExploreMode = input.exploreMode ?? "second-major";
 
-  // Switch the primary major entirely. Track/concentration belong to the old
-  // major, so drop them. An existing, distinct second major is kept.
+  // Switch the primary major entirely. The concentration belongs to the old
+  // major, so drop it. An existing, distinct second major is kept. (Career
+  // tracks like premed are not tied to a major, so they're handled separately.)
   if (mode === "switch-major") {
     const keepSecondId =
       input.secondMajorId && input.secondMajorId !== exploreId ? input.secondMajorId : null;
@@ -198,13 +225,13 @@ function resolveScenario(input: SchedulePlannerInput): ResolvedScenario {
     return {
       majorId: exploreId,
       degree: exploreDegree,
-      trackId: null,
       concentrationId: null,
       secondMajorId: keepSecondId,
       secondDegree: keepSecondId ? baseSecondDegree : exploreDegree,
-      scenarioLabel: keepSecond
+      majorLabel: keepSecond
         ? `If you switched your major to ${exploreName} (keeping ${keepSecond.name})`
         : `If you switched your major to ${exploreName} instead of ${primaryName}`,
+      majorChanged: true,
     };
   }
 
@@ -214,7 +241,8 @@ function resolveScenario(input: SchedulePlannerInput): ResolvedScenario {
       ...baseline,
       secondMajorId: exploreId,
       secondDegree: exploreDegree,
-      scenarioLabel: `If you added ${exploreName} as a second major alongside ${primaryName}`,
+      majorLabel: `If you added ${exploreName} as a second major alongside ${primaryName}`,
+      majorChanged: true,
     };
   }
 
@@ -222,7 +250,7 @@ function resolveScenario(input: SchedulePlannerInput): ResolvedScenario {
     const second = MAJORS_BY_ID[input.secondMajorId];
     return {
       ...baseline,
-      scenarioLabel: `Your current plan (${primaryName} + ${second?.name ?? "second major"})`,
+      majorLabel: `Your current plan (${primaryName} + ${second?.name ?? "second major"})`,
     };
   }
 
@@ -231,7 +259,55 @@ function resolveScenario(input: SchedulePlannerInput): ResolvedScenario {
     ...baseline,
     secondMajorId: exploreId,
     secondDegree: exploreDegree,
-    scenarioLabel: `If your second major were ${exploreName} instead of ${currentSecond?.name ?? "your current second major"}`,
+    majorLabel: `If your second major were ${exploreName} instead of ${currentSecond?.name ?? "your current second major"}`,
+    majorChanged: true,
+  };
+}
+
+function buildScenarioLabel(
+  major: MajorScenario,
+  baseTrackId: string | null,
+  effectiveTrackId: string | null,
+  trackChanged: boolean,
+): string {
+  if (!trackChanged) return major.majorLabel;
+
+  const fromName = trackName(baseTrackId);
+  const toName = trackName(effectiveTrackId);
+
+  if (!major.majorChanged) {
+    if (!baseTrackId) return `If you followed the ${toName} track`;
+    if (!effectiveTrackId) return `If you dropped the ${fromName} track`;
+    return `If you switched from the ${fromName} track to the ${toName} track`;
+  }
+
+  const clause = !effectiveTrackId
+    ? `dropping the ${fromName} track`
+    : !baseTrackId
+      ? `adding the ${toName} track`
+      : `switching to the ${toName} track`;
+  return `${major.majorLabel}, ${clause}`;
+}
+
+function resolveScenario(input: SchedulePlannerInput): ResolvedScenario {
+  const major = resolveMajorScenario(input);
+
+  // Career tracks (premed/prelaw/etc.) are independent of the chosen major, so
+  // they're resolved on top of the major scenario. `exploreTrackId === undefined`
+  // means "keep the saved track"; any string (including "none") previews it.
+  const baseTrackId = normalizeTrackId(input.trackId);
+  const exploringTrack = input.exploreTrackId !== undefined;
+  const effectiveTrackId = exploringTrack ? normalizeTrackId(input.exploreTrackId) : baseTrackId;
+  const trackChanged = effectiveTrackId !== baseTrackId;
+
+  return {
+    majorId: major.majorId,
+    degree: major.degree,
+    trackId: effectiveTrackId,
+    concentrationId: major.concentrationId,
+    secondMajorId: major.secondMajorId,
+    secondDegree: major.secondDegree,
+    scenarioLabel: buildScenarioLabel(major, baseTrackId, effectiveTrackId, trackChanged),
   };
 }
 
@@ -360,12 +436,15 @@ export function buildDegreeSchedule(input: SchedulePlannerInput): DegreeSchedule
   const lastSeason = seasons.at(-1)?.code ?? currentSeason;
 
   return {
-    terms: nonEmptyTerms.length > 0 ? terms : seasons.slice(0, 1).map((s) => ({
-      seasonCode: s.code,
-      label: s.label,
-      courses: [],
-      credits: 0,
-    })),
+    terms:
+      nonEmptyTerms.length > 0
+        ? terms
+        : seasons.slice(0, 1).map((s) => ({
+            seasonCode: s.code,
+            label: s.label,
+            courses: [],
+            credits: 0,
+          })),
     unscheduled,
     summary: {
       suggestedCount: suggestions.length,
