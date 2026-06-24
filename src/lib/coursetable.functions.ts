@@ -46,7 +46,10 @@ export const getRoadmapSuggestions = createServerFn({ method: "POST" })
         concentrationId: z.string().nullable().optional(),
         certificateIds: z.array(z.string()).optional(),
         trackId: z.string().nullable(),
-        season: z.string().regex(/^\d{6}$/).optional(),
+        season: z
+          .string()
+          .regex(/^\d{6}$/)
+          .optional(),
       })
       .parse(d),
   )
@@ -100,7 +103,11 @@ const scheduleInputSchema = z.object({
   classYear: z.number().int().min(2020).max(2035).nullable().optional(),
   exploreMajorId: z.string().nullable().optional(),
   exploreMode: z.enum(["second-major", "switch-major"]).optional(),
-  season: z.string().regex(/^\d{6}$/).optional(),
+  exploreTrackId: z.string().nullable().optional(),
+  season: z
+    .string()
+    .regex(/^\d{6}$/)
+    .optional(),
 });
 
 export const getDegreeSchedule = createServerFn({ method: "POST" })
@@ -125,6 +132,7 @@ export const getDegreeSchedule = createServerFn({ method: "POST" })
       classYear: data.classYear ?? null,
       exploreMajorId: data.exploreMajorId ?? null,
       exploreMode: data.exploreMode ?? "second-major",
+      exploreTrackId: data.exploreTrackId,
       catalogByCode,
       crosslistLookup,
     });
@@ -142,7 +150,10 @@ export const searchCourseTableCatalog = createServerFn({ method: "POST" })
     z
       .object({
         query: z.string().max(200).optional(),
-        season: z.string().regex(/^\d{6}$/).optional(),
+        season: z
+          .string()
+          .regex(/^\d{6}$/)
+          .optional(),
         limit: z.number().int().min(1).max(100).optional(),
       })
       .parse(d ?? {}),
@@ -157,12 +168,7 @@ export const searchCourseTableCatalog = createServerFn({ method: "POST" })
     if (!q) return { season, courses: catalog.slice(0, limit), total: catalog.length };
 
     const filtered = catalog.filter((c) => {
-      const haystack = [
-        c.code,
-        c.title,
-        c.subject,
-        ...(c.crosslistedCodes ?? []),
-      ]
+      const haystack = [c.code, c.title, c.subject, ...(c.crosslistedCodes ?? [])]
         .join(" ")
         .toLowerCase();
       return haystack.includes(q);
@@ -222,7 +228,9 @@ export const getRequirementExamples = createServerFn({ method: "POST" })
         const courses = await fetchSeasonCatalog(currentSeason);
         seasonsLoaded = 1;
         for (const course of courses) {
-          const keys = [course.code, ...(course.crosslistedCodes ?? [])].map((c) => c.toUpperCase());
+          const keys = [course.code, ...(course.crosslistedCodes ?? [])].map((c) =>
+            c.toUpperCase(),
+          );
           for (const key of keys) {
             const list = seasonByCode.get(key) ?? [];
             if (!list.includes(currentSeason)) list.push(currentSeason);
@@ -239,7 +247,10 @@ export const getRequirementExamples = createServerFn({ method: "POST" })
       }
     }
 
-    const crosslistLookup = buildCrosslistLookup([...Object.values(CATALOG_BY_CODE), ...catalogCourses]);
+    const crosslistLookup = buildCrosslistLookup([
+      ...Object.values(CATALOG_BY_CODE),
+      ...catalogCourses,
+    ]);
 
     const major = getMajorExampleSections(
       data.majorId,
@@ -291,18 +302,18 @@ export const getAuditCatalog = createServerFn({ method: "GET" }).handler(async (
 });
 
 export const getCourseTableCatalogMeta = createServerFn({ method: "GET" }).handler(async () => {
-    const res = await fetch(`${COURSETABLE_API}/api/catalog/metadata`);
-    if (!res.ok) throw new Error("Could not reach CourseTable");
-    const meta = (await res.json()) as { last_update: string };
-    const season = currentSeasonCode();
-    let courseCount = 0;
-    try {
-      courseCount = (await fetchSeasonCatalog(season)).length;
-    } catch {
-      /* catalog count optional */
-    }
-    return { lastUpdate: meta.last_update, season, courseCount };
-  });
+  const res = await fetch(`${COURSETABLE_API}/api/catalog/metadata`);
+  if (!res.ok) throw new Error("Could not reach CourseTable");
+  const meta = (await res.json()) as { last_update: string };
+  const season = currentSeasonCode();
+  let courseCount = 0;
+  try {
+    courseCount = (await fetchSeasonCatalog(season)).length;
+  } catch {
+    /* catalog count optional */
+  }
+  return { lastUpdate: meta.last_update, season, courseCount };
+});
 
 export const linkCourseTableNetId = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
