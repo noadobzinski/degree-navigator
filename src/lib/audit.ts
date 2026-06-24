@@ -33,6 +33,11 @@ import {
   courseMatchesSlotCodes,
   type CrosslistLookup,
 } from "@/lib/crosslist";
+import {
+  prerequisitesForCode,
+  unmetPrerequisiteNote,
+  unmetPrerequisites,
+} from "@/lib/prerequisites";
 
 export type UserCourse = {
   id: string;
@@ -481,9 +486,9 @@ export function suggestRoadmap(
   concentrationId?: string | null,
   certificateIds?: string[] | null,
   maxSuggestions = 18,
-): { priority: "high" | "med" | "low"; code: string; title: string; reason: string }[] {
+): RoadmapSuggestion[] {
   const completedCodes = buildCompletedCourseIdentitySet(courses);
-  const suggestions: { priority: "high" | "med" | "low"; code: string; title: string; reason: string }[] = [];
+  const suggestions: RoadmapSuggestion[] = [];
   const seen = new Set<string>();
   const pushIf = (code: string, reason: string, priority: "high" | "med" | "low") => {
     const c = lookupCatalog(code, catalogByCode);
@@ -492,7 +497,17 @@ export function suggestRoadmap(
     const key = courseIdentityKey(code);
     if (seen.has(key)) return;
     seen.add(key);
-    suggestions.push({ code, title: c.title, reason, priority });
+    const unmet = unmetPrerequisites(
+      prerequisitesForCode(code, catalogByCode),
+      completedCodes,
+    );
+    suggestions.push({
+      code,
+      title: c.title,
+      reason,
+      priority,
+      prereqNote: unmetPrerequisiteNote(unmet) ?? undefined,
+    });
   };
 
   if (majorId) {
@@ -606,4 +621,6 @@ export type RoadmapSuggestion = {
   code: string;
   title: string;
   reason: string;
+  /** Human-readable note when this course has prerequisites not yet met. */
+  prereqNote?: string;
 };
