@@ -36,7 +36,10 @@ function registerGroups(
   for (const group of groups) {
     const codes = [...new Set(group.map((c) => c.trim().toUpperCase()))];
     if (codes.length < 2) continue;
-    const id = codes.map((c) => canonicalCourseCode(c)).sort().join("|");
+    const id = codes
+      .map((c) => canonicalCourseCode(c))
+      .sort()
+      .join("|");
     membersMap.set(id, codes);
     for (const code of codes) {
       idMap.set(canonicalCourseCode(code), id);
@@ -56,7 +59,12 @@ export function registerCatalogRenumberingGroups(groups: CatalogRenumberingGroup
 function groupIdForCode(code: string): string | undefined {
   const upper = code.trim().toUpperCase();
   const canon = canonicalCourseCode(upper);
-  return catalogMatchGroupId.get(canon) ?? catalogMatchGroupId.get(upper) ?? staticMatchGroupId.get(canon) ?? staticMatchGroupId.get(upper);
+  return (
+    catalogMatchGroupId.get(canon) ??
+    catalogMatchGroupId.get(upper) ??
+    staticMatchGroupId.get(canon) ??
+    staticMatchGroupId.get(upper)
+  );
 }
 
 function codesInGroup(groupId: string): string[] {
@@ -114,6 +122,62 @@ export function courseCodesMatch(a: string, b: string): boolean {
 
 export function courseMatchesAny(code: string, candidates: string[]): boolean {
   return candidates.some((c) => courseCodesMatch(code, c));
+}
+
+/**
+ * Directional course ladders. Each ladder is ordered low → high, and every rung
+ * is a list of mutually-equivalent codes. A course on a given rung fulfils a
+ * requirement that lists any course on the same or a lower rung in the same
+ * ladder (e.g. MATH 120 satisfies a MATH 115 or MATH 112 requirement), but not
+ * the other way around.
+ */
+const COURSE_LADDERS: string[][][] = [
+  [
+    ["MATH 112"], // Calculus of Functions of One Variable I
+    ["MATH 115", "MATH 116"], // Calculus of Functions of One Variable II (116 = intensive)
+    ["MATH 118", "MATH 120"], // Calculus of Functions of Several Variables
+  ],
+];
+
+type LadderPosition = { ladder: number; rung: number };
+
+const ladderPositions = new Map<string, LadderPosition>();
+COURSE_LADDERS.forEach((ladder, ladderIdx) => {
+  ladder.forEach((rung, rungIdx) => {
+    for (const code of rung) {
+      ladderPositions.set(canonicalCourseCode(code), { ladder: ladderIdx, rung: rungIdx });
+    }
+  });
+});
+
+function ladderPosition(code: string): LadderPosition | undefined {
+  return ladderPositions.get(canonicalCourseCode(code));
+}
+
+/**
+ * True when a completed course sits at or above the required course in the same
+ * ladder, so it should fulfil a requirement that lists the lower course.
+ */
+export function courseSupersedesRequirement(completedCode: string, requiredCode: string): boolean {
+  const completed = ladderPosition(completedCode);
+  const required = ladderPosition(requiredCode);
+  if (!completed || !required) return false;
+  return completed.ladder === required.ladder && completed.rung >= required.rung;
+}
+
+/** A completed course satisfies a required code by exact match or ladder supersession. */
+export function courseSatisfiesRequirementCode(
+  completedCode: string,
+  requiredCode: string,
+): boolean {
+  return (
+    courseCodesMatch(completedCode, requiredCode) ||
+    courseSupersedesRequirement(completedCode, requiredCode)
+  );
+}
+
+export function courseSatisfiesAnyRequirementCode(code: string, candidates: string[]): boolean {
+  return candidates.some((c) => courseSatisfiesRequirementCode(code, c));
 }
 
 export function buildCompletedCourseIdentitySet(
