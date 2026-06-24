@@ -12,6 +12,7 @@ import { scheduleDiffCodes, type ExploreMode, type PlanSkeleton } from "@/lib/sc
 import { futureSeasonsUntilGraduation } from "@/lib/coursetable-seasons";
 import { courseIdentityKey } from "@/lib/course-codes";
 import { MajorPicker } from "@/components/major-picker";
+import { TrackMilestonesCard } from "@/components/track-milestones-card";
 import { ScheduleView } from "@/components/schedule-view";
 import {
   RoadmapSkeletonEditor,
@@ -382,6 +383,13 @@ function RoadmapPage() {
                   </p>
                 ) : null}
               </div>
+
+              {trackChanged && TRACKS_BY_ID[selectedTrackId]?.milestones?.length ? (
+                <TrackMilestonesCard
+                  track={TRACKS_BY_ID[selectedTrackId]}
+                  className="bg-muted/30"
+                />
+              ) : null}
             </CardContent>
           </Card>
 
