@@ -1,22 +1,59 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getProfile, getMyCourses } from "@/lib/audit.functions";
 import { getDegreeSchedule } from "@/lib/coursetable.functions";
 import { useCourseTableCatalogMeta, useClientQueryEnabled } from "@/hooks/use-coursetable-catalog";
 import type { UserCourse } from "@/lib/audit";
 import { MAJORS_BY_ID } from "@/data/majors";
 import { scheduleDiffCodes } from "@/lib/schedule-planner";
+import { futureSeasonsUntilGraduation } from "@/lib/coursetable-seasons";
 import { courseIdentityKey } from "@/lib/course-codes";
 import { MajorPicker } from "@/components/major-picker";
 import { ScheduleView } from "@/components/schedule-view";
+import {
+  RoadmapSkeletonEditor,
+  DEFAULT_COURSES_PER_TERM,
+} from "@/components/roadmap-skeleton-editor";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import type { ExploreMode } from "@/lib/schedule-planner";
+import type { ExploreMode, PlanSkeleton } from "@/lib/schedule-planner";
 import { Map, Sparkles } from "lucide-react";
+
+const SKELETON_STORAGE_KEY = "decree:roadmap-skeleton:v1";
+
+function emptySkeleton(): PlanSkeleton {
+  return { coursesPerTerm: DEFAULT_COURSES_PER_TERM, termTargets: {} };
+}
+
+function loadStoredSkeleton(): PlanSkeleton {
+  if (typeof window === "undefined") return emptySkeleton();
+  try {
+    const raw = window.localStorage.getItem(SKELETON_STORAGE_KEY);
+    if (!raw) return emptySkeleton();
+    const parsed = JSON.parse(raw) as PlanSkeleton;
+    return {
+      coursesPerTerm: parsed.coursesPerTerm ?? DEFAULT_COURSES_PER_TERM,
+      termTargets: parsed.termTargets ?? {},
+    };
+  } catch {
+    return emptySkeleton();
+  }
+}
+
+/** Drop skeleton fields that match the defaults so we only send meaningful overrides. */
+function normalizeSkeletonForRequest(skeleton: PlanSkeleton): PlanSkeleton | null {
+  const termTargets = Object.fromEntries(
+    Object.entries(skeleton.termTargets ?? {}).filter(([, v]) => Number.isFinite(v)),
+  );
+  const coursesPerTerm = skeleton.coursesPerTerm ?? DEFAULT_COURSES_PER_TERM;
+  const hasOverrides = Object.keys(termTargets).length > 0;
+  if (coursesPerTerm === DEFAULT_COURSES_PER_TERM && !hasOverrides) return null;
+  return { coursesPerTerm, termTargets };
+}
 
 export const Route = createFileRoute("/_authenticated/roadmap")({
   head: () => ({ meta: [{ title: "Roadmap — Decree" }] }),
@@ -45,6 +82,16 @@ function RoadmapPage() {
   const metaQ = useCourseTableCatalogMeta();
   const [exploreMajorId, setExploreMajorId] = useState("");
   const [exploreMode, setExploreMode] = useState<ExploreMode>("second-major");
+  const [skeleton, setSkeleton] = useState<PlanSkeleton>(loadStoredSkeleton);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(SKELETON_STORAGE_KEY, JSON.stringify(skeleton));
+    } catch {
+      /* ignore storage failures (private mode, quota) */
+    }
+  }, [skeleton]);
 
   const profileQ = useQuery({
     queryKey: ["profile"],
@@ -60,6 +107,11 @@ function RoadmapPage() {
   const profile = profileQ.data;
   const courses = (coursesQ.data ?? []) as UserCourse[];
   const scheduleBase = profile?.major_id ? profileScheduleInput(profile, courses) : null;
+  const requestSkeleton = useMemo(() => normalizeSkeletonForRequest(skeleton), [skeleton]);
+  const upcomingSeasons = useMemo(
+    () => futureSeasonsUntilGraduation(profile?.class_year ?? null),
+    [profile?.class_year],
+  );
 
   const baselineQ = useQuery({
     queryKey: [
@@ -74,9 +126,10 @@ function RoadmapPage() {
       profile?.certificate_ids,
       profile?.class_year,
       courses,
+      requestSkeleton,
     ],
     enabled: clientReady && !!scheduleBase,
-    queryFn: () => scheduleFn({ data: scheduleBase! }),
+    queryFn: () => scheduleFn({ data: { ...scheduleBase!, skeleton: requestSkeleton } }),
   });
 
   const exploreQ = useQuery({
@@ -93,6 +146,7 @@ function RoadmapPage() {
       profile?.certificate_ids,
       profile?.class_year,
       courses,
+      requestSkeleton,
     ],
     enabled: clientReady && !!scheduleBase && !!exploreMajorId,
     queryFn: () =>
@@ -101,6 +155,7 @@ function RoadmapPage() {
           ...scheduleBase!,
           exploreMajorId,
           exploreMode,
+          skeleton: requestSkeleton,
         },
       }),
   });
@@ -176,6 +231,12 @@ function RoadmapPage() {
         </TabsList>
 
         <TabsContent value="plan" className="space-y-4">
+          <RoadmapSkeletonEditor
+            seasons={upcomingSeasons}
+            skeleton={skeleton}
+            onChange={setSkeleton}
+          />
+
           {baselineQ.isLoading ? (
             <p className="text-muted-foreground">Building your semester plan…</p>
           ) : null}

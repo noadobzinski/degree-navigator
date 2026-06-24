@@ -51,6 +51,22 @@ export type DegreeSchedule = {
  */
 export type ExploreMode = "second-major" | "switch-major";
 
+/**
+ * A user-supplied rough plan that the auto-planner works off of, instead of
+ * imposing a fixed 4-courses-every-term grid. All fields are optional — an
+ * empty skeleton reproduces the default behaviour.
+ */
+export type PlanSkeleton = {
+  /** Default number of courses to schedule per term (clamped to 1–8). */
+  coursesPerTerm?: number;
+  /**
+   * Per-term overrides keyed by season code (e.g. "202503"). A value of 0 marks
+   * the term as "off" (study abroad / leave / light term) so the planner won't
+   * add suggestions to it. Missing terms fall back to `coursesPerTerm`.
+   */
+  termTargets?: Record<string, number>;
+};
+
 export type SchedulePlannerInput = {
   courses: UserCourse[];
   majorId: string;
@@ -65,12 +81,33 @@ export type SchedulePlannerInput = {
   exploreMajorId?: string | null;
   /** Whether the explore major is added as a second major or swapped in as the primary. */
   exploreMode?: ExploreMode;
+  /** Optional rough plan the user sketched out; the planner fills in around it. */
+  skeleton?: PlanSkeleton | null;
   catalogByCode: Record<string, CatalogCourse>;
   crosslistLookup?: CrosslistLookup;
 };
 
 const COURSES_PER_TERM = 4;
+const MIN_COURSES_PER_TERM = 1;
+const MAX_COURSES_PER_TERM = 8;
 const SCHEDULE_SUGGESTION_LIMIT = 48;
+
+function clampCourseLoad(value: number | undefined, fallback: number): number {
+  if (value == null || !Number.isFinite(value)) return fallback;
+  return Math.min(MAX_COURSES_PER_TERM, Math.max(MIN_COURSES_PER_TERM, Math.round(value)));
+}
+
+/** Target number of courses for a term given the user's skeleton (0 = term off). */
+function termCapacity(
+  seasonCode: string,
+  defaultLoad: number,
+  skeleton?: PlanSkeleton | null,
+): number {
+  const override = skeleton?.termTargets?.[seasonCode];
+  if (override == null || !Number.isFinite(override)) return defaultLoad;
+  if (override <= 0) return 0;
+  return Math.min(MAX_COURSES_PER_TERM, Math.max(MIN_COURSES_PER_TERM, Math.round(override)));
+}
 
 const PRIORITY_RANK: Record<RoadmapSuggestion["priority"], number> = {
   high: 0,
@@ -237,12 +274,22 @@ function assignSuggestionsToTerms(
   seasons: CatalogSeason[],
   plannedBySeason: Map<string, ScheduledCourse[]>,
   catalogByCode: Record<string, CatalogCourse>,
+  skeleton?: PlanSkeleton | null,
 ): { terms: ScheduleTerm[]; unscheduled: ScheduledCourse[] } {
+  const defaultLoad = clampCourseLoad(skeleton?.coursesPerTerm, COURSES_PER_TERM);
+
   const terms: ScheduleTerm[] = seasons.map((season) => {
     const courses = [...(plannedBySeason.get(season.code) ?? [])];
     const credits = courses.reduce((sum, c) => sum + c.credits, 0);
     return { seasonCode: season.code, label: season.label, courses, credits };
   });
+
+  // Per-term suggestion capacity from the skeleton. Planned (user-pinned)
+  // courses always stay where the user put them, but they count against the
+  // term's target so we don't overload a term the user wanted kept light.
+  const capacityByCode = new Map<string, number>(
+    terms.map((t) => [t.seasonCode, termCapacity(t.seasonCode, defaultLoad, skeleton)]),
+  );
 
   const alreadyScheduled = new Set(
     terms.flatMap((t) => t.courses.map((c) => courseIdentityKey(c.code))),
@@ -259,7 +306,8 @@ function assignSuggestionsToTerms(
     let placed = false;
 
     for (const term of terms) {
-      if (term.courses.length >= COURSES_PER_TERM) continue;
+      const capacity = capacityByCode.get(term.seasonCode) ?? defaultLoad;
+      if (term.courses.length >= capacity) continue;
       term.courses.push(course);
       term.credits += course.credits;
       placed = true;
@@ -305,6 +353,7 @@ export function buildDegreeSchedule(input: SchedulePlannerInput): DegreeSchedule
     seasons,
     plannedBySeason,
     input.catalogByCode,
+    input.skeleton,
   );
 
   const nonEmptyTerms = terms.filter((t) => t.courses.length > 0);
