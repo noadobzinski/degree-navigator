@@ -33,7 +33,6 @@ function isCreditAssigned(course: UserCourse): boolean {
   return creditAllocationFromSkills(course.skills ?? []) != null;
 }
 
-export function MultiCreditCoursesCard({ courses }: MultiCreditCoursesCardProps) {
 export function MultiCreditCoursesCard({
   courses,
   requirementLabelsByCourseId,
@@ -61,7 +60,6 @@ export function MultiCreditCoursesCard({
         <CardDescription>
           Some courses can satisfy more than one requirement (e.g. humanities and writing). Yale
           counts each course toward one distributional or skill credit — choose which you used it
-          for.
           for. This choice is separate from your major: a course still counts toward your major,
           track, and certificate requirements no matter which distributional credit you pick.
         </CardDescription>
@@ -77,39 +75,7 @@ export function MultiCreditCoursesCard({
             All multi-credit courses have an assigned credit. Nothing to review right now.
           </p>
         )}
-        {visible.map((course) => (
-          <div key={course.id} className="rounded-md border border-border p-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-semibold">{course.course_code}</span>
-              <span className="truncate text-sm text-muted-foreground">{course.course_title}</span>
-              <Badge variant="secondary" className="text-[10px] font-normal">
-                {allocationLabel(course, autoMap)}
-              </Badge>
-            </div>
-            <CreditAllocationSelect
-              course={course}
-              allCourses={courses}
-              disabled={allocationM.isPending}
-              onChange={(allocation) => allocationM.mutate({ course, allocation })}
-            />
-          </div>
-        ))}
-        {assigned.length > 0 ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground"
-            onClick={() => setShowAssigned((v) => !v)}
-          >
-            <ChevronDown className={`transition-transform ${showAssigned ? "rotate-180" : ""}`} />
-            {showAssigned
-              ? "Hide assigned courses"
-              : `Review ${assigned.length} assigned course${assigned.length === 1 ? "" : "s"}`}
-          </Button>
-        ) : null}
-        ) : null}
-        {multiCredit.map((course) => {
+        {visible.map((course) => {
           const alsoCounts = requirementLabelsByCourseId?.get(course.id) ?? [];
           return (
             <div key={course.id} className="rounded-md border border-border p-3">
@@ -135,6 +101,20 @@ export function MultiCreditCoursesCard({
             </div>
           );
         })}
+        {assigned.length > 0 ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground"
+            onClick={() => setShowAssigned((v) => !v)}
+          >
+            <ChevronDown className={`transition-transform ${showAssigned ? "rotate-180" : ""}`} />
+            {showAssigned
+              ? "Hide assigned courses"
+              : `Review ${assigned.length} assigned course${assigned.length === 1 ? "" : "s"}`}
+          </Button>
+        ) : null}
       </CardContent>
     </Card>
   );
