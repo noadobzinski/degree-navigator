@@ -270,6 +270,40 @@ export function coursesUsedInMajorAudit(sections: MajorAuditSection[]): UserCour
   return [...byId.values()];
 }
 
+/** Flatten every slot result in a major audit (top-level + grouped). */
+export function allSlotResults(sections: MajorAuditSection[]): SlotResult[] {
+  const out: SlotResult[] = [];
+  for (const s of sections) {
+    out.push(...s.results);
+    for (const g of s.groups ?? []) out.push(...g.slotResults);
+  }
+  return out;
+}
+
+/**
+ * Map each course id to the requirement(s) it is counted toward across the
+ * given audits (major, second major, track, certificates). A course can appear
+ * in several of these at once — Yale lets a course count toward a distributional
+ * credit *and* a major/track/certificate requirement simultaneously, so this is
+ * used to surface that overlap in the UI.
+ */
+export function collectRequirementLabels(
+  entries: { label: string; results: SlotResult[] }[],
+): Map<string, string[]> {
+  const map = new Map<string, string[]>();
+  for (const { label, results } of entries) {
+    for (const r of results) {
+      for (const c of r.filled) {
+        const list = map.get(c.id) ?? [];
+        const entry = `${label}: ${r.slot.label}`;
+        if (!list.includes(entry)) list.push(entry);
+        map.set(c.id, list);
+      }
+    }
+  }
+  return map;
+}
+
 export type MajorAudit = {
   major: (typeof MAJORS_BY_ID)[string];
   degree: "BA" | "BS";

@@ -39,7 +39,7 @@ export function CreditAllocationSelect({
     <div className={compact ? "mt-2 space-y-1.5" : "mt-2 space-y-1.5 rounded-md border border-dashed border-primary/30 bg-primary/5 p-2.5"}>
       <div className="flex flex-wrap items-center gap-1.5">
         <Label className={compact ? "text-xs text-muted-foreground" : "text-xs font-medium text-foreground"}>
-          Counts as one credit only — choose:
+          Counts as one distributional/skill credit — choose:
         </Label>
         {!compact ? (
           <span className="flex flex-wrap gap-1">

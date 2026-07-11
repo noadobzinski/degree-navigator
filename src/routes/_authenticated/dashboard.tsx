@@ -19,6 +19,8 @@ import {
   auditTrack,
   auditDistributional,
   computeDoubleMajorOverlap,
+  collectRequirementLabels,
+  allSlotResults,
   totalCredits,
   graduationCredits,
   type UserCourse,
@@ -127,6 +129,25 @@ function Dashboard() {
   const distAudit = auditDistributional(courses);
   const credits = totalCredits(courses);
   const gradTotal = graduationCredits();
+
+  // A course can count toward a distributional credit AND a major/track/certificate
+  // requirement at the same time. Collect those overlaps so we can reassure students
+  // that picking a distributional credit doesn't remove the course from their major.
+  const requirementLabelsByCourseId = collectRequirementLabels([
+    ...(majorAudit
+      ? [{ label: major?.name ?? "Major", results: allSlotResults(majorAudit.sections) }]
+      : []),
+    ...(secondAudit
+      ? [
+          {
+            label: secondMajor?.name ?? "Second major",
+            results: allSlotResults(secondAudit.sections),
+          },
+        ]
+      : []),
+    ...(trackAudit ? [{ label: trackAudit.track.name, results: trackAudit.results }] : []),
+    ...certificateAudits.map((c) => ({ label: c.certificate.name, results: c.results })),
+  ]);
 
   const distSatisfied = distAudit.filter((d) => d.satisfied).length;
   const overallPct = Math.min(100, Math.round((credits / gradTotal) * 100));
@@ -260,8 +281,9 @@ function Dashboard() {
         <CardHeader>
           <CardTitle className="font-serif">Distributional & skills requirements</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Each course counts toward one credit only. For courses with multiple tags, choose which credit you
-            used below or on My Courses.
+            Each course counts toward one <span className="font-medium">distributional or skill</span> credit
+            only. For courses with multiple tags, choose which credit you used below or on My Courses. These
+            courses still count toward your major, track, and certificate requirements.
           </p>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2">
@@ -285,7 +307,10 @@ function Dashboard() {
         </CardContent>
       </Card>
 
-      <MultiCreditCoursesCard courses={courses} />
+      <MultiCreditCoursesCard
+        courses={courses}
+        requirementLabelsByCourseId={requirementLabelsByCourseId}
+      />
 
       {majorAudit && (
         <MajorAuditCard audit={majorAudit} examplesQ={examplesQ} crosslistLookup={crosslistLookup} />
