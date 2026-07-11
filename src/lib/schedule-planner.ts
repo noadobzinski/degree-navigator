@@ -1,10 +1,7 @@
 import type { CatalogCourse } from "@/data/courses";
 import { MAJORS_BY_ID } from "@/data/majors";
-import {
-  suggestRoadmap,
-  type RoadmapSuggestion,
-  type UserCourse,
-} from "@/lib/audit";
+import { TRACKS_BY_ID } from "@/data/tracks";
+import { suggestRoadmap, type RoadmapSuggestion, type UserCourse } from "@/lib/audit";
 import {
   compareSeasonCodes,
   futureSeasonsUntilGraduation,
@@ -62,6 +59,22 @@ export type DegreeSchedule = {
  */
 export type ExploreMode = "second-major" | "switch-major";
 
+/**
+ * A user-supplied rough plan that the auto-planner works off of, instead of
+ * imposing a fixed 4-courses-every-term grid. All fields are optional — an
+ * empty skeleton reproduces the default behaviour.
+ */
+export type PlanSkeleton = {
+  /** Default number of courses to schedule per term (clamped to 1–8). */
+  coursesPerTerm?: number;
+  /**
+   * Per-term overrides keyed by season code (e.g. "202503"). A value of 0 marks
+   * the term as "off" (study abroad / leave / light term) so the planner won't
+   * add suggestions to it. Missing terms fall back to `coursesPerTerm`.
+   */
+  termTargets?: Record<string, number>;
+};
+
 export type SchedulePlannerInput = {
   courses: UserCourse[];
   majorId: string;
@@ -76,12 +89,39 @@ export type SchedulePlannerInput = {
   exploreMajorId?: string | null;
   /** Whether the explore major is added as a second major or swapped in as the primary. */
   exploreMode?: ExploreMode;
+  /**
+   * Hypothetical career track (premed/prelaw/etc.) for what-if planning.
+   * `undefined` keeps the saved track; a string (including `"none"`) previews
+   * that track instead. Does not mutate the saved profile.
+   */
+  exploreTrackId?: string | null;
+  /** Optional rough plan the user sketched out; the planner fills in around it. */
+  skeleton?: PlanSkeleton | null;
   catalogByCode: Record<string, CatalogCourse>;
   crosslistLookup?: CrosslistLookup;
 };
 
 const COURSES_PER_TERM = 4;
+const MIN_COURSES_PER_TERM = 1;
+const MAX_COURSES_PER_TERM = 8;
 const SCHEDULE_SUGGESTION_LIMIT = 48;
+
+function clampCourseLoad(value: number | undefined, fallback: number): number {
+  if (value == null || !Number.isFinite(value)) return fallback;
+  return Math.min(MAX_COURSES_PER_TERM, Math.max(MIN_COURSES_PER_TERM, Math.round(value)));
+}
+
+/** Target number of courses for a term given the user's skeleton (0 = term off). */
+function termCapacity(
+  seasonCode: string,
+  defaultLoad: number,
+  skeleton?: PlanSkeleton | null,
+): number {
+  const override = skeleton?.termTargets?.[seasonCode];
+  if (override == null || !Number.isFinite(override)) return defaultLoad;
+  if (override <= 0) return 0;
+  return Math.min(MAX_COURSES_PER_TERM, Math.max(MIN_COURSES_PER_TERM, Math.round(override)));
+}
 
 const PRIORITY_RANK: Record<RoadmapSuggestion["priority"], number> = {
   high: 0,
@@ -102,7 +142,10 @@ function toScheduled(
 ): ScheduledCourse {
   return {
     code: course.course_code,
-    title: course.course_title ?? lookupCatalogEntry(course.course_code, catalogByCode)?.title ?? course.course_code,
+    title:
+      course.course_title ??
+      lookupCatalogEntry(course.course_code, catalogByCode)?.title ??
+      course.course_code,
     reason,
     priority,
     credits: course.credits || catalogCredits(course.course_code, catalogByCode),
@@ -136,23 +179,43 @@ type ResolvedScenario = {
   scenarioLabel: string;
 };
 
-function resolveScenario(input: SchedulePlannerInput): ResolvedScenario {
+/** Normalize a track id: treat empty/`"none"` as "no track". */
+function normalizeTrackId(id: string | null | undefined): string | null {
+  return !id || id === "none" ? null : id;
+}
+
+function trackName(id: string | null): string {
+  if (!id) return "no track";
+  return TRACKS_BY_ID[id]?.name ?? id;
+}
+
+/** Resolution of just the major portion of a scenario (track applied separately). */
+type MajorScenario = {
+  majorId: string;
+  degree: "BA" | "BS";
+  concentrationId: string | null;
+  secondMajorId: string | null;
+  secondDegree: "BA" | "BS";
+  majorLabel: string;
+  majorChanged: boolean;
+};
+
+function resolveMajorScenario(input: SchedulePlannerInput): MajorScenario {
   const primary = MAJORS_BY_ID[input.majorId];
   const primaryName = primary?.name ?? "your major";
-  const baseTrackId = input.trackId ?? null;
   const baseConcentrationId = input.concentrationId ?? null;
   const baseSecondDegree = input.secondDegree ?? input.degree;
 
-  const baseline: ResolvedScenario = {
+  const baseline: MajorScenario = {
     majorId: input.majorId,
     degree: input.degree,
-    trackId: baseTrackId,
     concentrationId: baseConcentrationId,
     secondMajorId: input.secondMajorId ?? null,
     secondDegree: baseSecondDegree,
-    scenarioLabel: input.secondMajorId
+    majorLabel: input.secondMajorId
       ? `${primaryName} + ${MAJORS_BY_ID[input.secondMajorId]?.name ?? "second major"}`
       : primaryName,
+    majorChanged: false,
   };
 
   const exploreId =
@@ -164,8 +227,9 @@ function resolveScenario(input: SchedulePlannerInput): ResolvedScenario {
   const exploreDegree = explore?.defaultDegree ?? input.degree;
   const mode: ExploreMode = input.exploreMode ?? "second-major";
 
-  // Switch the primary major entirely. Track/concentration belong to the old
-  // major, so drop them. An existing, distinct second major is kept.
+  // Switch the primary major entirely. The concentration belongs to the old
+  // major, so drop it. An existing, distinct second major is kept. (Career
+  // tracks like premed are not tied to a major, so they're handled separately.)
   if (mode === "switch-major") {
     const keepSecondId =
       input.secondMajorId && input.secondMajorId !== exploreId ? input.secondMajorId : null;
@@ -173,13 +237,13 @@ function resolveScenario(input: SchedulePlannerInput): ResolvedScenario {
     return {
       majorId: exploreId,
       degree: exploreDegree,
-      trackId: null,
       concentrationId: null,
       secondMajorId: keepSecondId,
       secondDegree: keepSecondId ? baseSecondDegree : exploreDegree,
-      scenarioLabel: keepSecond
+      majorLabel: keepSecond
         ? `If you switched your major to ${exploreName} (keeping ${keepSecond.name})`
         : `If you switched your major to ${exploreName} instead of ${primaryName}`,
+      majorChanged: true,
     };
   }
 
@@ -189,7 +253,8 @@ function resolveScenario(input: SchedulePlannerInput): ResolvedScenario {
       ...baseline,
       secondMajorId: exploreId,
       secondDegree: exploreDegree,
-      scenarioLabel: `If you added ${exploreName} as a second major alongside ${primaryName}`,
+      majorLabel: `If you added ${exploreName} as a second major alongside ${primaryName}`,
+      majorChanged: true,
     };
   }
 
@@ -197,7 +262,7 @@ function resolveScenario(input: SchedulePlannerInput): ResolvedScenario {
     const second = MAJORS_BY_ID[input.secondMajorId];
     return {
       ...baseline,
-      scenarioLabel: `Your current plan (${primaryName} + ${second?.name ?? "second major"})`,
+      majorLabel: `Your current plan (${primaryName} + ${second?.name ?? "second major"})`,
     };
   }
 
@@ -206,7 +271,55 @@ function resolveScenario(input: SchedulePlannerInput): ResolvedScenario {
     ...baseline,
     secondMajorId: exploreId,
     secondDegree: exploreDegree,
-    scenarioLabel: `If your second major were ${exploreName} instead of ${currentSecond?.name ?? "your current second major"}`,
+    majorLabel: `If your second major were ${exploreName} instead of ${currentSecond?.name ?? "your current second major"}`,
+    majorChanged: true,
+  };
+}
+
+function buildScenarioLabel(
+  major: MajorScenario,
+  baseTrackId: string | null,
+  effectiveTrackId: string | null,
+  trackChanged: boolean,
+): string {
+  if (!trackChanged) return major.majorLabel;
+
+  const fromName = trackName(baseTrackId);
+  const toName = trackName(effectiveTrackId);
+
+  if (!major.majorChanged) {
+    if (!baseTrackId) return `If you followed the ${toName} track`;
+    if (!effectiveTrackId) return `If you dropped the ${fromName} track`;
+    return `If you switched from the ${fromName} track to the ${toName} track`;
+  }
+
+  const clause = !effectiveTrackId
+    ? `dropping the ${fromName} track`
+    : !baseTrackId
+      ? `adding the ${toName} track`
+      : `switching to the ${toName} track`;
+  return `${major.majorLabel}, ${clause}`;
+}
+
+function resolveScenario(input: SchedulePlannerInput): ResolvedScenario {
+  const major = resolveMajorScenario(input);
+
+  // Career tracks (premed/prelaw/etc.) are independent of the chosen major, so
+  // they're resolved on top of the major scenario. `exploreTrackId === undefined`
+  // means "keep the saved track"; any string (including "none") previews it.
+  const baseTrackId = normalizeTrackId(input.trackId);
+  const exploringTrack = input.exploreTrackId !== undefined;
+  const effectiveTrackId = exploringTrack ? normalizeTrackId(input.exploreTrackId) : baseTrackId;
+  const trackChanged = effectiveTrackId !== baseTrackId;
+
+  return {
+    majorId: major.majorId,
+    degree: major.degree,
+    trackId: effectiveTrackId,
+    concentrationId: major.concentrationId,
+    secondMajorId: major.secondMajorId,
+    secondDegree: major.secondDegree,
+    scenarioLabel: buildScenarioLabel(major, baseTrackId, effectiveTrackId, trackChanged),
   };
 }
 
@@ -327,7 +440,10 @@ function assignSuggestionsToTerms(
   plannedBySeason: Map<string, ScheduledCourse[]>,
   catalogByCode: Record<string, CatalogCourse>,
   completedKeys: Set<string>,
+  skeleton?: PlanSkeleton | null,
 ): { terms: ScheduleTerm[]; unscheduled: ScheduledCourse[] } {
+  const defaultLoad = clampCourseLoad(skeleton?.coursesPerTerm, COURSES_PER_TERM);
+
   const terms: ScheduleTerm[] = seasons.map((season) => {
     const courses = [...(plannedBySeason.get(season.code) ?? [])];
     const credits = courses.reduce((sum, c) => sum + c.credits, 0);
@@ -341,6 +457,16 @@ function assignSuggestionsToTerms(
   terms.forEach((term, i) => {
     for (const c of term.courses) placed.set(courseIdentityKey(c.code), i);
   });
+  // Per-term suggestion capacity from the skeleton. Planned (user-pinned)
+  // courses always stay where the user put them, but they count against the
+  // term's target so we don't overload a term the user wanted kept light.
+  const capacityByCode = new Map<string, number>(
+    terms.map((t) => [t.seasonCode, termCapacity(t.seasonCode, defaultLoad, skeleton)]),
+  );
+
+  const alreadyScheduled = new Set(
+    terms.flatMap((t) => t.courses.map((c) => courseIdentityKey(c.code))),
+  );
 
   const flexBase = suggestions
     .filter((s) => !placed.has(courseIdentityKey(s.code)))
@@ -387,6 +513,13 @@ function assignSuggestionsToTerms(
       pending.splice(i, 1);
       i--;
       progress = true;
+    for (const term of terms) {
+      const capacity = capacityByCode.get(term.seasonCode) ?? defaultLoad;
+      if (term.courses.length >= capacity) continue;
+      term.courses.push(course);
+      term.credits += course.credits;
+      placed = true;
+      break;
     }
   }
 
@@ -481,18 +614,22 @@ export function buildDegreeSchedule(input: SchedulePlannerInput): DegreeSchedule
     plannedBySeason,
     input.catalogByCode,
     completedKeys,
+    input.skeleton,
   );
 
   const nonEmptyTerms = terms.filter((t) => t.courses.length > 0);
   const lastSeason = seasons.at(-1)?.code ?? currentSeason;
 
   return {
-    terms: nonEmptyTerms.length > 0 ? terms : seasons.slice(0, 1).map((s) => ({
-      seasonCode: s.code,
-      label: s.label,
-      courses: [],
-      credits: 0,
-    })),
+    terms:
+      nonEmptyTerms.length > 0
+        ? terms
+        : seasons.slice(0, 1).map((s) => ({
+            seasonCode: s.code,
+            label: s.label,
+            courses: [],
+            credits: 0,
+          })),
     unscheduled,
     summary: {
       suggestedCount: suggestions.length,

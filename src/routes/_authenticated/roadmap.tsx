@@ -1,29 +1,78 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getProfile, getMyCourses } from "@/lib/audit.functions";
 import { getDegreeSchedule } from "@/lib/coursetable.functions";
 import { useCourseTableCatalogMeta, useClientQueryEnabled } from "@/hooks/use-coursetable-catalog";
 import type { UserCourse } from "@/lib/audit";
 import { MAJORS_BY_ID } from "@/data/majors";
-import { scheduleDiffCodes } from "@/lib/schedule-planner";
+import { TRACKS, TRACKS_BY_ID } from "@/data/tracks";
+import { scheduleDiffCodes, type ExploreMode, type PlanSkeleton } from "@/lib/schedule-planner";
+import { futureSeasonsUntilGraduation } from "@/lib/coursetable-seasons";
 import { courseIdentityKey } from "@/lib/course-codes";
 import { MajorPicker } from "@/components/major-picker";
+import { TrackMilestonesCard } from "@/components/track-milestones-card";
 import { ScheduleView } from "@/components/schedule-view";
+import {
+  RoadmapSkeletonEditor,
+  DEFAULT_COURSES_PER_TERM,
+} from "@/components/roadmap-skeleton-editor";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import type { ExploreMode } from "@/lib/schedule-planner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { Map, Sparkles } from "lucide-react";
+
+const SKELETON_STORAGE_KEY = "decree:roadmap-skeleton:v1";
+
+function emptySkeleton(): PlanSkeleton {
+  return { coursesPerTerm: DEFAULT_COURSES_PER_TERM, termTargets: {} };
+}
+
+function loadStoredSkeleton(): PlanSkeleton {
+  if (typeof window === "undefined") return emptySkeleton();
+  try {
+    const raw = window.localStorage.getItem(SKELETON_STORAGE_KEY);
+    if (!raw) return emptySkeleton();
+    const parsed = JSON.parse(raw) as PlanSkeleton;
+    return {
+      coursesPerTerm: parsed.coursesPerTerm ?? DEFAULT_COURSES_PER_TERM,
+      termTargets: parsed.termTargets ?? {},
+    };
+  } catch {
+    return emptySkeleton();
+  }
+}
+
+/** Drop skeleton fields that match the defaults so we only send meaningful overrides. */
+function normalizeSkeletonForRequest(skeleton: PlanSkeleton): PlanSkeleton | null {
+  const termTargets = Object.fromEntries(
+    Object.entries(skeleton.termTargets ?? {}).filter(([, v]) => Number.isFinite(v)),
+  );
+  const coursesPerTerm = skeleton.coursesPerTerm ?? DEFAULT_COURSES_PER_TERM;
+  const hasOverrides = Object.keys(termTargets).length > 0;
+  if (coursesPerTerm === DEFAULT_COURSES_PER_TERM && !hasOverrides) return null;
+  return { coursesPerTerm, termTargets };
+}
 
 export const Route = createFileRoute("/_authenticated/roadmap")({
   head: () => ({ meta: [{ title: "Roadmap — Decree" }] }),
   component: RoadmapPage,
 });
 
-function profileScheduleInput(profile: NonNullable<Awaited<ReturnType<typeof getProfile>>>, courses: UserCourse[]) {
+function profileScheduleInput(
+  profile: NonNullable<Awaited<ReturnType<typeof getProfile>>>,
+  courses: UserCourse[],
+) {
   return {
     courses,
     majorId: profile.major_id!,
@@ -45,6 +94,18 @@ function RoadmapPage() {
   const metaQ = useCourseTableCatalogMeta();
   const [exploreMajorId, setExploreMajorId] = useState("");
   const [exploreMode, setExploreMode] = useState<ExploreMode>("second-major");
+  // `null` means "follow the saved track"; a string previews a different track.
+  const [exploreTrackOverride, setExploreTrackOverride] = useState<string | null>(null);
+  const [skeleton, setSkeleton] = useState<PlanSkeleton>(loadStoredSkeleton);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(SKELETON_STORAGE_KEY, JSON.stringify(skeleton));
+    } catch {
+      /* ignore storage failures (private mode, quota) */
+    }
+  }, [skeleton]);
 
   const profileQ = useQuery({
     queryKey: ["profile"],
@@ -60,6 +121,15 @@ function RoadmapPage() {
   const profile = profileQ.data;
   const courses = (coursesQ.data ?? []) as UserCourse[];
   const scheduleBase = profile?.major_id ? profileScheduleInput(profile, courses) : null;
+  const requestSkeleton = useMemo(() => normalizeSkeletonForRequest(skeleton), [skeleton]);
+  const upcomingSeasons = useMemo(
+    () => futureSeasonsUntilGraduation(profile?.class_year ?? null),
+    [profile?.class_year],
+  );
+
+  const baselineTrackId = profile?.track_id ?? "none";
+  const selectedTrackId = exploreTrackOverride ?? baselineTrackId;
+  const trackChanged = selectedTrackId !== baselineTrackId;
 
   const baselineQ = useQuery({
     queryKey: [
@@ -74,9 +144,10 @@ function RoadmapPage() {
       profile?.certificate_ids,
       profile?.class_year,
       courses,
+      requestSkeleton,
     ],
     enabled: clientReady && !!scheduleBase,
-    queryFn: () => scheduleFn({ data: scheduleBase! }),
+    queryFn: () => scheduleFn({ data: { ...scheduleBase!, skeleton: requestSkeleton } }),
   });
 
   const exploreQ = useQuery({
@@ -85,6 +156,7 @@ function RoadmapPage() {
       "explore",
       exploreMajorId,
       exploreMode,
+      trackChanged ? selectedTrackId : null,
       profile?.major_id,
       profile?.degree_type,
       profile?.second_major_id,
@@ -93,14 +165,17 @@ function RoadmapPage() {
       profile?.certificate_ids,
       profile?.class_year,
       courses,
+      requestSkeleton,
     ],
-    enabled: clientReady && !!scheduleBase && !!exploreMajorId,
+    enabled: clientReady && !!scheduleBase && (!!exploreMajorId || trackChanged),
     queryFn: () =>
       scheduleFn({
         data: {
           ...scheduleBase!,
-          exploreMajorId,
+          exploreMajorId: exploreMajorId || null,
           exploreMode,
+          exploreTrackId: trackChanged ? selectedTrackId : undefined,
+          skeleton: requestSkeleton,
         },
       }),
   });
@@ -133,7 +208,15 @@ function RoadmapPage() {
   const baselineSchedule = baselineQ.data?.schedule;
   const exploreSchedule = exploreQ.data?.schedule;
   const isSwitchMode = exploreMode === "switch-major";
-  const isRedundantSecond = !isSwitchMode && !!exploreMajorId && exploreMajorId === profile.second_major_id;
+  const isRedundantSecond =
+    !isSwitchMode && !!exploreMajorId && exploreMajorId === profile.second_major_id;
+  const hasMajorChange = !!exploreMajorId && !isRedundantSecond;
+  const showExplore = hasMajorChange || trackChanged;
+  const exploreColumnTitle = hasMajorChange
+    ? isSwitchMode
+      ? "With the new major"
+      : "With the added major"
+    : "With the new track";
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -148,8 +231,8 @@ function RoadmapPage() {
           ) : null}
         </div>
         <p className="text-muted-foreground">
-          Semester-by-semester plan based on your majors, certificates, and courses — pulled from the live Yale
-          catalog.
+          Semester-by-semester plan based on your majors, certificates, and courses — pulled from
+          the live Yale catalog.
         </p>
         <div className="mt-2 flex flex-wrap gap-2 text-sm text-muted-foreground">
           <span>
@@ -172,10 +255,16 @@ function RoadmapPage() {
       <Tabs defaultValue="plan">
         <TabsList>
           <TabsTrigger value="plan">Your schedule</TabsTrigger>
-          <TabsTrigger value="explore">Explore a major</TabsTrigger>
+          <TabsTrigger value="explore">Explore</TabsTrigger>
         </TabsList>
 
         <TabsContent value="plan" className="space-y-4">
+          <RoadmapSkeletonEditor
+            seasons={upcomingSeasons}
+            skeleton={skeleton}
+            onChange={setSkeleton}
+          />
+
           {baselineQ.isLoading ? (
             <p className="text-muted-foreground">Building your semester plan…</p>
           ) : null}
@@ -192,7 +281,9 @@ function RoadmapPage() {
             <>
               <Card className="border-primary/20 bg-primary/5">
                 <CardHeader className="pb-2">
-                  <CardTitle className="font-serif text-lg">{baselineSchedule.scenarioLabel}</CardTitle>
+                  <CardTitle className="font-serif text-lg">
+                    {baselineSchedule.scenarioLabel}
+                  </CardTitle>
                   <CardDescription>
                     ~{baselineSchedule.summary.termsRemaining} semesters remaining ·{" "}
                     {baselineSchedule.summary.plannedCount} courses already on your list · up to{" "}
@@ -210,48 +301,99 @@ function RoadmapPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 font-serif text-lg">
                 <Sparkles className="h-5 w-5 text-primary" />
-                {isSwitchMode ? "What if you switched majors?" : "What if you added another major?"}
+                What if you explored a different path?
               </CardTitle>
               <CardDescription>
-                {isSwitchMode
-                  ? "Preview a semester plan as if this major replaced your current one. This does not change your saved profile — use Settings to update your actual major."
-                  : "Pick a major to preview a semester plan alongside your current one. This does not change your saved profile — use Settings to update your actual majors."}
+                Preview a what-if semester plan by exploring a different major and/or a different
+                pre-professional track. This does not change your saved profile — use Settings to
+                update your actual major and track.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="space-y-1.5">
-                <p className="text-sm font-medium">How do you want to explore?</p>
-                <ToggleGroup
-                  type="single"
-                  variant="outline"
-                  value={exploreMode}
-                  onValueChange={(value) => {
-                    if (value) setExploreMode(value as ExploreMode);
-                  }}
-                  className="justify-start"
-                >
-                  <ToggleGroupItem value="second-major" className="px-3">
-                    Add as second major
-                  </ToggleGroupItem>
-                  <ToggleGroupItem value="switch-major" className="px-3">
-                    Switch to a new major
-                  </ToggleGroupItem>
-                </ToggleGroup>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <p className="text-sm font-medium">Explore a major</p>
+                <div className="space-y-1.5">
+                  <p className="text-xs text-muted-foreground">How do you want to explore?</p>
+                  <ToggleGroup
+                    type="single"
+                    variant="outline"
+                    value={exploreMode}
+                    onValueChange={(value) => {
+                      if (value) setExploreMode(value as ExploreMode);
+                    }}
+                    className="justify-start"
+                  >
+                    <ToggleGroupItem value="second-major" className="px-3">
+                      Add as second major
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="switch-major" className="px-3">
+                      Switch to a new major
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
+                <MajorPicker
+                  value={exploreMajorId}
+                  onChange={setExploreMajorId}
+                  excludeId={profile.major_id}
+                />
+                {exploreMajorId ? (
+                  <button
+                    type="button"
+                    className="text-xs text-primary underline"
+                    onClick={() => setExploreMajorId("")}
+                  >
+                    Clear major exploration
+                  </button>
+                ) : null}
+                {isRedundantSecond ? (
+                  <p className="text-sm text-muted-foreground">
+                    This is already your second major — switch to &ldquo;Your schedule&rdquo; to see
+                    your current plan.
+                  </p>
+                ) : null}
               </div>
-              <MajorPicker
-                value={exploreMajorId}
-                onChange={setExploreMajorId}
-                excludeId={profile.major_id}
-              />
-              {isRedundantSecond ? (
-                <p className="text-sm text-muted-foreground">
-                  This is already your second major — switch to &ldquo;Your schedule&rdquo; to see your current plan.
+
+              <Separator />
+
+              <div className="space-y-1.5">
+                <p className="text-sm font-medium">Explore a track</p>
+                <p className="text-xs text-muted-foreground">
+                  Stick with your current track or preview the requirements for a pre-professional
+                  track like premed or prelaw.
                 </p>
+                <Select value={selectedTrackId} onValueChange={setExploreTrackOverride}>
+                  <SelectTrigger className="w-full sm:w-72">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">
+                      No track{baselineTrackId === "none" ? " (current)" : ""}
+                    </SelectItem>
+                    {TRACKS.filter((t) => t.id !== "none").map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.name}
+                        {t.id === baselineTrackId ? " (current)" : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {trackChanged ? (
+                  <p className="text-xs text-muted-foreground">
+                    {TRACKS_BY_ID[selectedTrackId]?.description ?? ""}
+                  </p>
+                ) : null}
+              </div>
+
+              {trackChanged && TRACKS_BY_ID[selectedTrackId]?.milestones?.length ? (
+                <TrackMilestonesCard
+                  track={TRACKS_BY_ID[selectedTrackId]}
+                  className="bg-muted/30"
+                />
               ) : null}
             </CardContent>
           </Card>
 
-          {exploreMajorId && !isRedundantSecond ? (
+          {showExplore ? (
             exploreQ.isLoading ? (
               <p className="text-muted-foreground">Building what-if schedule…</p>
             ) : exploreQ.isError ? (
@@ -264,7 +406,9 @@ function RoadmapPage() {
               <>
                 <Card className="border-primary/20 bg-primary/5">
                   <CardHeader className="pb-2">
-                    <CardTitle className="font-serif text-lg">{exploreSchedule.scenarioLabel}</CardTitle>
+                    <CardTitle className="font-serif text-lg">
+                      {exploreSchedule.scenarioLabel}
+                    </CardTitle>
                     <CardDescription>
                       {highlightCodes.size > 0
                         ? `${highlightCodes.size} additional course${highlightCodes.size === 1 ? "" : "s"} compared to your current plan`
@@ -280,9 +424,7 @@ function RoadmapPage() {
                       <ScheduleView schedule={baselineSchedule} />
                     </div>
                     <div className="space-y-2">
-                      <h2 className="font-serif text-lg font-semibold">
-                        {isSwitchMode ? "With the new major" : "With the added major"}
-                      </h2>
+                      <h2 className="font-serif text-lg font-semibold">{exploreColumnTitle}</h2>
                       <ScheduleView schedule={exploreSchedule} highlightCodes={highlightCodes} />
                     </div>
                   </div>
@@ -290,13 +432,15 @@ function RoadmapPage() {
                   <ScheduleView
                     schedule={exploreSchedule}
                     highlightCodes={highlightCodes}
-                    emptyMessage="This major path looks fully covered by your current courses and requirements."
+                    emptyMessage="This path looks fully covered by your current courses and requirements."
                   />
                 )}
               </>
             ) : null
           ) : (
-            <p className="text-sm text-muted-foreground">Choose a major above to see how your schedule would change.</p>
+            <p className="text-sm text-muted-foreground">
+              Choose a major or track above to see how your schedule would change.
+            </p>
           )}
         </TabsContent>
       </Tabs>

@@ -233,7 +233,7 @@ export function countsAsWrForAllocation(
   allocation: CreditBucketId | null,
 ): boolean | null | undefined {
   if (allocation === "wr") return true;
-  if (allocation && allocation !== "wr" && wrOffered(course)) return false;
+  if (allocation && wrOffered(course)) return false;
   return undefined;
 }
 

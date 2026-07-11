@@ -1,5 +1,11 @@
 import type { CatalogCourse } from "@/data/courses";
-import { canonicalCourseCode, codeLookupKeys, courseCodesMatch, courseMatchesAny, lookupCatalogEntry } from "@/lib/course-codes";
+import {
+  canonicalCourseCode,
+  codeLookupKeys,
+  courseCodesMatch,
+  courseSatisfiesAnyRequirementCode,
+  lookupCatalogEntry,
+} from "@/lib/course-codes";
 
 /** All Yale course codes for one offering (including cross-listings). */
 export function allListingCodes(entry: { code: string; crosslistedCodes?: string[] }): string[] {
@@ -85,10 +91,7 @@ export function formatCrosslistNote(
   lookup?: CrosslistLookup,
 ): string | null {
   const alts = [
-    ...new Set([
-      ...(crosslistedCodes ?? []),
-      ...alternateCodesForCourse(courseCode, lookup),
-    ]),
+    ...new Set([...(crosslistedCodes ?? []), ...alternateCodesForCourse(courseCode, lookup)]),
   ].filter((c) => !courseCodesMatch(c, courseCode));
   if (!alts.length) return null;
   return `Also listed as ${alts.join(", ")}`;
@@ -137,14 +140,15 @@ export function courseMatchesSlotCodes(
     const attrs = ycAttributesForCourseCodes(codesToCheck, catalogByCode);
     return slot.requiredAttributes.some((req) => attrs.has(req));
   }
-  if (slot.codes?.length && codesToCheck.some((code) => courseMatchesAny(code, slot.codes!))) {
+  if (
+    slot.codes?.length &&
+    codesToCheck.some((code) => courseSatisfiesAnyRequirementCode(code, slot.codes!))
+  ) {
     return true;
   }
   if (slot.codePrefix?.length) {
     return codesToCheck.some((code) =>
-      slot.codePrefix!.some((p) =>
-        courseMatchesCodePrefix(code, p, slot.minLevel, slot.maxLevel),
-      ),
+      slot.codePrefix!.some((p) => courseMatchesCodePrefix(code, p, slot.minLevel, slot.maxLevel)),
     );
   }
   return false;
