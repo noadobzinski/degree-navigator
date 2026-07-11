@@ -4,6 +4,7 @@ import {
   useCourseTableCatalogMeta,
   useCourseTableCatalogSearch,
 } from "@/hooks/use-coursetable-catalog";
+import { useHydrated } from "@/hooks/use-hydrated";
 import { courseTableSearchUrl, currentSeasonCode } from "@/lib/coursetable";
 import { recentCatalogSeasons } from "@/lib/coursetable-seasons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,6 +37,7 @@ export const Route = createFileRoute("/catalog")({
 });
 
 function PublicCatalogPage() {
+  const hydrated = useHydrated();
   const metaQ = useCourseTableCatalogMeta();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -111,7 +113,7 @@ function PublicCatalogPage() {
         <Card>
           <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0">
             <CardTitle className="font-serif">Search courses</CardTitle>
-            {catalogQ.data ? (
+            {!hydrated ? null : catalogQ.data ? (
               <Badge variant="secondary" className="gap-1 font-normal">
                 <Database className="h-3 w-3" />
                 {selectedSeasonLabel} · {(catalogQ.data.total ?? courses.length).toLocaleString()} courses
@@ -151,7 +153,7 @@ function PublicCatalogPage() {
                 />
               </div>
             </div>
-            {catalogQ.isLoading ? (
+            {hydrated && catalogQ.isLoading ? (
               <p className="py-8 text-center text-sm text-muted-foreground">
                 Loading {selectedSeasonLabel} catalog…
               </p>
@@ -192,7 +194,7 @@ function PublicCatalogPage() {
                   </div>
                 </div>
               ))}
-              {!catalogQ.isLoading && courses.length === 0 && !catalogQ.isError ? (
+              {hydrated && !catalogQ.isLoading && courses.length === 0 && !catalogQ.isError ? (
                 <p className="py-8 text-center text-sm text-muted-foreground">
                   No courses match your search.
                 </p>
