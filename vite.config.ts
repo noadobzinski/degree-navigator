@@ -7,6 +7,30 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
+  vite: {
+    server: {
+      proxy: {
+        "/ingest/static": {
+          target: "https://us-assets.i.posthog.com",
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/ingest/, ""),
+          secure: false,
+        },
+        "/ingest/array": {
+          target: "https://us-assets.i.posthog.com",
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/ingest/, ""),
+          secure: false,
+        },
+        "/ingest": {
+          target: "https://us.i.posthog.com",
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/ingest/, ""),
+          secure: false,
+        },
+      },
+    },
+  },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this

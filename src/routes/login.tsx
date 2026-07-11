@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GraduationCap } from "lucide-react";
 import { toast } from "sonner";
+import { usePostHog } from "posthog-js/react";
 
 export const Route = createFileRoute("/login")({
   validateSearch: z.object({
@@ -26,24 +27,56 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const posthog = usePostHog();
 
   const afterSignIn = redirectTo && redirectTo.startsWith("/") ? redirectTo : "/dashboard";
+
+  async function handleGoogle() {
+    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+      toast.error("Google sign-in is not available on localhost. Use email and password instead.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const result = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: window.location.origin + afterSignIn },
+      });
+      if (result.error) {
+        toast.error(result.error.message ?? "Sign-in failed");
+        setLoading(false);
+        return;
+      }
+      posthog.capture("user_signed_in", { method: "google" });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Sign-in failed");
+      setLoading(false);
+    }
+  }
 
   async function handleEmail(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data: signUpData, error } = await supabase.auth.signUp({
           email,
           password,
           options: { emailRedirectTo: `${window.location.origin}${afterSignIn}` },
         });
         if (error) throw error;
+        if (signUpData.user) {
+          posthog.identify(signUpData.user.id, { email });
+          posthog.capture("user_signed_up", { method: "email" });
+        }
         toast.success("Account created. Check your email to confirm, then sign in.");
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        if (signInData.user) {
+          posthog.identify(signInData.user.id, { email });
+          posthog.capture("user_signed_in", { method: "email" });
+        }
         await router.navigate({ to: afterSignIn as "/dashboard" });
       }
     } catch (e) {

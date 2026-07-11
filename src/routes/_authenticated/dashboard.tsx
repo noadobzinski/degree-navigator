@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
+import { usePostHog } from "posthog-js/react";
+import { useEffect } from "react";
 import { getProfile, getMyCourses } from "@/lib/audit.functions";
 import { useCourseTableCatalogMeta, useClientQueryEnabled } from "@/hooks/use-coursetable-catalog";
 import { useCrosslistLookup } from "@/hooks/use-crosslist";
@@ -39,6 +41,7 @@ function Dashboard() {
   const fetchProfile = useServerFn(getProfile);
   const fetchCourses = useServerFn(getMyCourses);
   const clientReady = useClientQueryEnabled();
+  const posthog = usePostHog();
   const metaQ = useCourseTableCatalogMeta();
   const profileQ = useQuery({
     queryKey: ["profile"],
