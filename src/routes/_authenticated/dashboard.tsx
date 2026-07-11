@@ -30,7 +30,7 @@ import { MAJORS_BY_ID, YALE_DOUBLE_MAJOR_MAX_OVERLAP } from "@/data/majors";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Circle, AlertCircle, GraduationCap, Database } from "lucide-react";
+import { CheckCircle2, CircleDot, Circle, AlertCircle, GraduationCap, Database } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Decree" }] }),
@@ -289,7 +289,13 @@ function Dashboard() {
         <CardContent className="grid gap-3 sm:grid-cols-2">
           {distAudit.map((d) => (
             <div key={d.req.id} className="flex items-start gap-3 rounded-md border border-border p-3">
-              {d.satisfied ? <CheckCircle2 className="mt-0.5 h-5 w-5 text-success" /> : <Circle className="mt-0.5 h-5 w-5 text-muted-foreground" />}
+              {d.satisfied ? (
+                <CheckCircle2 className="mt-0.5 h-5 w-5 text-success" />
+              ) : d.count > 0 ? (
+                <CircleDot className="mt-0.5 h-5 w-5 text-warning" />
+              ) : (
+                <Circle className="mt-0.5 h-5 w-5 text-muted-foreground" />
+              )}
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <p className="font-medium">{d.req.label}</p>
