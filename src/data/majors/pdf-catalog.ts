@@ -1,5 +1,6 @@
 import type { Major, MajorConcentration, MajorRequirements } from "./types";
 import { y } from "./course-codes";
+import { MBB_BASE_REQUIREMENTS, MBB_CONCENTRATIONS } from "./mbb";
 
 function senior(prefix: string, label?: string): MajorRequirements["senior"] {
   return [{ id: "senior", label: label ?? "Senior requirement", codePrefix: [prefix], minLevel: 490, needCount: 1 }];
@@ -336,54 +337,10 @@ export const PDF_CATALOG_MAJORS: Major[] = [
     department: "MB&B",
     degrees: ["BA", "BS"],
     defaultDegree: "BS",
-    notes: "Optional concentrations in Biochemistry, Biophysics, Chemical Biology, etc. (YCPS).",
-    requirements: {
-      BA: {
-        totalCourses: 10,
-        prerequisites: [
-          { id: "chem", label: "General & organic chemistry with labs", codes: y(["CHEM 161", "CHEM 165", "CHEM 220"]), needCount: 3 },
-          { id: "math", label: "Calculus (MATH 1120+)", codes: y(["MATH 112", "MATH 115"]), needCount: 1 },
-        ],
-        core: [
-          { id: "phys", label: "PHYS 1700+ & MB&B 2750 or CHEM 3320", codes: y(["PHYS 170", "MB&B 275", "CHEM 332"]), needCount: 2 },
-          { id: "mbb_core", label: "MB&B 3000 & 3010", codes: y(["MB&B 300", "MB&B 301"]), needCount: 2 },
-          { id: "practical", label: "Practical skills (≥0.5 MB&B)", codePrefix: ["MB&B"], needCount: 1 },
-          { id: "mbb_electives", label: "MB&B electives 2000+", codePrefix: ["MB&B"], minLevel: 200, needCount: 2 },
-        ],
-        senior: [{ id: "senior", label: "Senior project (MB&B 4900/4910)", codes: y(["MB&B 4900", "MB&B 4910"]), needCount: 1 }],
-      },
-      BS: {
-        totalCourses: 13,
-        prerequisites: [
-          { id: "chem", label: "General & organic chemistry with labs", codes: y(["CHEM 161", "CHEM 165", "CHEM 220", "CHEM 174"]), needCount: 4 },
-          { id: "math", label: "Calculus", codes: y(["MATH 112", "MATH 115"]), needCount: 1 },
-        ],
-        core: [
-          { id: "phys", label: "PHYS 1700+ sequence", codePrefix: ["PHYS"], minLevel: 170, needCount: 2 },
-          { id: "mbb_core", label: "MB&B 3000, 3010, CHEM 1750+", codes: y(["MB&B 300", "MB&B 301", "CHEM 175"]), needCount: 3 },
-          { id: "practical", label: "Practical skills (≥0.5 MB&B)", codePrefix: ["MB&B"], needCount: 2 },
-          { id: "mbb_electives", label: "MB&B electives & STEM lecture", codePrefix: ["MB&B", "MCDB", "CHEM"], minLevel: 200, needCount: 3 },
-        ],
-        senior: [{ id: "senior", label: "Senior project (MB&B 4900/4910)", codes: y(["MB&B 4900", "MB&B 4910"]), needCount: 1 }],
-      },
-    },
-    concentrations: [
-      {
-        id: "biochemistry",
-        label: "Biochemistry concentration",
-        degrees: ["BS"],
-        requirements: {
-          BS: {
-            totalCourses: 13,
-            core: [
-              { id: "mbb_core", label: "MB&B 3000, 3010, CHEM 1750+", codes: y(["MB&B 300", "MB&B 301", "CHEM 175"]), needCount: 3 },
-              { id: "conc", label: "Concentration electives (YCPS Biochemistry tab)", codePrefix: ["MB&B", "CHEM"], minLevel: 200, needCount: 4 },
-            ],
-            senior: [{ id: "senior", label: "Senior project", codePrefix: ["MB&B"], minLevel: 490, needCount: 1 }],
-          },
-        },
-      },
-    ],
+    notes:
+      "Six faculty-curated concentrations (Biochemistry; Biophysics and Structural Biology; Chemical Biology; Computational Biology and Bioinformatics; Environment and Climate Change; Medicine) appear on the official transcript. A concentration is optional; all base major requirements must still be met.",
+    requirements: MBB_BASE_REQUIREMENTS,
+    concentrations: MBB_CONCENTRATIONS,
   },
   {
     id: "meng",
