@@ -214,32 +214,54 @@ function Dashboard() {
           <CardHeader className="pb-2">
             <CardTitle className="font-serif text-lg">Double major overlap</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Yale allows at most {YALE_DOUBLE_MAJOR_MAX_OVERLAP} term courses to count toward both majors. Each major is
-              audited independently below.
+              Each major must be completed independently, with no more than{" "}
+              {YALE_DOUBLE_MAJOR_MAX_OVERLAP} term courses overlapping between them.
             </p>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-muted-foreground">
+              <li>
+                Prerequisites and introductory courses (e.g. General Chemistry, Calculus,
+                Physics) in either major don&apos;t count toward the overlap limit.
+              </li>
+              <li>
+                Every other course counting toward both majors is included — the best strategy
+                is to double-count advanced electives that apply to both programs.
+              </li>
+              <li>
+                Courses taken in excess of the minimum requirements of both majors are not
+                counted as overlap.
+              </li>
+            </ul>
           </CardHeader>
-          <CardContent className="flex flex-wrap items-center gap-3">
-            {overlap.withinLimit ? (
-              <CheckCircle2 className="h-5 w-5 text-success" />
-            ) : (
-              <AlertCircle className="h-5 w-5 text-warning" />
-            )}
-            <div className="flex-1">
-              <p className="font-medium">
-                {overlap.count} overlapping {overlap.count === 1 ? "course" : "courses"}
-                {overlap.withinLimit ? " (within limit)" : ` — exceeds limit of ${overlap.maxAllowed}`}
-              </p>
-              {overlap.courses.length > 0 ? (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {overlap.courses.map((c) => c.course_code).join(", ")}
-                </p>
+          <CardContent className="space-y-3">
+            <div className="flex flex-wrap items-center gap-3">
+              {overlap.withinLimit ? (
+                <CheckCircle2 className="h-5 w-5 text-success" />
               ) : (
-                <p className="mt-1 text-xs text-muted-foreground">No courses currently assigned to both majors.</p>
+                <AlertCircle className="h-5 w-5 text-warning" />
               )}
+              <div className="flex-1">
+                <p className="font-medium">
+                  {overlap.count} overlapping {overlap.count === 1 ? "course" : "courses"}
+                  {overlap.withinLimit ? " (within limit)" : ` — exceeds limit of ${overlap.maxAllowed}`}
+                </p>
+                {overlap.courses.length > 0 ? (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {overlap.courses.map((c) => c.course_code).join(", ")}
+                  </p>
+                ) : (
+                  <p className="mt-1 text-xs text-muted-foreground">No courses currently assigned to both majors.</p>
+                )}
+              </div>
+              <Badge variant={overlap.withinLimit ? "default" : "destructive"}>
+                {overlap.count}/{overlap.maxAllowed}
+              </Badge>
             </div>
-            <Badge variant={overlap.withinLimit ? "default" : "destructive"}>
-              {overlap.count}/{overlap.maxAllowed}
-            </Badge>
+            {overlap.exemptPrerequisites.length > 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Shared prerequisites exempt from the limit:{" "}
+                {overlap.exemptPrerequisites.map((c) => c.course_code).join(", ")}
+              </p>
+            ) : null}
           </CardContent>
         </Card>
       ) : null}
