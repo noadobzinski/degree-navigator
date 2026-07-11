@@ -110,7 +110,16 @@ function AuthBridge() {
   const router = useRouter();
   const queryClient = useQueryClient();
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      // A recovery link establishes a session wherever it lands. Send the user
+      // to the dedicated reset page so the "authenticated → dashboard" guards
+      // don't swallow the flow before they can choose a new password.
+      if (event === "PASSWORD_RECOVERY") {
+        if (router.state.location.pathname !== "/reset-password") {
+          router.navigate({ to: "/reset-password" });
+        }
+        return;
+      }
       router.invalidate();
       queryClient.invalidateQueries();
     });

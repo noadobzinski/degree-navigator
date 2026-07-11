@@ -12,6 +12,7 @@ import { describeAuthError } from "@/lib/auth-errors";
 export const Route = createFileRoute("/login")({
   validateSearch: z.object({
     redirect: z.string().optional(),
+    mode: z.enum(["signin", "signup", "forgot"]).optional(),
   }),
   beforeLoad: ({ context }) => {
     if (context.auth.isAuthenticated) throw redirect({ to: "/dashboard" });
@@ -22,8 +23,8 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const router = useRouter();
-  const { redirect: redirectTo } = Route.useSearch();
-  const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
+  const { redirect: redirectTo, mode: initialMode } = Route.useSearch();
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">(initialMode ?? "signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
