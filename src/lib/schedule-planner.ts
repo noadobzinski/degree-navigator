@@ -10,8 +10,17 @@ import {
   type YaleTerm,
 } from "@/lib/coursetable-seasons";
 import { currentSeasonCode } from "@/lib/coursetable";
-import { courseIdentityKey, lookupCatalogEntry } from "@/lib/course-codes";
+import {
+  buildCompletedCourseIdentitySet,
+  courseIdentityKey,
+  lookupCatalogEntry,
+} from "@/lib/course-codes";
 import type { CrosslistLookup } from "@/lib/crosslist";
+import {
+  prerequisitesForCode,
+  unmetPrerequisiteNote,
+  unmetPrerequisites,
+} from "@/lib/prerequisites";
 
 export type ScheduledCourse = {
   code: string;
@@ -20,6 +29,8 @@ export type ScheduledCourse = {
   priority: "high" | "med" | "low";
   credits: number;
   source: "planned" | "suggested";
+  /** Note shown when this course has prerequisites still to be satisfied. */
+  prereqNote?: string;
 };
 
 export type ScheduleTerm = {
@@ -153,6 +164,7 @@ function suggestionToScheduled(
     priority: s.priority,
     credits: catalogCredits(s.code, catalogByCode),
     source: "suggested",
+    prereqNote: s.prereqNote,
   };
 }
 
@@ -345,11 +357,89 @@ function plannedCoursesBySeason(
   return bySeason;
 }
 
+/** Prerequisite course codes that should be auto-added so a needed advanced
+ * course can actually be scheduled. Walks the prerequisite chain (capped). */
+const MAX_INJECTED_PREREQS = 16;
+
+function injectMissingPrerequisites(
+  flex: ScheduledCourse[],
+  terms: ScheduleTerm[],
+  presentKeys: Set<string>,
+  catalogByCode: Record<string, CatalogCourse>,
+): ScheduledCourse[] {
+  const present = new Set(presentKeys);
+  for (const item of flex) present.add(courseIdentityKey(item.code));
+
+  const result = [...flex];
+  const queue: string[] = [
+    ...flex.map((i) => i.code),
+    ...terms.flatMap((t) => t.courses.map((c) => c.code)),
+  ];
+  let injected = 0;
+
+  while (queue.length && injected < MAX_INJECTED_PREREQS) {
+    const code = queue.shift()!;
+    for (const group of prerequisitesForCode(code, catalogByCode)) {
+      if (group.some((opt) => present.has(courseIdentityKey(opt)))) continue;
+      const chosen = group.find((opt) => lookupCatalogEntry(opt, catalogByCode));
+      if (!chosen) continue;
+      const entry = lookupCatalogEntry(chosen, catalogByCode)!;
+      const key = courseIdentityKey(entry.code);
+      if (present.has(key)) continue;
+      present.add(key);
+      result.push({
+        code: entry.code,
+        title: entry.title,
+        reason: `Prerequisite for ${code}`,
+        priority: "high",
+        credits: entry.credits || 1,
+        source: "suggested",
+      });
+      queue.push(entry.code);
+      injected += 1;
+      if (injected >= MAX_INJECTED_PREREQS) break;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Earliest term index a course may be placed in so that every satisfiable
+ * prerequisite group sits in a strictly earlier term. Returns `blocked` when a
+ * prerequisite group has no option placed yet (so the caller defers it until a
+ * later pass, after its prerequisite has been positioned).
+ */
+function earliestTermForPrereqs(
+  code: string,
+  placed: Map<string, number>,
+  catalogByCode: Record<string, CatalogCourse>,
+): { earliest: number; blocked: boolean } {
+  let earliest = 0;
+  for (const group of prerequisitesForCode(code, catalogByCode)) {
+    const optionTerms = group
+      .map((opt) => placed.get(courseIdentityKey(opt)))
+      .filter((t): t is number => t !== undefined);
+    if (optionTerms.length === 0) return { earliest, blocked: true };
+    const minTerm = Math.min(...optionTerms);
+    if (minTerm >= 0) earliest = Math.max(earliest, minTerm + 1);
+  }
+  return { earliest, blocked: false };
+}
+
+function firstTermWithCapacity(terms: ScheduleTerm[], from: number): number {
+  for (let t = Math.max(0, from); t < terms.length; t++) {
+    if (terms[t].courses.length < COURSES_PER_TERM) return t;
+  }
+  return -1;
+}
+
 function assignSuggestionsToTerms(
   suggestions: RoadmapSuggestion[],
   seasons: CatalogSeason[],
   plannedBySeason: Map<string, ScheduledCourse[]>,
   catalogByCode: Record<string, CatalogCourse>,
+  completedKeys: Set<string>,
   skeleton?: PlanSkeleton | null,
 ): { terms: ScheduleTerm[]; unscheduled: ScheduledCourse[] } {
   const defaultLoad = clampCourseLoad(skeleton?.coursesPerTerm, COURSES_PER_TERM);
@@ -360,6 +450,13 @@ function assignSuggestionsToTerms(
     return { seasonCode: season.code, label: season.label, courses, credits };
   });
 
+  // Track where every known course sits: completed courses are available from
+  // the start (-1); planned courses occupy their assigned term.
+  const placed = new Map<string, number>();
+  for (const key of completedKeys) placed.set(key, -1);
+  terms.forEach((term, i) => {
+    for (const c of term.courses) placed.set(courseIdentityKey(c.code), i);
+  });
   // Per-term suggestion capacity from the skeleton. Planned (user-pinned)
   // courses always stay where the user put them, but they count against the
   // term's target so we don't overload a term the user wanted kept light.
@@ -371,16 +468,51 @@ function assignSuggestionsToTerms(
     terms.flatMap((t) => t.courses.map((c) => courseIdentityKey(c.code))),
   );
 
-  const sorted = [...suggestions]
-    .filter((s) => !alreadyScheduled.has(courseIdentityKey(s.code)))
-    .sort((a, b) => PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority]);
+  const flexBase = suggestions
+    .filter((s) => !placed.has(courseIdentityKey(s.code)))
+    .map((s) => suggestionToScheduled(s, catalogByCode));
+
+  const pending = injectMissingPrerequisites(
+    flexBase,
+    terms,
+    new Set(placed.keys()),
+    catalogByCode,
+  ).sort((a, b) => PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority]);
 
   const unscheduled: ScheduledCourse[] = [];
 
-  for (const suggestion of sorted) {
-    const course = suggestionToScheduled(suggestion, catalogByCode);
-    let placed = false;
-
+  // Fixpoint placement: defer courses whose prerequisites are not yet placed so
+  // they land in a later pass, after the prerequisite has a term.
+  let progress = true;
+  let guard = 0;
+  while (progress && guard <= pending.length + 2) {
+    progress = false;
+    guard += 1;
+    for (let i = 0; i < pending.length; i++) {
+      const item = pending[i];
+      const key = courseIdentityKey(item.code);
+      if (placed.has(key)) {
+        pending.splice(i, 1);
+        i--;
+        continue;
+      }
+      const { earliest, blocked } = earliestTermForPrereqs(item.code, placed, catalogByCode);
+      if (blocked) continue;
+      const target = firstTermWithCapacity(terms, earliest);
+      if (target < 0) {
+        unscheduled.push(item);
+        placed.set(key, terms.length);
+        pending.splice(i, 1);
+        i--;
+        progress = true;
+        continue;
+      }
+      terms[target].courses.push(item);
+      terms[target].credits += item.credits;
+      placed.set(key, target);
+      pending.splice(i, 1);
+      i--;
+      progress = true;
     for (const term of terms) {
       const capacity = capacityByCode.get(term.seasonCode) ?? defaultLoad;
       if (term.courses.length >= capacity) continue;
@@ -389,11 +521,60 @@ function assignSuggestionsToTerms(
       placed = true;
       break;
     }
-
-    if (!placed) unscheduled.push(course);
   }
 
+  // Anything still pending is blocked by an unplaceable prerequisite or a cycle;
+  // place it without the ordering constraint rather than dropping it.
+  for (const item of pending) {
+    const key = courseIdentityKey(item.code);
+    if (placed.has(key)) continue;
+    const target = firstTermWithCapacity(terms, 0);
+    if (target < 0) {
+      unscheduled.push(item);
+      placed.set(key, terms.length);
+    } else {
+      terms[target].courses.push(item);
+      terms[target].credits += item.credits;
+      placed.set(key, target);
+    }
+  }
+
+  annotatePrereqNotes(terms, unscheduled, completedKeys, catalogByCode);
   return { terms, unscheduled };
+}
+
+/**
+ * Flag any course whose prerequisites are not satisfied by courses completed or
+ * scheduled in a strictly earlier term. After ordering/injection this is only
+ * hit when a prerequisite cannot be placed earlier (e.g. a course the student
+ * manually planned too early, or a prerequisite missing from the catalog).
+ */
+function annotatePrereqNotes(
+  terms: ScheduleTerm[],
+  unscheduled: ScheduledCourse[],
+  completedKeys: Set<string>,
+  catalogByCode: Record<string, CatalogCourse>,
+): void {
+  const availableBefore = new Set(completedKeys);
+  for (const term of terms) {
+    const thisTermKeys: string[] = [];
+    for (const course of term.courses) {
+      const unmet = unmetPrerequisites(
+        prerequisitesForCode(course.code, catalogByCode),
+        availableBefore,
+      );
+      course.prereqNote = unmetPrerequisiteNote(unmet) ?? undefined;
+      thisTermKeys.push(courseIdentityKey(course.code));
+    }
+    for (const key of thisTermKeys) availableBefore.add(key);
+  }
+  for (const course of unscheduled) {
+    const unmet = unmetPrerequisites(
+      prerequisitesForCode(course.code, catalogByCode),
+      availableBefore,
+    );
+    course.prereqNote = unmetPrerequisiteNote(unmet) ?? undefined;
+  }
 }
 
 export function buildDegreeSchedule(input: SchedulePlannerInput): DegreeSchedule {
@@ -424,11 +605,15 @@ export function buildDegreeSchedule(input: SchedulePlannerInput): DegreeSchedule
   );
 
   const plannedCount = [...plannedBySeason.values()].reduce((n, list) => n + list.length, 0);
+  const completedKeys = buildCompletedCourseIdentitySet(
+    input.courses.filter((c) => c.status === "completed"),
+  );
   const { terms, unscheduled } = assignSuggestionsToTerms(
     suggestions,
     seasons,
     plannedBySeason,
     input.catalogByCode,
+    completedKeys,
     input.skeleton,
   );
 

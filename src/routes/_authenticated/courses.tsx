@@ -31,7 +31,21 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Plus, Search, Database, AlertCircle, ExternalLink, RefreshCw } from "lucide-react";
+import {
+  Trash2,
+  Plus,
+  Search,
+  Database,
+  AlertCircle,
+  ExternalLink,
+  RefreshCw,
+  Lock,
+} from "lucide-react";
+import {
+  describePrerequisites,
+  unmetPrerequisiteNote,
+  unmetPrerequisites,
+} from "@/lib/prerequisites";
 import { toast } from "sonner";
 import { formatCourseCredits, isHalfCreditCourse } from "@/lib/course-credits";
 import { wrCreditOffered, type UserCourse } from "@/lib/audit";
@@ -292,6 +306,9 @@ function CoursesPage() {
               const preview = userCoursePreviewFromCatalog(c, {
                 credit_allocation: addAllocationForCatalog(c),
               });
+              const prereqUnmetNote = unmetPrerequisiteNote(
+                unmetPrerequisites(c.prerequisites, takenIdentities),
+              );
               return (
               <div
                 key={c.code}
@@ -354,6 +371,18 @@ function CoursesPage() {
                       {formatCrosslistNote(c.code, c.crosslistedCodes) ??
                         `Also listed as ${c.crosslistedCodes.join(", ")}`}
                     </p>
+                  ) : null}
+                  {c.prerequisites?.length ? (
+                    prereqUnmetNote ? (
+                      <p className="mt-1 flex items-center gap-1 text-[10px] font-medium text-warning">
+                        <Lock className="h-3 w-3 shrink-0" />
+                        {prereqUnmetNote}
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-[10px] text-muted-foreground">
+                        Prereqs met: {describePrerequisites(c.prerequisites)}
+                      </p>
+                    )
                   ) : null}
                 </div>
                 <Button
