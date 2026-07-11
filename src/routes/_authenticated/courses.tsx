@@ -218,8 +218,9 @@ function CoursesPage() {
         <h1 className="font-serif text-3xl font-bold">My Courses</h1>
         <p className="text-muted-foreground">
           Search CourseTable by semester — pick the term when you took (or plan to take) each course. Courses with
-          multiple distributional tags (e.g. Hu + WR) need a credit choice — Yale counts each toward one requirement
-          only.
+          multiple distributional tags (e.g. Hu + WR) need a credit choice — Yale counts each toward one
+          distributional or skill credit only. This is separate from your major: the course still counts toward
+          major, track, and certificate requirements.
         </p>
         {classYear ? (
           <p className="mt-1 text-sm text-muted-foreground">
