@@ -7,6 +7,11 @@ import {
   stripAllocationMarkers,
 } from "@/lib/credit-allocation";
 import {
+  DEPT_ALLOC_SKILL_PREFIX,
+  departmentAllocationFromSkills,
+  stripDepartmentMarkers,
+} from "@/lib/department-allocation";
+import {
   isMandatoryWritingCourse,
   isOptionalWritingOffered,
   skillsForNewCourse,
@@ -15,6 +20,7 @@ import {
 
 const SCHEMA_CACHE_WR_ERROR = "counts_as_wr";
 const SCHEMA_CACHE_ALLOC_ERROR = "credit_allocation";
+const SCHEMA_CACHE_DEPT_ERROR = "department_allocation";
 
 export type CourseWriteInput = {
   course_code: string;
@@ -24,6 +30,7 @@ export type CourseWriteInput = {
   skills?: string[];
   counts_as_wr?: boolean | null;
   credit_allocation?: string | null;
+  department_allocation?: string | null;
   term?: string | null;
   year?: number | null;
   status?: string;
@@ -42,13 +49,23 @@ function isMissingAllocColumnError(message: string): boolean {
   return isMissingColumnError(message, SCHEMA_CACHE_ALLOC_ERROR);
 }
 
+function isMissingDeptColumnError(message: string): boolean {
+  return isMissingColumnError(message, SCHEMA_CACHE_DEPT_ERROR);
+}
+
 /** Encode WR preference in skills when DB column is not migrated yet. */
 export function encodeCourseForDb(data: CourseWriteInput): CourseWriteInput {
-  let skills = stripAllocationMarkers([...(data.skills ?? [])]).filter((s) => s !== WR_OPTIONAL_SKILL);
+  let skills = stripDepartmentMarkers(stripAllocationMarkers([...(data.skills ?? [])])).filter(
+    (s) => s !== WR_OPTIONAL_SKILL,
+  );
   const code = data.course_code;
 
   if (data.credit_allocation && isCreditBucketId(data.credit_allocation)) {
     skills.push(`${CREDIT_ALLOC_SKILL_PREFIX}${data.credit_allocation}`);
+  }
+
+  if (data.department_allocation) {
+    skills.push(`${DEPT_ALLOC_SKILL_PREFIX}${data.department_allocation}`);
   }
 
   if (data.counts_as_wr === true) {
@@ -66,11 +83,17 @@ export function encodeCourseForDb(data: CourseWriteInput): CourseWriteInput {
 
 export function decodeCourseFromDb<T extends CourseWriteInput>(
   row: T,
-): T & { counts_as_wr: boolean | null; credit_allocation: string | null } {
+): T & {
+  counts_as_wr: boolean | null;
+  credit_allocation: string | null;
+  department_allocation: string | null;
+} {
   const rawSkills = row.skills ?? [];
   const code = row.course_code ?? "";
   let counts_as_wr = row.counts_as_wr ?? null;
   let credit_allocation = row.credit_allocation ?? creditAllocationFromSkills(rawSkills) ?? null;
+  const department_allocation =
+    row.department_allocation ?? departmentAllocationFromSkills(rawSkills) ?? null;
 
   if (counts_as_wr == null) {
     if (rawSkills.includes("WR")) counts_as_wr = true;
@@ -80,9 +103,12 @@ export function decodeCourseFromDb<T extends CourseWriteInput>(
 
   return {
     ...row,
-    skills: stripAllocationMarkers(rawSkills).filter((s) => s !== WR_OPTIONAL_SKILL),
+    skills: stripDepartmentMarkers(stripAllocationMarkers(rawSkills)).filter(
+      (s) => s !== WR_OPTIONAL_SKILL,
+    ),
     counts_as_wr,
     credit_allocation,
+    department_allocation,
   };
 }
 
@@ -99,8 +125,18 @@ export async function insertUserCourse(
 
   let insertRow: Record<string, unknown> = { ...merged };
   let { error } = await supabase.from("user_courses").insert(insertRow);
-  if (error && (isMissingWrColumnError(error.message) || isMissingAllocColumnError(error.message))) {
-    const { counts_as_wr: _w, credit_allocation: _a, ...fallback } = insertRow;
+  if (
+    error &&
+    (isMissingWrColumnError(error.message) ||
+      isMissingAllocColumnError(error.message) ||
+      isMissingDeptColumnError(error.message))
+  ) {
+    const {
+      counts_as_wr: _w,
+      credit_allocation: _a,
+      department_allocation: _d,
+      ...fallback
+    } = insertRow;
     insertRow = encodeCourseForDb(fallback as CourseWriteInput);
     insertRow.user_id = row.user_id;
     ({ error } = await supabase.from("user_courses").insert(insertRow));
@@ -122,18 +158,33 @@ export async function updateUserCourse(
   });
 
   let updatePayload: Record<string, unknown> = { ...patch };
-  if (patch.counts_as_wr !== undefined || patch.credit_allocation !== undefined) {
+  if (
+    patch.counts_as_wr !== undefined ||
+    patch.credit_allocation !== undefined ||
+    patch.department_allocation !== undefined
+  ) {
     updatePayload = {
       ...updatePayload,
       skills: merged.skills,
       counts_as_wr: merged.counts_as_wr,
       credit_allocation: merged.credit_allocation,
+      department_allocation: merged.department_allocation,
     };
   }
 
   let { error } = await supabase.from("user_courses").update(updatePayload).eq("id", id).eq("user_id", userId);
-  if (error && (isMissingWrColumnError(error.message) || isMissingAllocColumnError(error.message))) {
-    const { counts_as_wr: _w, credit_allocation: _a, ...withoutCol } = updatePayload;
+  if (
+    error &&
+    (isMissingWrColumnError(error.message) ||
+      isMissingAllocColumnError(error.message) ||
+      isMissingDeptColumnError(error.message))
+  ) {
+    const {
+      counts_as_wr: _w,
+      credit_allocation: _a,
+      department_allocation: _d,
+      ...withoutCol
+    } = updatePayload;
     const fallback = encodeCourseForDb({
       ...existing,
       ...withoutCol,

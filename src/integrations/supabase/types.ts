@@ -72,6 +72,7 @@ export type Database = {
         Row: {
           counts_as_wr: boolean | null
           credit_allocation: string | null
+          department_allocation: string | null
           course_code: string
           course_title: string | null
           created_at: string
@@ -91,6 +92,7 @@ export type Database = {
         Insert: {
           counts_as_wr?: boolean | null
           credit_allocation?: string | null
+          department_allocation?: string | null
           course_code: string
           course_title?: string | null
           created_at?: string
@@ -110,6 +112,7 @@ export type Database = {
         Update: {
           counts_as_wr?: boolean | null
           credit_allocation?: string | null
+          department_allocation?: string | null
           course_code?: string
           course_title?: string | null
           created_at?: string

@@ -88,6 +88,7 @@ export const addCourse = createServerFn({ method: "POST" })
         skills: z.array(z.string()).default([]),
         counts_as_wr: z.boolean().nullable().optional(),
         credit_allocation: z.enum(["hu", "so", "sc", "qr", "wr", "lang"]).nullable().optional(),
+        department_allocation: z.string().max(20).nullable().optional(),
         term: z.string().max(20).optional().nullable(),
         year: z.number().int().min(2020).max(2035).optional().nullable(),
         status: z.enum(["planned", "in_progress", "completed"]).default("planned"),
@@ -110,6 +111,7 @@ export const updateCourse = createServerFn({ method: "POST" })
         status: z.enum(["planned", "in_progress", "completed"]).optional(),
         counts_as_wr: z.boolean().nullable().optional(),
         credit_allocation: z.enum(["hu", "so", "sc", "qr", "wr", "lang"]).nullable().optional(),
+        department_allocation: z.string().max(20).nullable().optional(),
         term: z.string().max(20).optional().nullable(),
         year: z.number().int().min(2020).max(2035).optional().nullable(),
         grade: z.string().max(5).optional().nullable(),
@@ -119,7 +121,11 @@ export const updateCourse = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const { id, ...patch } = data;
-    if (patch.counts_as_wr !== undefined || patch.credit_allocation !== undefined) {
+    if (
+      patch.counts_as_wr !== undefined ||
+      patch.credit_allocation !== undefined ||
+      patch.department_allocation !== undefined
+    ) {
       const { data: existing, error: fetchErr } = await supabase
         .from("user_courses")
         .select("course_code, skills, counts_as_wr")

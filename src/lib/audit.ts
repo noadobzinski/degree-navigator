@@ -29,10 +29,10 @@ import {
   lookupCatalogEntry,
 } from "@/lib/course-codes";
 import {
-  codesForRequirementMatch,
   courseMatchesSlotCodes,
   type CrosslistLookup,
 } from "@/lib/crosslist";
+import { matchCodesWithDepartment } from "@/lib/department-allocation";
 import {
   prerequisitesForCode,
   unmetPrerequisiteNote,
@@ -49,6 +49,8 @@ export type UserCourse = {
   counts_as_wr?: boolean | null;
   /** Manual distributional/skill bucket (hu, so, sc, qr, wr, lang); null = auto-optimize */
   credit_allocation?: string | null;
+  /** Department (subject prefix) a cross-listed course counts toward; null = every listing. */
+  department_allocation?: string | null;
   /** Other Yale codes for this offering (from CourseTable cross-listings). */
   crosslisted_codes?: string[] | null;
   status: "planned" | "in_progress" | "completed";
@@ -99,11 +101,7 @@ function matchesSlot(
     return false;
   }
 
-  const codesToCheck = codesForRequirementMatch(
-    course.course_code,
-    course.crosslisted_codes,
-    crosslistLookup,
-  );
+  const codesToCheck = matchCodesWithDepartment(course, crosslistLookup);
   const codeMatch = courseMatchesSlotCodes(codesToCheck, slot, catalogByCode);
 
   if (codeMatch) return true;
