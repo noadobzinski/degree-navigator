@@ -513,13 +513,6 @@ function assignSuggestionsToTerms(
       pending.splice(i, 1);
       i--;
       progress = true;
-    for (const term of terms) {
-      const capacity = capacityByCode.get(term.seasonCode) ?? defaultLoad;
-      if (term.courses.length >= capacity) continue;
-      term.courses.push(course);
-      term.credits += course.credits;
-      placed = true;
-      break;
     }
   }
 
