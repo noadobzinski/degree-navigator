@@ -1,10 +1,7 @@
 import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import {
-  getCourseTableCatalogMeta,
-  searchCourseTableCatalog,
-} from "@/lib/coursetable.functions";
+import { getCourseTableCatalogMeta, searchCourseTableCatalog } from "@/lib/coursetable.functions";
 import { currentSeasonCode } from "@/lib/coursetable";
 import { renumberingMapKey } from "@/hooks/use-course-renumbering";
 import { getRenumberingMap } from "@/lib/coursetable.functions";

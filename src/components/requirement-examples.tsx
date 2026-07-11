@@ -22,7 +22,9 @@ export function RequirementExamples({
 
   if (isLoading) {
     return (
-      <p className="mt-2 text-xs text-muted-foreground">Loading course examples from CourseTable…</p>
+      <p className="mt-2 text-xs text-muted-foreground">
+        Loading course examples from CourseTable…
+      </p>
     );
   }
 

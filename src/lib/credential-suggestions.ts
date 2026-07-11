@@ -1,8 +1,4 @@
-import {
-  CERTIFICATES,
-  resolveCertificateId,
-  type Certificate,
-} from "@/data/certificates";
+import { CERTIFICATES, resolveCertificateId, type Certificate } from "@/data/certificates";
 import { MAJORS, YALE_DOUBLE_MAJOR_MAX_OVERLAP } from "@/data/majors";
 import {
   auditMajor,
@@ -49,10 +45,7 @@ function isEasyCertificate(progress: RequirementProgress): boolean {
   return progress.remainingCourses <= 1 || progress.progressPct >= CERT_MIN_PROGRESS_PCT;
 }
 
-function isEasyDoubleMajor(
-  progress: RequirementProgress,
-  overlapWithinLimit: boolean,
-): boolean {
+function isEasyDoubleMajor(progress: RequirementProgress, overlapWithinLimit: boolean): boolean {
   if (!overlapWithinLimit || progress.coursesFilled <= 0 || progress.coursesRequired <= 0) {
     return false;
   }
@@ -95,9 +88,7 @@ function buildCertSuggestion(
   if (!isEasyCertificate(progress)) return null;
 
   const requirementRows = [
-    ...(audit.prerequisiteResult
-      ? slotResultsToRows([audit.prerequisiteResult], "prereq-")
-      : []),
+    ...(audit.prerequisiteResult ? slotResultsToRows([audit.prerequisiteResult], "prereq-") : []),
     ...slotResultsToRows(audit.results),
   ];
 

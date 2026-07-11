@@ -2,7 +2,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { getProfile, getMyCourses, addCourse, updateCourse, deleteCourse } from "@/lib/audit.functions";
+import {
+  getProfile,
+  getMyCourses,
+  addCourse,
+  updateCourse,
+  deleteCourse,
+} from "@/lib/audit.functions";
 import {
   useCourseTableCatalogSearch,
   useClientQueryEnabled,
@@ -110,13 +116,7 @@ function PlannerPage() {
   }, [courses, profile, crosslistLookup, catalogByCode]);
 
   const addM = useMutation({
-    mutationFn: ({
-      course,
-      season,
-    }: {
-      course: CatalogCourse;
-      season: CatalogSeason;
-    }) => {
+    mutationFn: ({ course, season }: { course: CatalogCourse; season: CatalogSeason }) => {
       const { skills, counts_as_wr } = skillsForNewCourse(course.skills, course.code);
       const isCurrent = season.code === currentSeasonCode();
       return addFn({
@@ -143,13 +143,7 @@ function PlannerPage() {
   });
 
   const moveM = useMutation({
-    mutationFn: ({
-      id,
-      season,
-    }: {
-      id: string;
-      season: CatalogSeason;
-    }) =>
+    mutationFn: ({ id, season }: { id: string; season: CatalogSeason }) =>
       updateFn({
         data: {
           id,
@@ -319,14 +313,13 @@ function PlannerPage() {
               const termCourses = coursesInSeason(courses, season);
               const credits = termCourses.reduce((s, c) => s + (c.credits || 1), 0);
               const yearLabel =
-                profile.class_year != null ? studentYearLabel(profile.class_year, season.code) : null;
+                profile.class_year != null
+                  ? studentYearLabel(profile.class_year, season.code)
+                  : null;
               const isPast = compareSeasonCodes(season.code, currentSeasonCode()) < 0;
 
               return (
-                <Card
-                  key={season.code}
-                  className={isPast ? "opacity-60" : undefined}
-                >
+                <Card key={season.code} className={isPast ? "opacity-60" : undefined}>
                   <CardHeader className="pb-2">
                     <div className="flex items-start justify-between gap-2">
                       <div>
@@ -356,13 +349,19 @@ function PlannerPage() {
                             <div className="flex items-start justify-between gap-1">
                               <div className="min-w-0">
                                 <div className="font-semibold">{c.course_code}</div>
-                                <div className="truncate text-xs text-muted-foreground">{title}</div>
+                                <div className="truncate text-xs text-muted-foreground">
+                                  {title}
+                                </div>
                                 <div className="mt-1 flex flex-wrap gap-1">
                                   <Badge variant="outline" className="text-[10px]">
                                     {c.status}
                                   </Badge>
                                   {yearTags.map((t) => (
-                                    <Badge key={t} variant="secondary" className="text-[10px] capitalize">
+                                    <Badge
+                                      key={t}
+                                      variant="secondary"
+                                      className="text-[10px] capitalize"
+                                    >
                                       {t}
                                     </Badge>
                                   ))}

@@ -2,7 +2,14 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { getMyCourses, getProfile, addCourse, updateCourse, deleteCourse } from "@/lib/audit.functions";
+import { usePostHog } from "posthog-js/react";
+import {
+  getMyCourses,
+  getProfile,
+  addCourse,
+  updateCourse,
+  deleteCourse,
+} from "@/lib/audit.functions";
 import {
   useCourseTableCatalogMeta,
   useCourseTableCatalogSearch,
@@ -30,7 +37,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Trash2, Plus, Search, Database, AlertCircle, ExternalLink, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { formatCourseCredits, isHalfCreditCourse } from "@/lib/course-credits";
@@ -60,6 +73,7 @@ function CoursesPage() {
   const deleteFn = useServerFn(deleteCourse);
   const clientReady = useClientQueryEnabled();
   const qc = useQueryClient();
+  const posthog = usePostHog();
   const coursesQ = useQuery({
     queryKey: ["courses"],
     queryFn: () => fetchCourses(),
@@ -144,9 +158,16 @@ function CoursesPage() {
         },
       });
     },
-    onSuccess: () => {
+    onSuccess: (_, vars) => {
       toast.success(`Added for ${selectedSeasonLabel}`);
       qc.invalidateQueries({ queryKey: ["courses"] });
+      posthog.capture("course_added", {
+        course_code: vars.course.code,
+        course_title: vars.course.title,
+        season: catalogSeason,
+        distributional: vars.course.distributional,
+        credits: vars.course.credits,
+      });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
   });
@@ -156,13 +177,19 @@ function CoursesPage() {
       status?: "planned" | "in_progress" | "completed";
       counts_as_wr?: boolean | null;
     }) => updateFn({ data: vars }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["courses"] }),
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["courses"] });
+      if (vars.status) {
+        posthog.capture("course_status_updated", { new_status: vars.status });
+      }
+    },
   });
   const delM = useMutation({
     mutationFn: (id: string) => deleteFn({ data: { id } }),
     onSuccess: () => {
       toast.success("Removed");
       qc.invalidateQueries({ queryKey: ["courses"] });
+      posthog.capture("course_removed", {});
     },
   });
 
@@ -203,13 +230,14 @@ function CoursesPage() {
       <div>
         <h1 className="font-serif text-3xl font-bold">My Courses</h1>
         <p className="text-muted-foreground">
-          Search CourseTable by semester — pick the term when you took (or plan to take) each course. Courses with
-          multiple distributional tags (e.g. Hu + WR) need a credit choice — Yale counts each toward one requirement
-          only.
+          Search CourseTable by semester — pick the term when you took (or plan to take) each
+          course. Courses with multiple distributional tags (e.g. Hu + WR) need a credit choice —
+          Yale counts each toward one requirement only.
         </p>
         {classYear ? (
           <p className="mt-1 text-sm text-muted-foreground">
-            Class of {classYear} · catalogs from Fall {firstFallYearForClass(classYear)} through today
+            Class of {classYear} · catalogs from Fall {firstFallYearForClass(classYear)} through
+            today
           </p>
         ) : (
           <p className="mt-1 text-sm text-muted-foreground">
@@ -232,8 +260,15 @@ function CoursesPage() {
                 Retry in a moment; no Yale NetID sign-in is required.
               </p>
             </div>
-            <Button variant="outline" size="sm" onClick={() => catalogQ.refetch()} disabled={catalogQ.isFetching}>
-              <RefreshCw className={`mr-1 h-3.5 w-3.5 ${catalogQ.isFetching ? "animate-spin" : ""}`} />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => catalogQ.refetch()}
+              disabled={catalogQ.isFetching}
+            >
+              <RefreshCw
+                className={`mr-1 h-3.5 w-3.5 ${catalogQ.isFetching ? "animate-spin" : ""}`}
+              />
               Retry
             </Button>
           </CardContent>
@@ -246,10 +281,13 @@ function CoursesPage() {
           {usingLiveCatalog && catalogQ.data ? (
             <Badge variant="secondary" className="gap-1 font-normal">
               <Database className="h-3 w-3" />
-              {selectedSeasonLabel} · {(catalogQ.data.total ?? browseCourses.length).toLocaleString()} courses
+              {selectedSeasonLabel} ·{" "}
+              {(catalogQ.data.total ?? browseCourses.length).toLocaleString()} courses
             </Badge>
           ) : (
-            <Badge variant="outline" className="font-normal">Sample catalog</Badge>
+            <Badge variant="outline" className="font-normal">
+              Sample catalog
+            </Badge>
           )}
         </CardHeader>
         <CardContent>
@@ -293,92 +331,98 @@ function CoursesPage() {
                 credit_allocation: addAllocationForCatalog(c),
               });
               return (
-              <div
-                key={c.code}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border p-3"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-semibold">{c.code}</span>
-                    <span className="truncate text-sm text-muted-foreground">{c.title}</span>
-                    {usingLiveCatalog ? (
-                      <a
-                        href={courseTableSearchUrl(c.code)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-muted-foreground hover:text-primary"
-                        title="View on CourseTable"
-                      >
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      </a>
-                    ) : null}
-                    {hasCreditChoice ? (
-                      <Badge variant="outline" className="text-[10px] font-normal">
-                        Pick one credit
-                      </Badge>
-                    ) : null}
-                  </div>
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    {c.distributional.map((d) => (
-                      <Badge key={d} variant="secondary" className="text-[10px]">
-                        {d}
-                      </Badge>
-                    ))}
-                    {c.skills.map((s) => (
-                      <Badge key={s} variant="outline" className="text-[10px]">
-                        {s}
-                      </Badge>
-                    ))}
-                    {isOptionalWritingOffered(c.skills, c.code) ? (
-                      <Badge variant="outline" className="text-[10px] text-muted-foreground">
-                        WR optional
-                      </Badge>
-                    ) : null}
-                    <span className="text-[10px] text-muted-foreground">{formatCourseCredits(c.credits)}</span>
-                    {isHalfCreditCourse(c.credits) ? (
-                      <Badge variant="outline" className="text-[10px]">
-                        Half credit
-                      </Badge>
-                    ) : null}
-                  </div>
-                  {hasCreditChoice ? (
-                    <CreditAllocationSelect
-                      compact
-                      course={preview}
-                      allCourses={myCourses}
-                      onChange={(allocation) => setAddAllocation(c, allocation)}
-                    />
-                  ) : null}
-                  {c.crosslistedCodes?.length ? (
-                    <p className="mt-1 text-[10px] text-muted-foreground">
-                      {formatCrosslistNote(c.code, c.crosslistedCodes) ??
-                        `Also listed as ${c.crosslistedCodes.join(", ")}`}
-                    </p>
-                  ) : null}
-                </div>
-                <Button
-                  size="sm"
-                  disabled={takenThisSeason(c.code) || courseAlreadyOnList(c.code) || addM.isPending}
-                  onClick={() =>
-                    addM.mutate({
-                      course: resolveCourse(c.code),
-                      credit_allocation: hasCreditChoice ? addAllocationForCatalog(c) : null,
-                    })
-                  }
+                <div
+                  key={c.code}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border p-3"
                 >
-                  {takenThisSeason(c.code) || courseAlreadyOnList(c.code) ? (
-                    "Added"
-                  ) : (
-                    <>
-                      <Plus className="mr-1 h-3 w-3" /> Add
-                    </>
-                  )}
-                </Button>
-              </div>
-            );
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold">{c.code}</span>
+                      <span className="truncate text-sm text-muted-foreground">{c.title}</span>
+                      {usingLiveCatalog ? (
+                        <a
+                          href={courseTableSearchUrl(c.code)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-muted-foreground hover:text-primary"
+                          title="View on CourseTable"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
+                      ) : null}
+                      {hasCreditChoice ? (
+                        <Badge variant="outline" className="text-[10px] font-normal">
+                          Pick one credit
+                        </Badge>
+                      ) : null}
+                    </div>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {c.distributional.map((d) => (
+                        <Badge key={d} variant="secondary" className="text-[10px]">
+                          {d}
+                        </Badge>
+                      ))}
+                      {c.skills.map((s) => (
+                        <Badge key={s} variant="outline" className="text-[10px]">
+                          {s}
+                        </Badge>
+                      ))}
+                      {isOptionalWritingOffered(c.skills, c.code) ? (
+                        <Badge variant="outline" className="text-[10px] text-muted-foreground">
+                          WR optional
+                        </Badge>
+                      ) : null}
+                      <span className="text-[10px] text-muted-foreground">
+                        {formatCourseCredits(c.credits)}
+                      </span>
+                      {isHalfCreditCourse(c.credits) ? (
+                        <Badge variant="outline" className="text-[10px]">
+                          Half credit
+                        </Badge>
+                      ) : null}
+                    </div>
+                    {hasCreditChoice ? (
+                      <CreditAllocationSelect
+                        compact
+                        course={preview}
+                        allCourses={myCourses}
+                        onChange={(allocation) => setAddAllocation(c, allocation)}
+                      />
+                    ) : null}
+                    {c.crosslistedCodes?.length ? (
+                      <p className="mt-1 text-[10px] text-muted-foreground">
+                        {formatCrosslistNote(c.code, c.crosslistedCodes) ??
+                          `Also listed as ${c.crosslistedCodes.join(", ")}`}
+                      </p>
+                    ) : null}
+                  </div>
+                  <Button
+                    size="sm"
+                    disabled={
+                      takenThisSeason(c.code) || courseAlreadyOnList(c.code) || addM.isPending
+                    }
+                    onClick={() =>
+                      addM.mutate({
+                        course: resolveCourse(c.code),
+                        credit_allocation: hasCreditChoice ? addAllocationForCatalog(c) : null,
+                      })
+                    }
+                  >
+                    {takenThisSeason(c.code) || courseAlreadyOnList(c.code) ? (
+                      "Added"
+                    ) : (
+                      <>
+                        <Plus className="mr-1 h-3 w-3" /> Add
+                      </>
+                    )}
+                  </Button>
+                </div>
+              );
             })}
             {!catalogQ.isLoading && browseCourses.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">No courses match your search.</p>
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                No courses match your search.
+              </p>
             ) : null}
           </div>
         </CardContent>
@@ -386,96 +430,107 @@ function CoursesPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="font-serif">My course list ({coursesQ.data?.length ?? 0})</CardTitle>
+          <CardTitle className="font-serif">
+            My course list ({coursesQ.data?.length ?? 0})
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {coursesQ.isLoading ? <p className="text-muted-foreground">Loading…</p> : null}
           {coursesQ.data?.length === 0 ? (
-            <p className="text-muted-foreground">You haven't added any courses yet — browse above.</p>
+            <p className="text-muted-foreground">
+              You haven't added any courses yet — browse above.
+            </p>
           ) : null}
           <div className="space-y-2">
             {myCourses.map((c) => {
               const row = c as UserCourse;
               const displaySkills = effectiveSkills(row);
               const wrOffered = wrCreditOffered(row);
-              const wrOn = row.counts_as_wr === true || (row.counts_as_wr == null && row.skills?.includes("WR"));
+              const wrOn =
+                row.counts_as_wr === true ||
+                (row.counts_as_wr == null && row.skills?.includes("WR"));
               return (
-              <div
-                key={c.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border p-3"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-semibold">{c.course_code}</span>
-                    <span className="truncate text-sm text-muted-foreground">{c.course_title}</span>
-                    {c.term && c.year ? (
-                      <Badge variant="outline" className="text-[10px] font-normal">
-                        {c.term} {c.year}
-                      </Badge>
-                    ) : null}
-                  </div>
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    {c.distributional?.map((d: string) => (
-                      <Badge key={d} variant="secondary" className="text-[10px]">
-                        {d}
-                      </Badge>
-                    ))}
-                    {displaySkills.map((s: string) => (
-                      <Badge key={s} variant="outline" className="text-[10px]">
-                        {s}
-                      </Badge>
-                    ))}
-                    {row.crosslisted_codes?.length ? (
-                      <span className="w-full text-[10px] text-muted-foreground">
-                        {formatCrosslistNote(row.course_code, row.crosslisted_codes) ??
-                          `Also listed as ${row.crosslisted_codes.join(", ")}`}
-                      </span>
-                    ) : null}
-                    <span className="text-[10px] text-muted-foreground">
-                      {formatCourseCredits(c.credits ?? 1)}
-                    </span>
-                  </div>
-                  <CreditAllocationSelect
-                    course={row}
-                    allCourses={myCourses}
-                    disabled={allocationM.isPending}
-                    onChange={(allocation) => allocationM.mutate({ course: row, allocation })}
-                  />
-                  {wrOffered && !courseHasExclusiveCreditChoice(row) ? (
-                    <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
-                      <Checkbox
-                        checked={wrOn}
-                        onCheckedChange={(checked) =>
-                          updateM.mutate({
-                            id: c.id,
-                            counts_as_wr: checked === true,
-                          })
-                        }
-                      />
-                      Count as writing (WR) credit
-                    </label>
-                  ) : null}
-                </div>
-                <Select
-                  value={c.status}
-                  onValueChange={(v) =>
-                    updateM.mutate({ id: c.id, status: v as "planned" | "in_progress" | "completed" })
-                  }
+                <div
+                  key={c.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border p-3"
                 >
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="in_progress">In progress</SelectItem>
-                    <SelectItem value="planned">Planned</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button variant="ghost" size="icon" onClick={() => delM.mutate(c.id)}>
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-              </div>
-            );
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold">{c.course_code}</span>
+                      <span className="truncate text-sm text-muted-foreground">
+                        {c.course_title}
+                      </span>
+                      {c.term && c.year ? (
+                        <Badge variant="outline" className="text-[10px] font-normal">
+                          {c.term} {c.year}
+                        </Badge>
+                      ) : null}
+                    </div>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {c.distributional?.map((d: string) => (
+                        <Badge key={d} variant="secondary" className="text-[10px]">
+                          {d}
+                        </Badge>
+                      ))}
+                      {displaySkills.map((s: string) => (
+                        <Badge key={s} variant="outline" className="text-[10px]">
+                          {s}
+                        </Badge>
+                      ))}
+                      {row.crosslisted_codes?.length ? (
+                        <span className="w-full text-[10px] text-muted-foreground">
+                          {formatCrosslistNote(row.course_code, row.crosslisted_codes) ??
+                            `Also listed as ${row.crosslisted_codes.join(", ")}`}
+                        </span>
+                      ) : null}
+                      <span className="text-[10px] text-muted-foreground">
+                        {formatCourseCredits(c.credits ?? 1)}
+                      </span>
+                    </div>
+                    <CreditAllocationSelect
+                      course={row}
+                      allCourses={myCourses}
+                      disabled={allocationM.isPending}
+                      onChange={(allocation) => allocationM.mutate({ course: row, allocation })}
+                    />
+                    {wrOffered && !courseHasExclusiveCreditChoice(row) ? (
+                      <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                        <Checkbox
+                          checked={wrOn}
+                          onCheckedChange={(checked) =>
+                            updateM.mutate({
+                              id: c.id,
+                              counts_as_wr: checked === true,
+                            })
+                          }
+                        />
+                        Count as writing (WR) credit
+                      </label>
+                    ) : null}
+                  </div>
+                  <Select
+                    value={c.status}
+                    onValueChange={(v) =>
+                      updateM.mutate({
+                        id: c.id,
+                        status: v as "planned" | "in_progress" | "completed",
+                      })
+                    }
+                  >
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="in_progress">In progress</SelectItem>
+                      <SelectItem value="planned">Planned</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button variant="ghost" size="icon" onClick={() => delM.mutate(c.id)}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              );
             })}
           </div>
         </CardContent>

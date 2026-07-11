@@ -4,10 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import {
-  CatalogLink,
-  RequirementSlotRows,
-} from "@/components/requirement-slot-rows";
+import { CatalogLink, RequirementSlotRows } from "@/components/requirement-slot-rows";
 import type { CredentialSuggestion } from "@/lib/credential-suggestions";
 import type { CrosslistLookup } from "@/lib/crosslist";
 
@@ -38,10 +35,7 @@ export function CredentialSuggestionsCard({
       </CardHeader>
       <CardContent className="space-y-4">
         {suggestions.map((s) => (
-          <div
-            key={`${s.kind}-${s.id}`}
-            className="rounded-lg border border-border bg-card p-4"
-          >
+          <div key={`${s.kind}-${s.id}`} className="rounded-lg border border-border bg-card p-4">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -67,8 +61,8 @@ export function CredentialSuggestionsCard({
             <p className="mt-2 text-sm text-muted-foreground">{s.summary}</p>
             {s.kind === "double_major" && s.overlapCount != null && s.overlapCount > 0 ? (
               <p className="mt-1 text-xs text-muted-foreground">
-                {s.overlapCount} overlapping{" "}
-                {s.overlapCount === 1 ? "course" : "courses"} with your primary major
+                {s.overlapCount} overlapping {s.overlapCount === 1 ? "course" : "courses"} with your
+                primary major
                 {s.overlapWithinLimit ? " (allowed)" : " — may exceed Yale's overlap limit"}
                 {s.overlapCourseCodes?.length ? `: ${s.overlapCourseCodes.join(", ")}` : ""}.
               </p>

@@ -117,7 +117,12 @@ export const ROADMAP_MAJORS: Major[] = [
         totalCourses: 15,
         prerequisites: [
           { id: "intro", label: "CGSC 1100", codes: y(["CGSC 110"]), needCount: 1 },
-          { id: "junior_colloq", label: "Junior colloquium (CGSC 3950)", codes: y(["CGSC 3950"]), needCount: 1 },
+          {
+            id: "junior_colloq",
+            label: "Junior colloquium (CGSC 3950)",
+            codes: y(["CGSC 3950"]),
+            needCount: 1,
+          },
         ],
         core: cgscSharedCore,
         coreGroups: [CGSC_SUBFIELD_GROUP],
@@ -127,7 +132,12 @@ export const ROADMAP_MAJORS: Major[] = [
         totalCourses: 15,
         prerequisites: [
           { id: "intro", label: "CGSC 1100", codes: y(["CGSC 110"]), needCount: 1 },
-          { id: "junior_colloq", label: "Junior colloquium (CGSC 3950)", codes: y(["CGSC 3950"]), needCount: 1 },
+          {
+            id: "junior_colloq",
+            label: "Junior colloquium (CGSC 3950)",
+            codes: y(["CGSC 3950"]),
+            needCount: 1,
+          },
         ],
         coreGroups: [CGSC_SUBFIELD_GROUP],
         core: [
@@ -165,7 +175,12 @@ export const ROADMAP_MAJORS: Major[] = [
         totalCourses: 12,
         core: [
           { id: "afst_hu", label: "AFST humanities course", codePrefix: ["AFST"], needCount: 1 },
-          { id: "afst_so", label: "AFST social science course", codePrefix: ["AFST"], needCount: 1 },
+          {
+            id: "afst_so",
+            label: "AFST social science course",
+            codePrefix: ["AFST"],
+            needCount: 1,
+          },
           { id: "language", label: "African language courses", codePrefix: ["AFST"], needCount: 4 },
           { id: "focus", label: "Area of focus", codePrefix: ["AFST"], needCount: 4 },
           {
@@ -175,7 +190,14 @@ export const ROADMAP_MAJORS: Major[] = [
             needCount: 1,
           },
         ],
-        senior: [{ id: "senior", label: "Senior essay (AFST 4491)", codes: y(["AFST 4491"]), needCount: 1 }],
+        senior: [
+          {
+            id: "senior",
+            label: "Senior essay (AFST 4491)",
+            codes: y(["AFST 4491"]),
+            needCount: 1,
+          },
+        ],
       },
     },
   },
@@ -225,7 +247,8 @@ export const ROADMAP_MAJORS: Major[] = [
     department: "Anthropology",
     degrees: ["BA"],
     defaultDegree: "BA",
-    notes: "At least 9 ANTH courses; up to 3 cognate courses in other departments with DUS approval.",
+    notes:
+      "At least 9 ANTH courses; up to 3 cognate courses in other departments with DUS approval.",
     requirements: {
       BA: {
         totalCourses: 12,
@@ -275,12 +298,32 @@ export const ROADMAP_MAJORS: Major[] = [
       BA: {
         totalCourses: 11,
         prerequisites: [
-          { id: "calc", label: "MATH 1200 or ENAS 1510", codes: y(["MATH 120", "ENAS 1510"]), needCount: 1 },
-          { id: "linalg", label: "Linear algebra", codes: y(["MATH 222", "MATH 225", "MATH 226"]), needCount: 1 },
-          { id: "disc", label: "Discrete math (AMTH 2440 or CPSC 2020)", codes: y(["AMTH 244", "CPSC 202"]), needCount: 1 },
+          {
+            id: "calc",
+            label: "MATH 1200 or ENAS 1510",
+            codes: y(["MATH 120", "ENAS 1510"]),
+            needCount: 1,
+          },
+          {
+            id: "linalg",
+            label: "Linear algebra",
+            codes: y(["MATH 222", "MATH 225", "MATH 226"]),
+            needCount: 1,
+          },
+          {
+            id: "disc",
+            label: "Discrete math (AMTH 2440 or CPSC 2020)",
+            codes: y(["AMTH 244", "CPSC 202"]),
+            needCount: 1,
+          },
         ],
         core: [
-          { id: "de", label: "Differential equations", codes: y(["ENAS 194", "MATH 246"]), needCount: 1 },
+          {
+            id: "de",
+            label: "Differential equations",
+            codes: y(["ENAS 194", "MATH 246"]),
+            needCount: 1,
+          },
           { id: "prob", label: "Probability", codes: y(["S&DS 241", "S&DS 238"]), needCount: 1 },
           { id: "data", label: "Data analysis", codes: y(["S&DS 361", "S&DS 230"]), needCount: 1 },
           {
@@ -291,21 +334,54 @@ export const ROADMAP_MAJORS: Major[] = [
             needCount: 3,
           },
         ],
-        senior: [{ id: "senior", label: "Senior thesis (AMTH 4910)", codes: y(["AMTH 4910"]), needCount: 1 }],
+        senior: [
+          {
+            id: "senior",
+            label: "Senior thesis (AMTH 4910)",
+            codes: y(["AMTH 4910"]),
+            needCount: 1,
+          },
+        ],
       },
       BS: {
         totalCourses: 14,
         prerequisites: [
-          { id: "calc", label: "MATH 1200 or ENAS 1510", codes: y(["MATH 120", "ENAS 1510"]), needCount: 1 },
-          { id: "linalg", label: "Linear algebra", codes: y(["MATH 222", "MATH 225", "MATH 226"]), needCount: 1 },
+          {
+            id: "calc",
+            label: "MATH 1200 or ENAS 1510",
+            codes: y(["MATH 120", "ENAS 1510"]),
+            needCount: 1,
+          },
+          {
+            id: "linalg",
+            label: "Linear algebra",
+            codes: y(["MATH 222", "MATH 225", "MATH 226"]),
+            needCount: 1,
+          },
           { id: "engr", label: "ENAS 1300", codes: y(["ENAS 1300", "CPSC 100"]), needCount: 1 },
-          { id: "disc", label: "Discrete math (AMTH 2440 or CPSC 2020)", codes: y(["AMTH 244", "CPSC 202"]), needCount: 1 },
+          {
+            id: "disc",
+            label: "Discrete math (AMTH 2440 or CPSC 2020)",
+            codes: y(["AMTH 244", "CPSC 202"]),
+            needCount: 1,
+          },
         ],
         core: [
-          { id: "de", label: "Differential equations", codes: y(["ENAS 194", "MATH 246"]), needCount: 1 },
+          {
+            id: "de",
+            label: "Differential equations",
+            codes: y(["ENAS 194", "MATH 246"]),
+            needCount: 1,
+          },
           { id: "prob", label: "Probability", codes: y(["S&DS 241", "S&DS 238"]), needCount: 1 },
           { id: "data", label: "Data analysis", codes: y(["S&DS 361", "S&DS 230"]), needCount: 1 },
-          { id: "vector", label: "Vector analysis course", codePrefix: ["AMTH", "MATH"], minLevel: 300, needCount: 1 },
+          {
+            id: "vector",
+            label: "Vector analysis course",
+            codePrefix: ["AMTH", "MATH"],
+            minLevel: 300,
+            needCount: 1,
+          },
           {
             id: "concentration",
             label: "4 advanced courses in concentration area",
@@ -314,7 +390,14 @@ export const ROADMAP_MAJORS: Major[] = [
             needCount: 4,
           },
         ],
-        senior: [{ id: "senior", label: "Senior thesis (AMTH 4910)", codes: y(["AMTH 4910"]), needCount: 1 }],
+        senior: [
+          {
+            id: "senior",
+            label: "Senior thesis (AMTH 4910)",
+            codes: y(["AMTH 4910"]),
+            needCount: 1,
+          },
+        ],
       },
     },
   },
@@ -336,7 +419,12 @@ export const ROADMAP_MAJORS: Major[] = [
             codes: y(["PHYS 180", "PHYS 181", "PHYS 200", "PHYS 201", "PHYS 260", "PHYS 261"]),
             needCount: 1,
           },
-          { id: "math", label: "APHY 1510 or MATH 1200", codes: y(["APHY 151", "MATH 120"]), needCount: 1 },
+          {
+            id: "math",
+            label: "APHY 1510 or MATH 1200",
+            codes: y(["APHY 151", "MATH 120"]),
+            needCount: 1,
+          },
           {
             id: "upper_phys",
             label: "PHYS 4000 or APHY 1940 + linear algebra",
@@ -346,7 +434,12 @@ export const ROADMAP_MAJORS: Major[] = [
         ],
         core: [
           { id: "aphy322", label: "APHY 3220", codes: y(["APHY 322"]), needCount: 1 },
-          { id: "aphy439", label: "APHY 4390 or PHYS 4400", codes: y(["APHY 439", "PHYS 440"]), needCount: 1 },
+          {
+            id: "aphy439",
+            label: "APHY 4390 or PHYS 4400",
+            codes: y(["APHY 439", "PHYS 440"]),
+            needCount: 1,
+          },
           { id: "aphy420", label: "APHY 4200", codes: y(["APHY 420"]), needCount: 1 },
           {
             id: "focus_electives",
@@ -380,11 +473,28 @@ export const ROADMAP_MAJORS: Major[] = [
         totalCourses: 12,
         core: [
           { id: "survey", label: "Introductory survey", codePrefix: ["ARCG"], needCount: 1 },
-          { id: "lab", label: "Introductory laboratory (ARCG 3116L)", codes: y(["ARCG 3116L"]), needCount: 1 },
+          {
+            id: "lab",
+            label: "Introductory laboratory (ARCG 3116L)",
+            codes: y(["ARCG 3116L"]),
+            needCount: 1,
+          },
           { id: "theory", label: "Theory course", codePrefix: ["ARCG"], needCount: 1 },
-          { id: "electives", label: "7 electives (DUS approval)", codePrefix: ["ARCG", "ANTH", "CLSS", "HIST"], needCount: 7 },
+          {
+            id: "electives",
+            label: "7 electives (DUS approval)",
+            codePrefix: ["ARCG", "ANTH", "CLSS", "HIST"],
+            needCount: 7,
+          },
         ],
-        senior: [{ id: "senior", label: "Senior research (ARCG 4491)", codes: y(["ARCG 4491"]), needCount: 1 }],
+        senior: [
+          {
+            id: "senior",
+            label: "Senior research (ARCG 4491)",
+            codes: y(["ARCG 4491"]),
+            needCount: 1,
+          },
+        ],
       },
     },
   },
@@ -399,14 +509,39 @@ export const ROADMAP_MAJORS: Major[] = [
       BA: {
         totalCourses: 12,
         core: [
-          { id: "blst116", label: "BLST 1160 & 1162", codes: y(["BLST 1160", "BLST 1162"]), needCount: 2 },
-          { id: "hu", label: "Humanities course in Black Studies", codePrefix: ["BLST", "AFST", "ENGL"], needCount: 1 },
-          { id: "so", label: "Social science course in Black Studies", codePrefix: ["BLST", "AFST", "HIST", "SOCY"], needCount: 1 },
+          {
+            id: "blst116",
+            label: "BLST 1160 & 1162",
+            codes: y(["BLST 1160", "BLST 1162"]),
+            needCount: 2,
+          },
+          {
+            id: "hu",
+            label: "Humanities course in Black Studies",
+            codePrefix: ["BLST", "AFST", "ENGL"],
+            needCount: 1,
+          },
+          {
+            id: "so",
+            label: "Social science course in Black Studies",
+            codePrefix: ["BLST", "AFST", "HIST", "SOCY"],
+            needCount: 1,
+          },
           { id: "focus", label: "5 courses in area of focus", codePrefix: ["BLST"], needCount: 5 },
         ],
         senior: [
-          { id: "junior_sem", label: "Junior seminar (BLST 4310)", codes: y(["BLST 4310"]), needCount: 1 },
-          { id: "senior", label: "Senior colloquium & essay", codes: y(["BLST 4380", "BLST 4391"]), needCount: 2 },
+          {
+            id: "junior_sem",
+            label: "Junior seminar (BLST 4310)",
+            codes: y(["BLST 4310"]),
+            needCount: 1,
+          },
+          {
+            id: "senior",
+            label: "Senior colloquium & essay",
+            codes: y(["BLST 4380", "BLST 4391"]),
+            needCount: 2,
+          },
         ],
       },
     },
@@ -418,7 +553,8 @@ export const ROADMAP_MAJORS: Major[] = [
     department: "Ethics, Politics & Economics",
     degrees: ["BA"],
     defaultDegree: "BA",
-    notes: "8 introductory categories, core seminars, intermediate micro, and 3-course concentration (incl. senior).",
+    notes:
+      "8 introductory categories, core seminars, intermediate micro, and 3-course concentration (incl. senior).",
     requirements: {
       BA: {
         totalCourses: 15,
@@ -480,7 +616,8 @@ export const ROADMAP_MAJORS: Major[] = [
           },
           {
             id: "core_seminars",
-            label: "3 core seminars (1 Classics EP&E 3212–3217 + 2 in other core areas, 1 advanced)",
+            label:
+              "3 core seminars (1 Classics EP&E 3212–3217 + 2 in other core areas, 1 advanced)",
             codePrefix: ["EP&E"],
             minLevel: 300,
             needCount: 3,
@@ -512,14 +649,30 @@ export const ROADMAP_MAJORS: Major[] = [
     department: "Ecology & Evolutionary Biology",
     degrees: ["BA", "BS"],
     defaultDegree: "BS",
-    notes: "Choose Biodiversity and the Environment or Organismal Biology concentration; cognates with DUS approval.",
+    notes:
+      "Choose Biodiversity and the Environment or Organismal Biology concentration; cognates with DUS approval.",
     requirements: {
       BA: {
         totalCourses: 14,
         prerequisites: [
-          { id: "bio", label: "BIOL 1010–1040", codes: y(["BIOL 101", "BIOL 102", "BIOL 103", "BIOL 104"]), needCount: 4 },
-          { id: "chem", label: "General chemistry + labs", codes: y(["CHEM 161", "CHEM 165", "CHEM 174", "CHEM 175"]), needCount: 2 },
-          { id: "math", label: "Math or statistics", codes: y(["MATH 115", "MATH 120", "S&DS 100", "S&DS 230"]), needCount: 1 },
+          {
+            id: "bio",
+            label: "BIOL 1010–1040",
+            codes: y(["BIOL 101", "BIOL 102", "BIOL 103", "BIOL 104"]),
+            needCount: 4,
+          },
+          {
+            id: "chem",
+            label: "General chemistry + labs",
+            codes: y(["CHEM 161", "CHEM 165", "CHEM 174", "CHEM 175"]),
+            needCount: 2,
+          },
+          {
+            id: "math",
+            label: "Math or statistics",
+            codes: y(["MATH 115", "MATH 120", "S&DS 100", "S&DS 230"]),
+            needCount: 1,
+          },
         ],
         core: [
           {
@@ -549,9 +702,24 @@ export const ROADMAP_MAJORS: Major[] = [
       BS: {
         totalCourses: 14,
         prerequisites: [
-          { id: "bio", label: "BIOL 1010–1040", codes: y(["BIOL 101", "BIOL 102", "BIOL 103", "BIOL 104"]), needCount: 4 },
-          { id: "chem", label: "General chemistry + labs", codes: y(["CHEM 161", "CHEM 165", "CHEM 1340L", "CHEM 1360L"]), needCount: 2 },
-          { id: "math", label: "Math or statistics", codes: y(["MATH 115", "MATH 120", "S&DS 100", "S&DS 230"]), needCount: 1 },
+          {
+            id: "bio",
+            label: "BIOL 1010–1040",
+            codes: y(["BIOL 101", "BIOL 102", "BIOL 103", "BIOL 104"]),
+            needCount: 4,
+          },
+          {
+            id: "chem",
+            label: "General chemistry + labs",
+            codes: y(["CHEM 161", "CHEM 165", "CHEM 1340L", "CHEM 1360L"]),
+            needCount: 2,
+          },
+          {
+            id: "math",
+            label: "Math or statistics",
+            codes: y(["MATH 115", "MATH 120", "S&DS 100", "S&DS 230"]),
+            needCount: 1,
+          },
         ],
         core: [
           {
@@ -580,19 +748,50 @@ export const ROADMAP_MAJORS: Major[] = [
     department: "Environmental Studies",
     degrees: ["BA", "BS"],
     defaultDegree: "BA",
-    notes: "Interdisciplinary core plus a 6-course concentration (choose a named area or customize with DUS).",
+    notes:
+      "Interdisciplinary core plus a 6-course concentration (choose a named area or customize with DUS).",
     requirements: {
       BA: {
         totalCourses: 13,
         prerequisites: [
-          { id: "quant", label: "Quantitative prereq (MATH 1120+, PHYS 1700+, or S&DS 1000+)", codes: y(["MATH 112", "PHYS 170", "S&DS 100"]), needCount: 1 },
-          { id: "science", label: "BIOL 1010–1040 or chemistry sequence", codes: y(["BIOL 101", "CHEM 161"]), needCount: 1 },
+          {
+            id: "quant",
+            label: "Quantitative prereq (MATH 1120+, PHYS 1700+, or S&DS 1000+)",
+            codes: y(["MATH 112", "PHYS 170", "S&DS 100"]),
+            needCount: 1,
+          },
+          {
+            id: "science",
+            label: "BIOL 1010–1040 or chemistry sequence",
+            codes: y(["BIOL 101", "CHEM 161"]),
+            needCount: 1,
+          },
         ],
         core: [
-          { id: "core_hu", label: "Core humanities", codePrefix: ["EVST", "HIST", "HUMS", "ENGL"], needCount: 1 },
-          { id: "core_so", label: "Core social science", codePrefix: ["EVST", "ANTH", "PLSC", "SOCY"], needCount: 1 },
-          { id: "core_ns", label: "Core natural sciences (3)", codePrefix: ["EVST", "EEB", "G&G", "CHEM", "PHYS"], needCount: 3 },
-          { id: "concentration", label: "6 courses in concentration", codePrefix: ["EVST", "EEB", "F&ES", "ANTH"], needCount: 6 },
+          {
+            id: "core_hu",
+            label: "Core humanities",
+            codePrefix: ["EVST", "HIST", "HUMS", "ENGL"],
+            needCount: 1,
+          },
+          {
+            id: "core_so",
+            label: "Core social science",
+            codePrefix: ["EVST", "ANTH", "PLSC", "SOCY"],
+            needCount: 1,
+          },
+          {
+            id: "core_ns",
+            label: "Core natural sciences (3)",
+            codePrefix: ["EVST", "EEB", "G&G", "CHEM", "PHYS"],
+            needCount: 3,
+          },
+          {
+            id: "concentration",
+            label: "6 courses in concentration",
+            codePrefix: ["EVST", "EEB", "F&ES", "ANTH"],
+            needCount: 6,
+          },
         ],
         senior: [
           {
@@ -606,17 +805,55 @@ export const ROADMAP_MAJORS: Major[] = [
       BS: {
         totalCourses: 12,
         prerequisites: [
-          { id: "quant", label: "Quantitative prereq", codes: y(["MATH 112", "S&DS 100"]), needCount: 1 },
-          { id: "science", label: "BIOL or chemistry", codes: y(["BIOL 101", "CHEM 161"]), needCount: 1 },
-          { id: "lab", label: "Natural science lab", codePrefix: ["EEB", "G&G", "CHEM", "PHYS"], needCount: 1 },
+          {
+            id: "quant",
+            label: "Quantitative prereq",
+            codes: y(["MATH 112", "S&DS 100"]),
+            needCount: 1,
+          },
+          {
+            id: "science",
+            label: "BIOL or chemistry",
+            codes: y(["BIOL 101", "CHEM 161"]),
+            needCount: 1,
+          },
+          {
+            id: "lab",
+            label: "Natural science lab",
+            codePrefix: ["EEB", "G&G", "CHEM", "PHYS"],
+            needCount: 1,
+          },
         ],
         core: [
           { id: "core_hu", label: "Core humanities", codePrefix: ["EVST", "HIST"], needCount: 1 },
-          { id: "core_so", label: "Core social science", codePrefix: ["EVST", "ANTH"], needCount: 1 },
-          { id: "core_ns", label: "Core natural sciences (2)", codePrefix: ["EVST", "EEB", "G&G"], needCount: 2 },
-          { id: "concentration", label: "6 courses in concentration (3 SC, 2000+)", codePrefix: ["EVST", "EEB", "G&G"], minLevel: 200, needCount: 6 },
+          {
+            id: "core_so",
+            label: "Core social science",
+            codePrefix: ["EVST", "ANTH"],
+            needCount: 1,
+          },
+          {
+            id: "core_ns",
+            label: "Core natural sciences (2)",
+            codePrefix: ["EVST", "EEB", "G&G"],
+            needCount: 2,
+          },
+          {
+            id: "concentration",
+            label: "6 courses in concentration (3 SC, 2000+)",
+            codePrefix: ["EVST", "EEB", "G&G"],
+            minLevel: 200,
+            needCount: 6,
+          },
         ],
-        senior: [{ id: "senior", label: "Two-term senior project (EVST 4960)", codes: y(["EVST 4960"]), needCount: 2 }],
+        senior: [
+          {
+            id: "senior",
+            label: "Two-term senior project (EVST 4960)",
+            codes: y(["EVST 4960"]),
+            needCount: 2,
+          },
+        ],
       },
     },
     concentrations: EVST_CONCENTRATIONS,
@@ -633,9 +870,24 @@ export const ROADMAP_MAJORS: Major[] = [
       BA: {
         totalCourses: 14,
         core: [
-          { id: "glbl_core", label: "GLBL 2121, 2122, 3101", codes: y(["GLBL 2121", "GLBL 2122", "GLBL 3101"]), needCount: 3 },
-          { id: "econ_micro", label: "Intro micro (ECON 1108/1110/1115)", codes: y(["ECON 110", "ECON 108", "ECON 1115"]), needCount: 1 },
-          { id: "econ_macro", label: "Intro macro (ECON 1111/1116)", codes: y(["ECON 111", "ECON 1116"]), needCount: 1 },
+          {
+            id: "glbl_core",
+            label: "GLBL 2121, 2122, 3101",
+            codes: y(["GLBL 2121", "GLBL 2122", "GLBL 3101"]),
+            needCount: 3,
+          },
+          {
+            id: "econ_micro",
+            label: "Intro micro (ECON 1108/1110/1115)",
+            codes: y(["ECON 110", "ECON 108", "ECON 1115"]),
+            needCount: 1,
+          },
+          {
+            id: "econ_macro",
+            label: "Intro macro (ECON 1111/1116)",
+            codes: y(["ECON 111", "ECON 1116"]),
+            needCount: 1,
+          },
           {
             id: "plsc",
             label: "2 PLSC from different subfields",
@@ -649,7 +901,12 @@ export const ROADMAP_MAJORS: Major[] = [
             needCount: 1,
           },
           { id: "history", label: "2 History courses", codePrefix: ["HIST"], needCount: 2 },
-          { id: "glbl_electives", label: "3 GLBL electives (DUS approval)", codePrefix: ["GLBL"], needCount: 3 },
+          {
+            id: "glbl_electives",
+            label: "3 GLBL electives (DUS approval)",
+            codePrefix: ["GLBL"],
+            needCount: 3,
+          },
         ],
         senior: [
           {
@@ -669,12 +926,18 @@ export const ROADMAP_MAJORS: Major[] = [
     department: "History of Science",
     degrees: ["BA"],
     defaultDegree: "BA",
-    notes: "7-course concentration block plus 3 additional HSHM electives — all within the 12-credit major.",
+    notes:
+      "7-course concentration block plus 3 additional HSHM electives — all within the 12-credit major.",
     requirements: {
       BA: {
         totalCourses: 12,
         core: [
-          { id: "hshm_core", label: "2 HSHM courses in concentration", codePrefix: ["HSHM"], needCount: 2 },
+          {
+            id: "hshm_core",
+            label: "2 HSHM courses in concentration",
+            codePrefix: ["HSHM"],
+            needCount: 2,
+          },
           {
             id: "hshm_seminar",
             label: "1 HSHM or HIST seminar before senior year",
@@ -719,14 +982,30 @@ export const ROADMAP_MAJORS: Major[] = [
     department: "Humanities",
     degrees: ["BA"],
     defaultDegree: "BA",
-    notes: "Core seminars and courses across literature, arts, science-in-humanities, and intellectual history.",
+    notes:
+      "Core seminars and courses across literature, arts, science-in-humanities, and intellectual history.",
     requirements: {
       BA: {
         totalCourses: 14,
         core: [
-          { id: "modernities", label: "2 Modernities seminars", codePrefix: ["HUMS"], needCount: 2 },
-          { id: "interpretations", label: "2 Interpretations seminars", codePrefix: ["HUMS"], needCount: 2 },
-          { id: "traditions", label: "2 Traditions lectures/seminars", codePrefix: ["HUMS"], needCount: 2 },
+          {
+            id: "modernities",
+            label: "2 Modernities seminars",
+            codePrefix: ["HUMS"],
+            needCount: 2,
+          },
+          {
+            id: "interpretations",
+            label: "2 Interpretations seminars",
+            codePrefix: ["HUMS"],
+            needCount: 2,
+          },
+          {
+            id: "traditions",
+            label: "2 Traditions lectures/seminars",
+            codePrefix: ["HUMS"],
+            needCount: 2,
+          },
           {
             id: "areas",
             label: "1 course in each of 4 areas (lit, arts, sci-in-hum, intellectual history)",
@@ -734,7 +1013,14 @@ export const ROADMAP_MAJORS: Major[] = [
             needCount: 4,
           },
         ],
-        senior: [{ id: "senior", label: "Senior essay (HUMS 4910)", codes: y(["HUMS 4910"]), needCount: 1 }],
+        senior: [
+          {
+            id: "senior",
+            label: "Senior essay (HUMS 4910)",
+            codes: y(["HUMS 4910"]),
+            needCount: 1,
+          },
+        ],
       },
     },
   },
@@ -745,7 +1031,8 @@ export const ROADMAP_MAJORS: Major[] = [
     department: "Linguistics",
     degrees: ["BA"],
     defaultDegree: "BA",
-    notes: "Breadth across subfields; electives may include related courses in other departments with DUS permission.",
+    notes:
+      "Breadth across subfields; electives may include related courses in other departments with DUS permission.",
     requirements: {
       BA: {
         totalCourses: 12,
@@ -769,11 +1056,29 @@ export const ROADMAP_MAJORS: Major[] = [
             ]),
             needCount: 5,
           },
-          { id: "depth", label: "2 depth courses in one area", codePrefix: ["LING"], minLevel: 200, needCount: 2 },
-          { id: "electives", label: "3 LING electives (1 at 2000+)", codePrefix: ["LING", "PSYC", "CPSC", "PHIL"], needCount: 3 },
+          {
+            id: "depth",
+            label: "2 depth courses in one area",
+            codePrefix: ["LING"],
+            minLevel: 200,
+            needCount: 2,
+          },
+          {
+            id: "electives",
+            label: "3 LING electives (1 at 2000+)",
+            codePrefix: ["LING", "PSYC", "CPSC", "PHIL"],
+            needCount: 3,
+          },
           { id: "research", label: "Research (LING 4900)", codes: y(["LING 4900"]), needCount: 1 },
         ],
-        senior: [{ id: "senior", label: "Senior essay (LING 4910)", codes: y(["LING 4910"]), needCount: 1 }],
+        senior: [
+          {
+            id: "senior",
+            label: "Senior essay (LING 4910)",
+            codes: y(["LING 4910"]),
+            needCount: 1,
+          },
+        ],
       },
     },
   },
@@ -784,23 +1089,59 @@ export const ROADMAP_MAJORS: Major[] = [
     department: "Neuroscience",
     degrees: ["BA", "BS"],
     defaultDegree: "BA",
-    notes: "Highly interdisciplinary — core courses from NSCI, PSYC, BIOL, CPSC, and allied departments.",
+    notes:
+      "Highly interdisciplinary — core courses from NSCI, PSYC, BIOL, CPSC, and allied departments.",
     requirements: {
       BA: {
         totalCourses: 19,
         prerequisites: [
-          { id: "bio", label: "BIOL 1010–1040", codes: y(["BIOL 101", "BIOL 102", "BIOL 103", "BIOL 104"]), needCount: 4 },
-          { id: "stats", label: "S&DS 1000, 2200, 2300, or 2380", codes: y(["S&DS 100", "S&DS 220", "S&DS 230", "S&DS 238"]), needCount: 1 },
+          {
+            id: "bio",
+            label: "BIOL 1010–1040",
+            codes: y(["BIOL 101", "BIOL 102", "BIOL 103", "BIOL 104"]),
+            needCount: 4,
+          },
+          {
+            id: "stats",
+            label: "S&DS 1000, 2200, 2300, or 2380",
+            codes: y(["S&DS 100", "S&DS 220", "S&DS 230", "S&DS 238"]),
+            needCount: 1,
+          },
           { id: "intro", label: "NSCI 1600", codes: y(["NSCI 160"]), needCount: 1 },
           { id: "core320", label: "NSCI 3200", codes: y(["NSCI 320"]), needCount: 1 },
-          { id: "lab", label: "Lab course", codes: y(["NSCI 2280L", "NSCI 2290L", "PSYC 2538"]), needCount: 1 },
+          {
+            id: "lab",
+            label: "Lab course",
+            codes: y(["NSCI 2280L", "NSCI 2290L", "PSYC 2538"]),
+            needCount: 1,
+          },
         ],
         core: [
-          { id: "systems", label: "2 systems/circuits/behavior core", codePrefix: ["NSCI", "PSYC"], needCount: 2 },
-          { id: "molecular", label: "2 molecular/cellular core", codePrefix: ["NSCI", "MCDB", "MB&B"], needCount: 2 },
-          { id: "quant", label: "1 quantitative core", codePrefix: ["NSCI", "S&DS", "CPSC", "MATH"], needCount: 1 },
+          {
+            id: "systems",
+            label: "2 systems/circuits/behavior core",
+            codePrefix: ["NSCI", "PSYC"],
+            needCount: 2,
+          },
+          {
+            id: "molecular",
+            label: "2 molecular/cellular core",
+            codePrefix: ["NSCI", "MCDB", "MB&B"],
+            needCount: 2,
+          },
+          {
+            id: "quant",
+            label: "1 quantitative core",
+            codePrefix: ["NSCI", "S&DS", "CPSC", "MATH"],
+            needCount: 1,
+          },
           { id: "comp", label: "1 computational core", codePrefix: ["NSCI", "CPSC"], needCount: 1 },
-          { id: "allied", label: "1 basic allied core (max 2 other allied)", codePrefix: ["NSCI", "PSYC", "MCDB", "PHYS"], needCount: 1 },
+          {
+            id: "allied",
+            label: "1 basic allied core (max 2 other allied)",
+            codePrefix: ["NSCI", "PSYC", "MCDB", "PHYS"],
+            needCount: 1,
+          },
           {
             id: "nsci_electives",
             label: "Additional credits toward 11 electives (with core distribution above)",
@@ -820,17 +1161,57 @@ export const ROADMAP_MAJORS: Major[] = [
       BS: {
         totalCourses: 21,
         prerequisites: [
-          { id: "bio", label: "BIOL 1010–1040", codes: y(["BIOL 101", "BIOL 102", "BIOL 103", "BIOL 104"]), needCount: 4 },
-          { id: "stats", label: "Statistics", codes: y(["S&DS 100", "S&DS 220", "S&DS 230"]), needCount: 1 },
-          { id: "intro", label: "NSCI 1600 & 3200", codes: y(["NSCI 160", "NSCI 320"]), needCount: 2 },
-          { id: "lab", label: "Lab course", codes: y(["NSCI 2280L", "NSCI 3210L", "PSYC 2538"]), needCount: 1 },
+          {
+            id: "bio",
+            label: "BIOL 1010–1040",
+            codes: y(["BIOL 101", "BIOL 102", "BIOL 103", "BIOL 104"]),
+            needCount: 4,
+          },
+          {
+            id: "stats",
+            label: "Statistics",
+            codes: y(["S&DS 100", "S&DS 220", "S&DS 230"]),
+            needCount: 1,
+          },
+          {
+            id: "intro",
+            label: "NSCI 1600 & 3200",
+            codes: y(["NSCI 160", "NSCI 320"]),
+            needCount: 2,
+          },
+          {
+            id: "lab",
+            label: "Lab course",
+            codes: y(["NSCI 2280L", "NSCI 3210L", "PSYC 2538"]),
+            needCount: 1,
+          },
         ],
         core: [
-          { id: "systems", label: "2 systems/circuits/behavior core", codePrefix: ["NSCI", "PSYC"], needCount: 2 },
-          { id: "molecular", label: "2 molecular/cellular core", codePrefix: ["NSCI", "MCDB"], needCount: 2 },
-          { id: "quant", label: "1 quantitative core", codePrefix: ["NSCI", "S&DS", "MATH"], needCount: 1 },
+          {
+            id: "systems",
+            label: "2 systems/circuits/behavior core",
+            codePrefix: ["NSCI", "PSYC"],
+            needCount: 2,
+          },
+          {
+            id: "molecular",
+            label: "2 molecular/cellular core",
+            codePrefix: ["NSCI", "MCDB"],
+            needCount: 2,
+          },
+          {
+            id: "quant",
+            label: "1 quantitative core",
+            codePrefix: ["NSCI", "S&DS", "MATH"],
+            needCount: 1,
+          },
           { id: "comp", label: "1 computational core", codePrefix: ["NSCI", "CPSC"], needCount: 1 },
-          { id: "allied", label: "1 basic allied core (max 2 other allied)", codePrefix: ["NSCI", "PSYC", "PHYS"], needCount: 1 },
+          {
+            id: "allied",
+            label: "1 basic allied core (max 2 other allied)",
+            codePrefix: ["NSCI", "PSYC", "PHYS"],
+            needCount: 1,
+          },
           {
             id: "nsci_electives",
             label: "Additional credits toward 11 electives (with core distribution above)",
@@ -865,12 +1246,32 @@ export const ROADMAP_MAJORS: Major[] = [
           { id: "film3201", label: "FILM 3201", codes: y(["FILM 3201"]), needCount: 1 },
         ],
         core: [
-          { id: "intl", label: "International/world cinema (upper level)", codePrefix: ["FILM"], minLevel: 200, needCount: 1 },
-          { id: "critical", label: "Critical studies (upper level)", codePrefix: ["FILM"], minLevel: 200, needCount: 1 },
+          {
+            id: "intl",
+            label: "International/world cinema (upper level)",
+            codePrefix: ["FILM"],
+            minLevel: 200,
+            needCount: 1,
+          },
+          {
+            id: "critical",
+            label: "Critical studies (upper level)",
+            codePrefix: ["FILM"],
+            minLevel: 200,
+            needCount: 1,
+          },
           { id: "production", label: "Production course", codePrefix: ["FILM"], needCount: 1 },
           { id: "electives", label: "4 electives", codePrefix: ["FILM"], needCount: 4 },
         ],
-        senior: [{ id: "senior", label: "Senior essay or production project", codePrefix: ["FILM"], minLevel: 400, needCount: 1 }],
+        senior: [
+          {
+            id: "senior",
+            label: "Senior essay or production project",
+            codePrefix: ["FILM"],
+            minLevel: 400,
+            needCount: 1,
+          },
+        ],
       },
     },
   },
@@ -881,18 +1282,48 @@ export const ROADMAP_MAJORS: Major[] = [
     department: "Sociology",
     degrees: ["BA"],
     defaultDegree: "BA",
-    notes: "Standard major or concentrations in Economy & Society, Health & Society, Data & Society, Inequality/Race & Society, or student-designed.",
+    notes:
+      "Standard major or concentrations in Economy & Society, Health & Society, Data & Society, Inequality/Race & Society, or student-designed.",
     requirements: {
       BA: {
         totalCourses: 13,
         core: [
-          { id: "intro", label: "Intro SOCY course", codePrefix: ["SOCY"], maxLevel: 1999, needCount: 1 },
-          { id: "theory", label: "SOCY 2001 & 2002", codes: y(["SOCY 2001", "SOCY 2002"]), needCount: 2 },
+          {
+            id: "intro",
+            label: "Intro SOCY course",
+            codePrefix: ["SOCY"],
+            maxLevel: 1999,
+            needCount: 1,
+          },
+          {
+            id: "theory",
+            label: "SOCY 2001 & 2002",
+            codes: y(["SOCY 2001", "SOCY 2002"]),
+            needCount: 2,
+          },
           { id: "methods_socy", label: "SOCY 2100", codes: y(["SOCY 2100"]), needCount: 1 },
-          { id: "methods", label: "Social science methods course", codePrefix: ["SOCY", "S&DS", "PLSC"], needCount: 1 },
-          { id: "electives", label: "6 electives", codePrefix: ["SOCY", "ECON", "ANTH"], needCount: 6 },
+          {
+            id: "methods",
+            label: "Social science methods course",
+            codePrefix: ["SOCY", "S&DS", "PLSC"],
+            needCount: 1,
+          },
+          {
+            id: "electives",
+            label: "6 electives",
+            codePrefix: ["SOCY", "ECON", "ANTH"],
+            needCount: 6,
+          },
         ],
-        senior: [{ id: "senior", label: "Senior requirement", codePrefix: ["SOCY"], minLevel: 400, needCount: 1 }],
+        senior: [
+          {
+            id: "senior",
+            label: "Senior requirement",
+            codePrefix: ["SOCY"],
+            minLevel: 400,
+            needCount: 1,
+          },
+        ],
       },
     },
     concentrations: SOCY_CONCENTRATIONS,
@@ -904,36 +1335,116 @@ export const ROADMAP_MAJORS: Major[] = [
     department: "Statistics & Data Science",
     degrees: ["BA", "BS"],
     defaultDegree: "BS",
-    notes: "Structured methods, computation, and theory requirements — electives from many departments with DUS approval.",
+    notes:
+      "Structured methods, computation, and theory requirements — electives from many departments with DUS approval.",
     requirements: {
       BA: {
         totalCourses: 11,
         prerequisites: [
-          { id: "calc", label: "MATH 1200 or equivalent", codes: y(["MATH 120", "ENAS 1510", "MATH 302"]), needCount: 1 },
-          { id: "linalg", label: "Linear algebra", codes: y(["MATH 222", "MATH 225", "MATH 226"]), needCount: 1 },
+          {
+            id: "calc",
+            label: "MATH 1200 or equivalent",
+            codes: y(["MATH 120", "ENAS 1510", "MATH 302"]),
+            needCount: 1,
+          },
+          {
+            id: "linalg",
+            label: "Linear algebra",
+            codes: y(["MATH 222", "MATH 225", "MATH 226"]),
+            needCount: 1,
+          },
         ],
         core: [
-          { id: "comp", label: "2 computational skills courses", codePrefix: ["S&DS", "CPSC"], needCount: 2 },
-          { id: "methods", label: "3 methods of data science courses", codePrefix: ["S&DS"], needCount: 3 },
-          { id: "theory", label: "1 mathematical foundations course", codePrefix: ["MATH", "S&DS"], needCount: 1 },
-          { id: "prob", label: "2 core probability & statistics", codePrefix: ["S&DS"], needCount: 2 },
+          {
+            id: "comp",
+            label: "2 computational skills courses",
+            codePrefix: ["S&DS", "CPSC"],
+            needCount: 2,
+          },
+          {
+            id: "methods",
+            label: "3 methods of data science courses",
+            codePrefix: ["S&DS"],
+            needCount: 3,
+          },
+          {
+            id: "theory",
+            label: "1 mathematical foundations course",
+            codePrefix: ["MATH", "S&DS"],
+            needCount: 1,
+          },
+          {
+            id: "prob",
+            label: "2 core probability & statistics",
+            codePrefix: ["S&DS"],
+            needCount: 2,
+          },
         ],
-        senior: [{ id: "senior", label: "Senior project (S&DS 4910/4920)", codes: y(["S&DS 4910", "S&DS 4920"]), needCount: 1 }],
+        senior: [
+          {
+            id: "senior",
+            label: "Senior project (S&DS 4910/4920)",
+            codes: y(["S&DS 4910", "S&DS 4920"]),
+            needCount: 1,
+          },
+        ],
       },
       BS: {
         totalCourses: 14,
         prerequisites: [
-          { id: "calc", label: "MATH 1200 or equivalent", codes: y(["MATH 120", "ENAS 1510"]), needCount: 1 },
-          { id: "linalg", label: "Linear algebra", codes: y(["MATH 222", "MATH 225", "MATH 226"]), needCount: 1 },
+          {
+            id: "calc",
+            label: "MATH 1200 or equivalent",
+            codes: y(["MATH 120", "ENAS 1510"]),
+            needCount: 1,
+          },
+          {
+            id: "linalg",
+            label: "Linear algebra",
+            codes: y(["MATH 222", "MATH 225", "MATH 226"]),
+            needCount: 1,
+          },
         ],
         core: [
-          { id: "comp", label: "2 computational skills courses", codePrefix: ["S&DS", "CPSC"], needCount: 2 },
-          { id: "methods", label: "2 methods courses (incl. S&DS 3650)", codes: y(["S&DS 365"]), needCount: 2 },
-          { id: "theory", label: "Mathematical foundations", codePrefix: ["MATH", "S&DS"], needCount: 1 },
-          { id: "prob", label: "2 core probability & statistics (incl. S&DS 2420)", codes: y(["S&DS 242", "S&DS 241"]), needCount: 2 },
-          { id: "electives", label: "3 additional electives (DUS approval)", codePrefix: ["S&DS", "ECON", "CPSC", "MATH"], needCount: 3 },
+          {
+            id: "comp",
+            label: "2 computational skills courses",
+            codePrefix: ["S&DS", "CPSC"],
+            needCount: 2,
+          },
+          {
+            id: "methods",
+            label: "2 methods courses (incl. S&DS 3650)",
+            codes: y(["S&DS 365"]),
+            needCount: 2,
+          },
+          {
+            id: "theory",
+            label: "Mathematical foundations",
+            codePrefix: ["MATH", "S&DS"],
+            needCount: 1,
+          },
+          {
+            id: "prob",
+            label: "2 core probability & statistics (incl. S&DS 2420)",
+            codes: y(["S&DS 242", "S&DS 241"]),
+            needCount: 2,
+          },
+          {
+            id: "electives",
+            label: "3 additional electives (DUS approval)",
+            codePrefix: ["S&DS", "ECON", "CPSC", "MATH"],
+            needCount: 3,
+          },
         ],
-        senior: [{ id: "senior", label: "Senior project (S&DS 4910/4920)", codes: y(["S&DS 4910", "S&DS 4920"]), needCount: 1 }],
+        senior: [
+          {
+            id: "senior",
+            label: "Senior project (S&DS 4910/4920)",
+            codes: y(["S&DS 4910", "S&DS 4920"]),
+            needCount: 1,
+          },
+        ],
       },
     },
   },

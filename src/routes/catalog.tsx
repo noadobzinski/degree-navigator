@@ -11,7 +11,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Search,
   Database,
@@ -114,7 +120,8 @@ function PublicCatalogPage() {
             {catalogQ.data ? (
               <Badge variant="secondary" className="gap-1 font-normal">
                 <Database className="h-3 w-3" />
-                {selectedSeasonLabel} · {(catalogQ.data.total ?? courses.length).toLocaleString()} courses
+                {selectedSeasonLabel} · {(catalogQ.data.total ?? courses.length).toLocaleString()}{" "}
+                courses
               </Badge>
             ) : metaQ.isLoading ? (
               <Badge variant="outline" className="font-normal">

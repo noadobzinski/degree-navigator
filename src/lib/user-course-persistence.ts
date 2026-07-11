@@ -44,7 +44,9 @@ function isMissingAllocColumnError(message: string): boolean {
 
 /** Encode WR preference in skills when DB column is not migrated yet. */
 export function encodeCourseForDb(data: CourseWriteInput): CourseWriteInput {
-  let skills = stripAllocationMarkers([...(data.skills ?? [])]).filter((s) => s !== WR_OPTIONAL_SKILL);
+  let skills = stripAllocationMarkers([...(data.skills ?? [])]).filter(
+    (s) => s !== WR_OPTIONAL_SKILL,
+  );
   const code = data.course_code;
 
   if (data.credit_allocation && isCreditBucketId(data.credit_allocation)) {
@@ -99,7 +101,10 @@ export async function insertUserCourse(
 
   let insertRow: Record<string, unknown> = { ...merged };
   let { error } = await supabase.from("user_courses").insert(insertRow);
-  if (error && (isMissingWrColumnError(error.message) || isMissingAllocColumnError(error.message))) {
+  if (
+    error &&
+    (isMissingWrColumnError(error.message) || isMissingAllocColumnError(error.message))
+  ) {
     const { counts_as_wr: _w, credit_allocation: _a, ...fallback } = insertRow;
     insertRow = encodeCourseForDb(fallback as CourseWriteInput);
     insertRow.user_id = row.user_id;
@@ -131,8 +136,15 @@ export async function updateUserCourse(
     };
   }
 
-  let { error } = await supabase.from("user_courses").update(updatePayload).eq("id", id).eq("user_id", userId);
-  if (error && (isMissingWrColumnError(error.message) || isMissingAllocColumnError(error.message))) {
+  let { error } = await supabase
+    .from("user_courses")
+    .update(updatePayload)
+    .eq("id", id)
+    .eq("user_id", userId);
+  if (
+    error &&
+    (isMissingWrColumnError(error.message) || isMissingAllocColumnError(error.message))
+  ) {
     const { counts_as_wr: _w, credit_allocation: _a, ...withoutCol } = updatePayload;
     const fallback = encodeCourseForDb({
       ...existing,

@@ -52,7 +52,8 @@ export const INTERDISCIPLINARY_CERTIFICATES: Certificate[] = [
     name: "Climate Science and Solutions",
     department: "Earth & Planetary Sciences",
     category: "interdisciplinary",
-    catalogUrl: "https://catalog.yale.edu/ycps/subjects-of-instruction/climate-science-and-solutions/",
+    catalogUrl:
+      "https://catalog.yale.edu/ycps/subjects-of-instruction/climate-science-and-solutions/",
     description:
       "Six courses: one in each of three pillars (Basic Climate Sci, Anthropogenic Climate, Climate Solutions), plus 3 electives incl. one climate seminar; 3 must be SET focus. Max 2 overlap with major.",
     requirements: [
@@ -203,7 +204,8 @@ export const INTERDISCIPLINARY_CERTIFICATES: Certificate[] = [
     name: "Food, Agriculture, and Climate Change",
     department: "Yale Sustainable Food Program",
     category: "interdisciplinary",
-    catalogUrl: "https://catalog.yale.edu/ycps/subjects-of-instruction/food_agriculture_climate_change/",
+    catalogUrl:
+      "https://catalog.yale.edu/ycps/subjects-of-instruction/food_agriculture_climate_change/",
     description:
       "Five courses: 2 consumption (YC Food Consumption), 1 environment (YC Food Environment), 2 production (YC Food Production). Plus co-curricular summary.",
     requirements: [
@@ -413,7 +415,8 @@ export const INTERDISCIPLINARY_CERTIFICATES: Certificate[] = [
     name: "Native American and Indigenous Studies",
     department: "Native American Cultural Center",
     category: "interdisciplinary",
-    catalogUrl: "https://catalog.yale.edu/ycps/subjects-of-instruction/native-american-indigenous-studies/",
+    catalogUrl:
+      "https://catalog.yale.edu/ycps/subjects-of-instruction/native-american-indigenous-studies/",
     description:
       "Five Indigenous-topic courses from ≥3 of 5 focus areas (max 2 per area). Optional capstone. Apply by junior year.",
     requirements: [
@@ -463,7 +466,20 @@ export const INTERDISCIPLINARY_CERTIFICATES: Certificate[] = [
       {
         id: "translation_courses",
         label: "Translation-themed courses (5; approved list on Translation Initiative website)",
-        codePrefix: ["SLAV", "RUSS", "CPLT", "ENGL", "FILM", "FREN", "GERM", "ITAL", "SPAN", "PORT", "EALL", "NELC"],
+        codePrefix: [
+          "SLAV",
+          "RUSS",
+          "CPLT",
+          "ENGL",
+          "FILM",
+          "FREN",
+          "GERM",
+          "ITAL",
+          "SPAN",
+          "PORT",
+          "EALL",
+          "NELC",
+        ],
         minLevel: 100,
         needCount: 5,
       },

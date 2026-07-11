@@ -1,7 +1,6 @@
 import type { RequirementSlot } from "../majors/types";
 
-export const YCPS_CERTIFICATES_URL =
-  "https://catalog.yale.edu/ycps/programs_certificates/";
+export const YCPS_CERTIFICATES_URL = "https://catalog.yale.edu/ycps/programs_certificates/";
 
 export type CertificateCategory = "language" | "interdisciplinary" | "skills";
 

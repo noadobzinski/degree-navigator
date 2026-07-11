@@ -89,15 +89,17 @@ export function recentCatalogSeasons(count = 8, now = new Date()): CatalogSeason
     codes.push(code);
     code = previousSeasonCode(code);
   }
-  return codes
-    .reverse()
-    .map((c) => {
-      const { term, year } = seasonToTermFields(c);
-      return { code: c, label: formatSeasonLabel(c), term, calendarYear: year };
-    });
+  return codes.reverse().map((c) => {
+    const { term, year } = seasonToTermFields(c);
+    return { code: c, label: formatSeasonLabel(c), term, calendarYear: year };
+  });
 }
 
-export function courseTakenKey(courseCode: string, term: string | null, year: number | null): string {
+export function courseTakenKey(
+  courseCode: string,
+  term: string | null,
+  year: number | null,
+): string {
   return `${courseIdentityKey(courseCode)}|${term ?? ""}|${year ?? ""}`;
 }
 
@@ -119,7 +121,10 @@ export function nextSeasonCode(code: string): string {
  * Upcoming semesters from the current catalog season through graduation
  * (Spring of class year). Defaults to 8 terms when class year is unknown.
  */
-export function futureSeasonsUntilGraduation(classYear: number | null, now = new Date()): CatalogSeason[] {
+export function futureSeasonsUntilGraduation(
+  classYear: number | null,
+  now = new Date(),
+): CatalogSeason[] {
   const current = currentSeasonCode(now);
   const endCode = classYear ? springSeasonCode(classYear) : null;
   const codes: string[] = [];

@@ -24,8 +24,7 @@ type MajorAuditCardProps = {
 export function MajorAuditCard({ audit, title, examplesQ, crosslistLookup }: MajorAuditCardProps) {
   const conc = audit.concentration?.label;
   const heading =
-    title ??
-    `${audit.major.name}${conc ? ` · ${conc}` : ""} (${audit.degree}) requirements`;
+    title ?? `${audit.major.name}${conc ? ` · ${conc}` : ""} (${audit.degree}) requirements`;
 
   return (
     <Card>
@@ -34,17 +33,25 @@ export function MajorAuditCard({ audit, title, examplesQ, crosslistLookup }: Maj
         {examplesQ.data ? (
           <p className="text-sm text-muted-foreground">
             Examples from CourseTable across the last {examplesQ.data.seasonsSearched} terms
-            {examplesQ.data.seasonsSearched > 0 ? " (includes current and historical offerings)" : ""}.
+            {examplesQ.data.seasonsSearched > 0
+              ? " (includes current and historical offerings)"
+              : ""}
+            .
           </p>
         ) : null}
       </CardHeader>
       <CardContent className="space-y-5">
         {audit.sections.map((s) => (
           <div key={s.title}>
-            <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">{s.title}</h3>
+            <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              {s.title}
+            </h3>
             <div className="space-y-2">
               {s.groups?.map((g) => (
-                <div key={g.group.id} className="rounded-md border border-border bg-muted/20 p-3 space-y-2">
+                <div
+                  key={g.group.id}
+                  className="rounded-md border border-border bg-muted/20 p-3 space-y-2"
+                >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
                       <p className="font-medium">{g.group.label}</p>

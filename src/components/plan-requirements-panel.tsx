@@ -54,7 +54,9 @@ export function PlanRequirementsPanel({
           <div className="space-y-2 text-sm">
             <div className="flex items-center justify-between">
               <span>{majorName}</span>
-              <Badge variant={audit.majorSatisfied ? "default" : "secondary"}>{audit.majorSummary}</Badge>
+              <Badge variant={audit.majorSatisfied ? "default" : "secondary"}>
+                {audit.majorSummary}
+              </Badge>
             </div>
             {secondMajorName && audit.secondMajorSummary ? (
               <div className="flex items-center justify-between">
@@ -67,7 +69,9 @@ export function PlanRequirementsPanel({
             {audit.trackSummary ? (
               <div className="flex items-center justify-between">
                 <span>Track</span>
-                <Badge variant={audit.trackSatisfied ? "default" : "secondary"}>{audit.trackSummary}</Badge>
+                <Badge variant={audit.trackSatisfied ? "default" : "secondary"}>
+                  {audit.trackSummary}
+                </Badge>
               </div>
             ) : null}
           </div>
@@ -80,7 +84,10 @@ export function PlanRequirementsPanel({
         </CardHeader>
         <CardContent className="space-y-2">
           {audit.distributional.map((d) => (
-            <div key={d.req.id} className="flex items-start gap-2 rounded-md border border-border p-2 text-sm">
+            <div
+              key={d.req.id}
+              className="flex items-start gap-2 rounded-md border border-border p-2 text-sm"
+            >
               {d.satisfied ? (
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
               ) : (

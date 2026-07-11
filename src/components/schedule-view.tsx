@@ -11,13 +11,7 @@ type ScheduleViewProps = {
   emptyMessage?: string;
 };
 
-function CourseRow({
-  course,
-  highlighted,
-}: {
-  course: ScheduledCourse;
-  highlighted?: boolean;
-}) {
+function CourseRow({ course, highlighted }: { course: ScheduledCourse; highlighted?: boolean }) {
   return (
     <div
       className={`rounded-md border p-3 ${highlighted ? "border-primary/50 bg-primary/5" : "border-border"}`}
@@ -52,7 +46,11 @@ function CourseRow({
         <div className="flex shrink-0 items-center gap-2">
           <span className="text-xs text-muted-foreground">{course.credits} cr</span>
           <Badge variant={course.priority === "high" ? "default" : "secondary"}>
-            {course.priority === "high" ? "Major" : course.priority === "med" ? "Other req" : "Elective"}
+            {course.priority === "high"
+              ? "Major"
+              : course.priority === "med"
+                ? "Other req"
+                : "Elective"}
           </Badge>
         </div>
       </div>
@@ -86,7 +84,8 @@ export function ScheduleView({ schedule, highlightCodes, emptyMessage }: Schedul
                 {term.label}
               </CardTitle>
               <span className="text-sm text-muted-foreground">
-                {term.courses.length} course{term.courses.length === 1 ? "" : "s"} · ~{term.credits} credits
+                {term.courses.length} course{term.courses.length === 1 ? "" : "s"} · ~{term.credits}{" "}
+                credits
               </span>
             </div>
           </CardHeader>

@@ -10,7 +10,14 @@ export const requirementExamplesKey = (
   trackId: string | null | undefined,
   classYear: number | null | undefined,
 ) =>
-  ["requirement-examples", majorId, degree, concentrationId ?? "", trackId ?? "none", classYear ?? ""] as const;
+  [
+    "requirement-examples",
+    majorId,
+    degree,
+    concentrationId ?? "",
+    trackId ?? "none",
+    classYear ?? "",
+  ] as const;
 
 export function useRequirementExamples(
   majorId: string | null | undefined,
@@ -21,7 +28,13 @@ export function useRequirementExamples(
 ) {
   const fn = useServerFn(getRequirementExamples);
   return useQuery({
-    queryKey: requirementExamplesKey(majorId ?? "", degree ?? "BA", concentrationId, trackId, classYear),
+    queryKey: requirementExamplesKey(
+      majorId ?? "",
+      degree ?? "BA",
+      concentrationId,
+      trackId,
+      classYear,
+    ),
     queryFn: () =>
       fn({
         data: {

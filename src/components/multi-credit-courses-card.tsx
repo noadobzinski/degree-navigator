@@ -30,15 +30,16 @@ export function MultiCreditCoursesCard({ courses }: MultiCreditCoursesCardProps)
           Multi-credit courses
         </CardTitle>
         <CardDescription>
-          Some courses can satisfy more than one requirement (e.g. humanities and writing). Yale counts each
-          course toward one distributional or skill credit — choose which you used it for.
+          Some courses can satisfy more than one requirement (e.g. humanities and writing). Yale
+          counts each course toward one distributional or skill credit — choose which you used it
+          for.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {needsPick.length > 0 ? (
           <p className="text-sm text-amber-700 dark:text-amber-400">
-            {needsPick.length} course{needsPick.length === 1 ? "" : "s"} still on auto-assign — pick a credit if
-            you know how you counted {needsPick.length === 1 ? "it" : "them"}.
+            {needsPick.length} course{needsPick.length === 1 ? "" : "s"} still on auto-assign — pick
+            a credit if you know how you counted {needsPick.length === 1 ? "it" : "them"}.
           </p>
         ) : null}
         {multiCredit.map((course) => (

@@ -6,7 +6,13 @@ import {
   type CreditBucketId,
 } from "@/lib/credit-allocation";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 
 const AUTO_VALUE = "__auto__";
@@ -36,9 +42,19 @@ export function CreditAllocationSelect({
   const currentValue = manual && course.credit_allocation ? course.credit_allocation : AUTO_VALUE;
 
   return (
-    <div className={compact ? "mt-2 space-y-1.5" : "mt-2 space-y-1.5 rounded-md border border-dashed border-primary/30 bg-primary/5 p-2.5"}>
+    <div
+      className={
+        compact
+          ? "mt-2 space-y-1.5"
+          : "mt-2 space-y-1.5 rounded-md border border-dashed border-primary/30 bg-primary/5 p-2.5"
+      }
+    >
       <div className="flex flex-wrap items-center gap-1.5">
-        <Label className={compact ? "text-xs text-muted-foreground" : "text-xs font-medium text-foreground"}>
+        <Label
+          className={
+            compact ? "text-xs text-muted-foreground" : "text-xs font-medium text-foreground"
+          }
+        >
           Counts as one credit only — choose:
         </Label>
         {!compact ? (
@@ -79,7 +95,8 @@ export function CreditAllocationSelect({
       </Select>
       {!compact ? (
         <p className="text-[10px] text-muted-foreground">
-          Currently counting toward: <span className="font-medium text-foreground">{allocationLabel(course, autoMap)}</span>
+          Currently counting toward:{" "}
+          <span className="font-medium text-foreground">{allocationLabel(course, autoMap)}</span>
           {!manual ? " — pick manually to override" : ""}
         </p>
       ) : null}

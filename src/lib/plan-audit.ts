@@ -8,7 +8,10 @@ import {
 } from "@/lib/audit";
 import type { CatalogCourse } from "@/data/courses";
 import { MAJORS_BY_ID } from "@/data/majors";
-import { activeImplicationNotes, impliedPrerequisiteCourses } from "@/lib/prerequisite-implications";
+import {
+  activeImplicationNotes,
+  impliedPrerequisiteCourses,
+} from "@/lib/prerequisite-implications";
 import { yearRestrictionViolation } from "@/lib/schedule-year-rules";
 import { termFieldsToSeasonCode } from "@/lib/coursetable-seasons";
 import type { CrosslistLookup } from "@/lib/crosslist";
@@ -75,7 +78,10 @@ export function auditDegreePlan(input: PlanAuditInput): PlanAuditResult {
   }
 
   const implied = impliedPrerequisiteCourses(input.courses, titleByCode);
-  const coursesForRequirements = [...input.courses.filter((c) => !c.implied_prerequisite), ...implied];
+  const coursesForRequirements = [
+    ...input.courses.filter((c) => !c.implied_prerequisite),
+    ...implied,
+  ];
 
   const credits = totalCredits(input.courses);
   const gradTotal = graduationCredits();

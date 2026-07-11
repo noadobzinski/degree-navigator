@@ -63,7 +63,9 @@ export function MajorPicker({ value, onChange, onDegreeDefault, excludeId }: Maj
                     setOpen(false);
                   }}
                 >
-                  <Check className={cn("mr-2 h-4 w-4", value === m.id ? "opacity-100" : "opacity-0")} />
+                  <Check
+                    className={cn("mr-2 h-4 w-4", value === m.id ? "opacity-100" : "opacity-0")}
+                  />
                   <div className="min-w-0">
                     <div className="truncate font-medium">{m.name}</div>
                     <div className="truncate text-xs text-muted-foreground">

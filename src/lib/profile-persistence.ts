@@ -85,8 +85,18 @@ type ProfileColumnOmit = {
   certificates?: boolean;
 };
 
-function buildUpdatePayload(data: ProfileUpdateInput, omit: ProfileColumnOmit): Record<string, unknown> {
-  const { second_degree_type, track_id, second_major_id, concentration_id, certificate_ids, ...rest } = data;
+function buildUpdatePayload(
+  data: ProfileUpdateInput,
+  omit: ProfileColumnOmit,
+): Record<string, unknown> {
+  const {
+    second_degree_type,
+    track_id,
+    second_major_id,
+    concentration_id,
+    certificate_ids,
+    ...rest
+  } = data;
   const payload: Record<string, unknown> = { ...rest };
 
   if (!omit.concentration && concentration_id !== undefined) {
@@ -100,9 +110,7 @@ function buildUpdatePayload(data: ProfileUpdateInput, omit: ProfileColumnOmit): 
 
   const clearingDoubleMajor = second_major_id === null;
   const effectiveTrack =
-    clearingDoubleMajor && (!track_id || isStashedSecondDegreeTrack(track_id))
-      ? null
-      : track_id;
+    clearingDoubleMajor && (!track_id || isStashedSecondDegreeTrack(track_id)) ? null : track_id;
 
   if (omit.secondDegree) {
     if (clearingDoubleMajor) {

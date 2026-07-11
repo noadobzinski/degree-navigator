@@ -11,6 +11,7 @@ import { getCrosslistLookup } from "@/lib/catalog-cache";
 import { alternateCodesForCourse } from "@/lib/crosslist";
 import { currentSeasonCode } from "@/lib/coursetable";
 import { seasonsForHistoricalCatalog } from "@/lib/requirement-examples";
+import { getPostHogClient } from "@/utils/posthog-server";
 
 export const getProfile = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -45,6 +46,19 @@ export const updateProfile = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     await updateProfileRow(supabase, userId, data);
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: userId,
+      event: "profile_updated",
+      properties: {
+        major_id: data.major_id ?? null,
+        degree_type: data.degree_type ?? null,
+        has_second_major: !!data.second_major_id,
+        has_concentration: !!data.concentration_id,
+        certificate_count: (data.certificate_ids ?? []).length,
+        source: "server",
+      },
+    });
     return { ok: true };
   });
 
@@ -98,6 +112,21 @@ export const addCourse = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     await insertUserCourse(supabase, { ...data, user_id: userId });
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: userId,
+      event: "course_added",
+      properties: {
+        course_code: data.course_code,
+        course_title: data.course_title ?? null,
+        credits: data.credits,
+        distributional: data.distributional,
+        term: data.term ?? null,
+        year: data.year ?? null,
+        status: data.status,
+        source: "server",
+      },
+    });
     return { ok: true };
   });
 
@@ -130,7 +159,11 @@ export const updateCourse = createServerFn({ method: "POST" })
       if (!existing) throw new Error("Course not found");
       await updateUserCourse(supabase, id, userId, patch, decodeCourseFromDb(existing));
     } else {
-      const { error } = await supabase.from("user_courses").update(patch).eq("id", id).eq("user_id", userId);
+      const { error } = await supabase
+        .from("user_courses")
+        .update(patch)
+        .eq("id", id)
+        .eq("user_id", userId);
       if (error) throw new Error(error.message);
     }
     return { ok: true };
@@ -141,7 +174,11 @@ export const deleteCourse = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const { error } = await supabase.from("user_courses").delete().eq("id", data.id).eq("user_id", userId);
+    const { error } = await supabase
+      .from("user_courses")
+      .delete()
+      .eq("id", data.id)
+      .eq("user_id", userId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

@@ -47,8 +47,7 @@ export const LANGUAGE_CERTIFICATES: Certificate[] = [
     department: "Italian Studies",
     catalogUrl: "https://catalog.yale.edu/ycps/subjects-of-instruction/italian",
     prefix: "ITAL",
-    description:
-      "Four courses beyond L4; at least three Yale L5. Grade B or above; no Cr/D/F.",
+    description: "Four courses beyond L4; at least three Yale L5. Grade B or above; no Cr/D/F.",
   }),
   advLangCert({
     id: "spanish",
@@ -84,7 +83,8 @@ export const LANGUAGE_CERTIFICATES: Certificate[] = [
     id: "russian",
     name: "Russian",
     department: "Slavic Languages and Literatures",
-    catalogUrl: "https://catalog.yale.edu/ycps/subjects-of-instruction/slavic-languages-literatures/",
+    catalogUrl:
+      "https://catalog.yale.edu/ycps/subjects-of-instruction/slavic-languages-literatures/",
     prefix: "RUSS",
     description:
       "Four courses beyond L4 after RUSS 1510; ≥2 Yale L5 content courses. Grade B or above.",

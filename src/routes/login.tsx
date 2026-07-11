@@ -71,7 +71,10 @@ function LoginPage() {
         }
         toast.success("Account created. Check your email to confirm, then sign in.");
       } else {
-        const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data: signInData, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
         if (error) throw error;
         if (signInData.user) {
           posthog.identify(signInData.user.id, { email });
@@ -103,11 +106,24 @@ function LoginPage() {
         <form onSubmit={handleEmail} className="mt-6 space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Input
+              id="email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+            <Input
+              id="password"
+              type="password"
+              required
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
           </div>
           <Button type="submit" disabled={loading} className="w-full">
             {mode === "signin" ? "Sign in" : "Create account"}
@@ -116,7 +132,10 @@ function LoginPage() {
 
         <p className="mt-4 text-center text-xs text-muted-foreground">
           {mode === "signin" ? "New here? " : "Already have an account? "}
-          <button onClick={() => setMode(mode === "signin" ? "signup" : "signin")} className="font-medium text-primary hover:underline">
+          <button
+            onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+            className="font-medium text-primary hover:underline"
+          >
             {mode === "signin" ? "Create an account" : "Sign in"}
           </button>
         </p>

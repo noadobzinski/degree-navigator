@@ -9,7 +9,11 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: `${APP_NAME} — ${APP_TAGLINE}` },
-      { name: "description", content: "Plan your Yale College degree. Track major, distributional, and prehealth/prelaw requirements." },
+      {
+        name: "description",
+        content:
+          "Plan your Yale College degree. Track major, distributional, and prehealth/prelaw requirements.",
+      },
     ],
   }),
   component: Landing,
@@ -25,10 +29,16 @@ function Landing() {
             <span className="font-serif text-xl font-bold text-primary">{APP_NAME}</span>
           </div>
           <div className="flex items-center gap-2">
-            <Link to="/catalog" className="rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-accent">
+            <Link
+              to="/catalog"
+              className="rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-accent"
+            >
               Browse courses
             </Link>
-            <Link to="/login" className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+            <Link
+              to="/login"
+              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
               Sign in
             </Link>
           </div>
@@ -44,20 +54,31 @@ function Landing() {
             Your degree, <span className="text-primary">finally</span> in one place.
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-            Plan your major, track your distributional credits, and see exactly what's left for premed,
-            prelaw, prevet, or just graduation — without a spreadsheet.
+            Plan your major, track your distributional credits, and see exactly what's left for
+            premed, prelaw, prevet, or just graduation — without a spreadsheet.
           </p>
           <div className="mt-10 flex flex-wrap justify-center gap-3">
-            <Link to="/catalog" className="rounded-md border border-border px-6 py-3 text-sm font-semibold hover:bg-accent">
+            <Link
+              to="/catalog"
+              className="rounded-md border border-border px-6 py-3 text-sm font-semibold hover:bg-accent"
+            >
               Browse Yale courses
             </Link>
-            <Link to="/login" className="rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
+            <Link
+              to="/login"
+              className="rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+            >
               Start your audit
             </Link>
           </div>
           <p className="mt-4 text-sm text-muted-foreground">
             Course catalog powered by{" "}
-            <a href="https://coursetable.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+            <a
+              href="https://coursetable.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
               CourseTable
             </a>
             — no Yale NetID required to search.
@@ -66,9 +87,21 @@ function Landing() {
 
         <section className="mx-auto grid max-w-5xl gap-6 px-6 pb-24 md:grid-cols-3">
           {[
-            { icon: CheckCircle2, title: "Real Yale requirements", body: "Modeled on Yale's distributional system (Hu, So, Sc, QR, WR, language) and 36-credit graduation rule." },
-            { icon: GraduationCap, title: "Major + track", body: "Pick from CS, MCDB, Econ, Math, English, History and more — with BA/BS variants. Add a premed, prelaw, or prevet track on top." },
-            { icon: Map, title: "Smart roadmap", body: "We suggest what to take next based on what's missing — prioritized by urgency." },
+            {
+              icon: CheckCircle2,
+              title: "Real Yale requirements",
+              body: "Modeled on Yale's distributional system (Hu, So, Sc, QR, WR, language) and 36-credit graduation rule.",
+            },
+            {
+              icon: GraduationCap,
+              title: "Major + track",
+              body: "Pick from CS, MCDB, Econ, Math, English, History and more — with BA/BS variants. Add a premed, prelaw, or prevet track on top.",
+            },
+            {
+              icon: Map,
+              title: "Smart roadmap",
+              body: "We suggest what to take next based on what's missing — prioritized by urgency.",
+            },
           ].map((f) => (
             <div key={f.title} className="rounded-lg border border-border bg-card p-6">
               <f.icon className="h-6 w-6 text-primary" />

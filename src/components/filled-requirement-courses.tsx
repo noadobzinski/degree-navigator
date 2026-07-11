@@ -25,9 +25,7 @@ export function FilledRequirementCourses({
     >
       <p
         className={
-          complete
-            ? "text-xs font-medium text-success"
-            : "text-xs font-medium text-foreground"
+          complete ? "text-xs font-medium text-success" : "text-xs font-medium text-foreground"
         }
       >
         {complete ? "Fulfilled by your courses" : "Your courses counting here"}

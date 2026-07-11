@@ -17,10 +17,7 @@ export function useCrosslistLookup(enabled: boolean): {
     retry: 1,
   });
 
-  const lookup = useMemo(
-    () => (q.data ? deserializeCrosslistLookup(q.data) : undefined),
-    [q.data],
-  );
+  const lookup = useMemo(() => (q.data ? deserializeCrosslistLookup(q.data) : undefined), [q.data]);
 
   return { lookup, isLoading: q.isLoading };
 }

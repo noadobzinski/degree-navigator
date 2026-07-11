@@ -30,8 +30,7 @@ export function progressFromSlotResults(results: SlotResult[]): RequirementProgr
     if (r.satisfied) slotsSatisfied++;
   }
   const remainingCourses = Math.max(0, coursesRequired - coursesFilled);
-  const progressPct =
-    coursesRequired > 0 ? Math.round((coursesFilled / coursesRequired) * 100) : 0;
+  const progressPct = coursesRequired > 0 ? Math.round((coursesFilled / coursesRequired) * 100) : 0;
   return {
     coursesFilled,
     coursesRequired,
@@ -42,7 +41,10 @@ export function progressFromSlotResults(results: SlotResult[]): RequirementProgr
   };
 }
 
-export function slotResultsToRows(results: SlotResult[], idPrefix = ""): CredentialRequirementRow[] {
+export function slotResultsToRows(
+  results: SlotResult[],
+  idPrefix = "",
+): CredentialRequirementRow[] {
   return results.map((r) => ({
     id: `${idPrefix}${r.slot.id}`,
     label: r.slot.label,
@@ -54,7 +56,9 @@ export function slotResultsToRows(results: SlotResult[], idPrefix = ""): Credent
   }));
 }
 
-export function flattenMajorAuditSections(sections: MajorAuditSection[]): CredentialRequirementRow[] {
+export function flattenMajorAuditSections(
+  sections: MajorAuditSection[],
+): CredentialRequirementRow[] {
   const rows: CredentialRequirementRow[] = [];
   for (const section of sections) {
     for (const r of section.results) {

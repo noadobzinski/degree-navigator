@@ -36,8 +36,12 @@ const DEFAULT_LIMIT = 8;
 
 function sortExamples(a: CourseExample, b: CourseExample, slot: RequirementSlot): number {
   if (a.offeredNow !== b.offeredNow) return a.offeredNow ? -1 : 1;
-  const aExplicit = slot.codes?.some((c) => canonicalCourseCode(c) === canonicalCourseCode(a.code)) ? 0 : 1;
-  const bExplicit = slot.codes?.some((c) => canonicalCourseCode(c) === canonicalCourseCode(b.code)) ? 0 : 1;
+  const aExplicit = slot.codes?.some((c) => canonicalCourseCode(c) === canonicalCourseCode(a.code))
+    ? 0
+    : 1;
+  const bExplicit = slot.codes?.some((c) => canonicalCourseCode(c) === canonicalCourseCode(b.code))
+    ? 0
+    : 1;
   if (aExplicit !== bExplicit) return aExplicit - bExplicit;
   return a.code.localeCompare(b.code);
 }
@@ -95,7 +99,11 @@ export function examplesForSlot(
     seen.add(key);
     const canon = canonicalCourseCode(course.code);
     const seasons = seasonByCode.get(course.code.toUpperCase()) ?? seasonByCode.get(canon) ?? [];
-    const crosslistedAs = formatCrosslistNote(course.code, course.crosslistedCodes, crosslistLookup);
+    const crosslistedAs = formatCrosslistNote(
+      course.code,
+      course.crosslistedCodes,
+      crosslistLookup,
+    );
     examples.push({
       code: course.code,
       title: course.title,
@@ -113,8 +121,7 @@ export function examplesForSlot(
     for (const code of slot.codes) {
       const key = exampleGroupKey(code, crosslistLookup);
       if (seen.has(key)) continue;
-      const staticCourse =
-        lookupCatalogEntry(code, CATALOG_BY_CODE);
+      const staticCourse = lookupCatalogEntry(code, CATALOG_BY_CODE);
       if (staticCourse && catalogMatchesSlot(staticCourse, slot, crosslistLookup)) {
         seen.add(key);
         examples.push({
@@ -124,8 +131,11 @@ export function examplesForSlot(
           offeredNow: false,
           recentSeasons: [],
           crosslistedAs:
-            formatCrosslistNote(staticCourse.code, staticCourse.crosslistedCodes, crosslistLookup) ??
-            undefined,
+            formatCrosslistNote(
+              staticCourse.code,
+              staticCourse.crosslistedCodes,
+              crosslistLookup,
+            ) ?? undefined,
         });
       }
     }
@@ -150,7 +160,14 @@ export function buildSlotExampleGroups(
     section,
     slotId: slot.id,
     label: slot.label,
-    examples: examplesForSlot(slot, catalogCourses, seasonByCode, currentSeason, DEFAULT_LIMIT, crosslistLookup),
+    examples: examplesForSlot(
+      slot,
+      catalogCourses,
+      seasonByCode,
+      currentSeason,
+      DEFAULT_LIMIT,
+      crosslistLookup,
+    ),
   }));
 }
 
@@ -187,5 +204,11 @@ export function getTrackExampleSections(
   const track = TRACKS_BY_ID[trackId];
   if (!track) return [];
   const sections = track.requirements.map((slot) => ({ section: track.name, slot }));
-  return buildSlotExampleGroups(sections, catalogCourses, seasonByCode, currentSeason, crosslistLookup);
+  return buildSlotExampleGroups(
+    sections,
+    catalogCourses,
+    seasonByCode,
+    currentSeason,
+    crosslistLookup,
+  );
 }

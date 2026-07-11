@@ -148,10 +148,7 @@ export function standardBaBsMajor(opts: {
       BA: {
         totalCourses: opts.baTotal,
         prerequisites: opts.baPrerequisites,
-        core:
-          baElectives > 0
-            ? [...baCore, deptElectives(opts.codePrefix, baElectives)]
-            : baCore,
+        core: baElectives > 0 ? [...baCore, deptElectives(opts.codePrefix, baElectives)] : baCore,
         senior: [seniorSlot(opts.codePrefix)],
       },
       BS: {
@@ -255,7 +252,15 @@ export function dualDeptMajor(opts: {
           ]
         : []),
     ],
-    senior: [{ id: "senior", label: "Senior requirement", codePrefix: [opts.prefixA, opts.prefixB], minLevel: 490, needCount: 1 }],
+    senior: [
+      {
+        id: "senior",
+        label: "Senior requirement",
+        codePrefix: [opts.prefixA, opts.prefixB],
+        minLevel: 490,
+        needCount: 1,
+      },
+    ],
   };
   return {
     id: opts.id,

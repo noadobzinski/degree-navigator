@@ -1,7 +1,4 @@
-import {
-  DISTRIBUTIONAL_REQUIREMENTS,
-  type DistributionalCode,
-} from "@/data/distributional";
+import { DISTRIBUTIONAL_REQUIREMENTS, type DistributionalCode } from "@/data/distributional";
 import type { CatalogCourse } from "@/data/courses";
 import type { UserCourse } from "@/lib/audit";
 import { effectiveSkills, skillsForNewCourse, WR_OPTIONAL_SKILL } from "@/lib/course-codes";
@@ -214,10 +211,7 @@ export function getEffectiveCreditAllocation(
   return autoMap.get(course.id) ?? getEligibleCreditBuckets(course)[0] ?? null;
 }
 
-export function allocationLabel(
-  course: UserCourse,
-  autoMap: Map<string, CreditBucketId>,
-): string {
+export function allocationLabel(course: UserCourse, autoMap: Map<string, CreditBucketId>): string {
   const bucket = getEffectiveCreditAllocation(course, autoMap);
   if (!bucket) return "—";
   const manual =
@@ -252,9 +246,7 @@ export function auditDistributionalWithAllocation(
   const allocations = autoMap ?? optimizeDistributionalAllocation(courses);
 
   const rows = DISTRIBUTIONAL_REQUIREMENTS.map((req) => {
-    const matched = courses.filter(
-      (c) => getEffectiveCreditAllocation(c, allocations) === req.id,
-    );
+    const matched = courses.filter((c) => getEffectiveCreditAllocation(c, allocations) === req.id);
     const count = matched.length;
     return {
       req,

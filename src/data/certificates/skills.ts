@@ -21,7 +21,15 @@ export const SKILLS_CERTIFICATES: Certificate[] = [
       {
         id: "probability",
         label: "Probability & statistical theory (1)",
-        codes: y(["S&DS 238", "S&DS 240", "S&DS 241", "S&DS 242", "S&DS 351", "S&DS 364", "ECE 431"]),
+        codes: y([
+          "S&DS 238",
+          "S&DS 240",
+          "S&DS 241",
+          "S&DS 242",
+          "S&DS 351",
+          "S&DS 364",
+          "ECE 431",
+        ]),
         needCount: 1,
       },
       {
@@ -108,7 +116,15 @@ export const SKILLS_CERTIFICATES: Certificate[] = [
       {
         id: "applications",
         label: "Applications or algorithms elective (e.g. CPSC 3650/3660, 3340, 3760, 4770)",
-        codes: y(["CPSC 365", "CPSC 366", "CPSC 334", "CPSC 376", "CPSC 477", "CPSC 479", "LING 380"]),
+        codes: y([
+          "CPSC 365",
+          "CPSC 366",
+          "CPSC 334",
+          "CPSC 376",
+          "CPSC 477",
+          "CPSC 479",
+          "LING 380",
+        ]),
         needCount: 1,
       },
     ],

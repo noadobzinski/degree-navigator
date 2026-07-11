@@ -32,7 +32,6 @@ export const DISTRIBUTIONAL_REQUIREMENTS = [
     label: "Foreign Language",
     tag: "L_ANY",
     count: 1,
-    description:
-      "Demonstrate proficiency through L4 or L5, or complete one course beyond L4.",
+    description: "Demonstrate proficiency through L4 or L5, or complete one course beyond L4.",
   },
 ] as const;

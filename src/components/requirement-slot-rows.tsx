@@ -17,9 +17,7 @@ export function RequirementSlotRows({
   crosslistLookup,
   hideEmpty = false,
 }: RequirementSlotRowsProps) {
-  const visible = hideEmpty
-    ? rows.filter((r) => r.filled.length > 0 || r.satisfied)
-    : rows;
+  const visible = hideEmpty ? rows.filter((r) => r.filled.length > 0 || r.satisfied) : rows;
 
   if (visible.length === 0) return null;
 
@@ -77,10 +75,7 @@ export function CatalogLink({ href, label }: { href: string; label?: string }) {
 
 export function SettingsCertificateLink({ certificateId }: { certificateId: string }) {
   return (
-    <Link
-      to="/settings"
-      className="text-xs font-medium text-primary hover:underline"
-    >
+    <Link to="/settings" className="text-xs font-medium text-primary hover:underline">
       Add in Settings
     </Link>
   );

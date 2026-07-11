@@ -78,6 +78,19 @@ function Dashboard() {
     clientReady && !!profileForExamples?.major_id,
   );
 
+  useEffect(() => {
+    if (!clientReady || profileQ.isLoading || coursesQ.isLoading) return;
+    if (!profileQ.data?.major_id) return;
+    posthog.capture("dashboard_viewed", {
+      major_id: profileQ.data.major_id,
+      degree_type: profileQ.data.degree_type,
+      has_second_major: !!profileQ.data.second_major_id,
+      certificate_count: (profileQ.data.certificate_ids ?? []).length,
+      course_count: (coursesQ.data ?? []).length,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientReady, profileQ.isLoading, coursesQ.isLoading]);
+
   if (!clientReady || profileQ.isLoading || coursesQ.isLoading) {
     return <div className="text-muted-foreground">Loading your audit…</div>;
   }
@@ -89,12 +102,20 @@ function Dashboard() {
       <div className="mx-auto max-w-2xl rounded-xl border border-border bg-card p-8 text-center">
         <GraduationCap className="mx-auto h-10 w-10 text-primary" />
         <h2 className="mt-4 font-serif text-2xl font-bold">Welcome to Decree</h2>
-        <p className="mt-2 text-muted-foreground">Let's set up your degree audit. Browse majors or pick one in Settings.</p>
+        <p className="mt-2 text-muted-foreground">
+          Let's set up your degree audit. Browse majors or pick one in Settings.
+        </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <Link to="/majors" className="inline-block rounded-md border border-border px-5 py-2.5 text-sm font-semibold hover:bg-accent">
+          <Link
+            to="/majors"
+            className="inline-block rounded-md border border-border px-5 py-2.5 text-sm font-semibold hover:bg-accent"
+          >
             Explore majors
           </Link>
-          <Link to="/settings" className="inline-block rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
+          <Link
+            to="/settings"
+            className="inline-block rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+          >
             Get started
           </Link>
         </div>
@@ -134,10 +155,8 @@ function Dashboard() {
   const distSatisfied = distAudit.filter((d) => d.satisfied).length;
   const overallPct = Math.min(100, Math.round((credits / gradTotal) * 100));
 
-  const majorUnits =
-    (majorAudit?.satisfiedCount ?? 0) + (secondAudit?.satisfiedCount ?? 0);
-  const majorTotal =
-    (majorAudit?.totalCount ?? 0) + (secondAudit?.totalCount ?? 0);
+  const majorUnits = (majorAudit?.satisfiedCount ?? 0) + (secondAudit?.satisfiedCount ?? 0);
+  const majorTotal = (majorAudit?.totalCount ?? 0) + (secondAudit?.totalCount ?? 0);
 
   const titleParts = [
     `${major?.name}${majorAudit?.concentration ? ` · ${majorAudit.concentration.label}` : ""} · ${degree}`,
@@ -159,23 +178,30 @@ function Dashboard() {
     <div className="mx-auto max-w-5xl space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm text-muted-foreground">Welcome back{profile.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}</p>
+          <p className="text-sm text-muted-foreground">
+            Welcome back{profile.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}
+          </p>
           <h1 className="font-serif text-3xl font-bold">{titleParts.join(" & ")}</h1>
           {majorAudit?.concentration?.description ? (
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
               {majorAudit.concentration.description}
             </p>
           ) : null}
-          {profile.class_year && <p className="text-sm text-muted-foreground">Class of {profile.class_year}</p>}
+          {profile.class_year && (
+            <p className="text-sm text-muted-foreground">Class of {profile.class_year}</p>
+          )}
         </div>
-        <Link to="/settings" className="text-sm font-medium text-primary hover:underline">Edit profile</Link>
+        <Link to="/settings" className="text-sm font-medium text-primary hover:underline">
+          Edit profile
+        </Link>
       </header>
 
       {metaQ.data ? (
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
           <Database className="h-4 w-4 text-primary" />
           <span>
-            Course catalog synced from CourseTable — {metaQ.data.courseCount.toLocaleString()} courses available.
+            Course catalog synced from CourseTable — {metaQ.data.courseCount.toLocaleString()}{" "}
+            courses available.
           </span>
           <Link to="/courses" className="font-medium text-primary hover:underline">
             Search courses
@@ -196,8 +222,8 @@ function Dashboard() {
           <CardHeader className="pb-2">
             <CardTitle className="font-serif text-lg">Double major overlap</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Yale allows at most {YALE_DOUBLE_MAJOR_MAX_OVERLAP} term courses to count toward both majors. Each major is
-              audited independently below.
+              Yale allows at most {YALE_DOUBLE_MAJOR_MAX_OVERLAP} term courses to count toward both
+              majors. Each major is audited independently below.
             </p>
           </CardHeader>
           <CardContent className="flex flex-wrap items-center gap-3">
@@ -209,14 +235,18 @@ function Dashboard() {
             <div className="flex-1">
               <p className="font-medium">
                 {overlap.count} overlapping {overlap.count === 1 ? "course" : "courses"}
-                {overlap.withinLimit ? " (within limit)" : ` — exceeds limit of ${overlap.maxAllowed}`}
+                {overlap.withinLimit
+                  ? " (within limit)"
+                  : ` — exceeds limit of ${overlap.maxAllowed}`}
               </p>
               {overlap.courses.length > 0 ? (
                 <p className="mt-1 text-xs text-muted-foreground">
                   {overlap.courses.map((c) => c.course_code).join(", ")}
                 </p>
               ) : (
-                <p className="mt-1 text-xs text-muted-foreground">No courses currently assigned to both majors.</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  No courses currently assigned to both majors.
+                </p>
               )}
             </div>
             <Badge variant={overlap.withinLimit ? "default" : "destructive"}>
@@ -233,16 +263,26 @@ function Dashboard() {
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Total credits</CardTitle></CardHeader>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-muted-foreground">Total credits</CardTitle>
+          </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{credits.toFixed(1)}<span className="text-lg text-muted-foreground"> / {gradTotal}</span></div>
+            <div className="text-3xl font-bold">
+              {credits.toFixed(1)}
+              <span className="text-lg text-muted-foreground"> / {gradTotal}</span>
+            </div>
             <Progress value={overallPct} className="mt-3" />
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Distributional</CardTitle></CardHeader>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-muted-foreground">Distributional</CardTitle>
+          </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{distSatisfied}<span className="text-lg text-muted-foreground"> / {distAudit.length}</span></div>
+            <div className="text-3xl font-bold">
+              {distSatisfied}
+              <span className="text-lg text-muted-foreground"> / {distAudit.length}</span>
+            </div>
             <Progress value={(distSatisfied / distAudit.length) * 100} className="mt-3" />
           </CardContent>
         </Card>
@@ -253,7 +293,10 @@ function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{majorUnits}<span className="text-lg text-muted-foreground"> / {majorTotal}</span></div>
+            <div className="text-3xl font-bold">
+              {majorUnits}
+              <span className="text-lg text-muted-foreground"> / {majorTotal}</span>
+            </div>
             <Progress value={majorTotal ? (majorUnits / majorTotal) * 100 : 0} className="mt-3" />
           </CardContent>
         </Card>
@@ -263,18 +306,27 @@ function Dashboard() {
         <CardHeader>
           <CardTitle className="font-serif">Distributional & skills requirements</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Each course counts toward one credit only. For courses with multiple tags, choose which credit you
-            used below or on My Courses.
+            Each course counts toward one credit only. For courses with multiple tags, choose which
+            credit you used below or on My Courses.
           </p>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2">
           {distAudit.map((d) => (
-            <div key={d.req.id} className="flex items-start gap-3 rounded-md border border-border p-3">
-              {d.satisfied ? <CheckCircle2 className="mt-0.5 h-5 w-5 text-success" /> : <Circle className="mt-0.5 h-5 w-5 text-muted-foreground" />}
+            <div
+              key={d.req.id}
+              className="flex items-start gap-3 rounded-md border border-border p-3"
+            >
+              {d.satisfied ? (
+                <CheckCircle2 className="mt-0.5 h-5 w-5 text-success" />
+              ) : (
+                <Circle className="mt-0.5 h-5 w-5 text-muted-foreground" />
+              )}
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <p className="font-medium">{d.req.label}</p>
-                  <Badge variant={d.satisfied ? "default" : "secondary"}>{d.count}/{d.req.count}</Badge>
+                  <Badge variant={d.satisfied ? "default" : "secondary"}>
+                    {d.count}/{d.req.count}
+                  </Badge>
                 </div>
                 {d.matched.length > 0 ? (
                   <p className="mt-1 text-xs text-muted-foreground">
@@ -291,7 +343,11 @@ function Dashboard() {
       <MultiCreditCoursesCard courses={courses} />
 
       {majorAudit && (
-        <MajorAuditCard audit={majorAudit} examplesQ={examplesQ} crosslistLookup={crosslistLookup} />
+        <MajorAuditCard
+          audit={majorAudit}
+          examplesQ={examplesQ}
+          crosslistLookup={crosslistLookup}
+        />
       )}
 
       {secondAudit && (
@@ -311,12 +367,21 @@ function Dashboard() {
           </CardHeader>
           <CardContent className="space-y-2">
             {trackAudit.results.map((r) => (
-              <div key={r.slot.id} className="flex items-start gap-3 rounded-md border border-border p-3">
-                {r.satisfied ? <CheckCircle2 className="mt-0.5 h-5 w-5 text-success" /> : <AlertCircle className="mt-0.5 h-5 w-5 text-warning" />}
+              <div
+                key={r.slot.id}
+                className="flex items-start gap-3 rounded-md border border-border p-3"
+              >
+                {r.satisfied ? (
+                  <CheckCircle2 className="mt-0.5 h-5 w-5 text-success" />
+                ) : (
+                  <AlertCircle className="mt-0.5 h-5 w-5 text-warning" />
+                )}
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="font-medium">{r.slot.label}</p>
-                    <Badge variant={r.satisfied ? "default" : "secondary"}>{r.filled.length}/{r.slot.needCount}</Badge>
+                    <Badge variant={r.satisfied ? "default" : "secondary"}>
+                      {r.filled.length}/{r.slot.needCount}
+                    </Badge>
                   </div>
                   <FilledRequirementCourses
                     courses={r.filled}
@@ -348,13 +413,19 @@ function Dashboard() {
             <CardHeader>
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
-                  <CardTitle className="font-serif">{certAudit.certificate.name} certificate</CardTitle>
-                  <p className="mt-1 text-sm text-muted-foreground">{certAudit.certificate.description}</p>
+                  <CardTitle className="font-serif">
+                    {certAudit.certificate.name} certificate
+                  </CardTitle>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {certAudit.certificate.description}
+                  </p>
                   <p className="mt-1">
                     <CatalogLink href={certAudit.certificate.catalogUrl} />
                   </p>
                 </div>
-                <Badge variant={certAudit.progress.remainingCourses === 0 ? "default" : "secondary"}>
+                <Badge
+                  variant={certAudit.progress.remainingCourses === 0 ? "default" : "secondary"}
+                >
                   {certAudit.progress.coursesFilled}/{certAudit.progress.coursesRequired} credits
                 </Badge>
               </div>

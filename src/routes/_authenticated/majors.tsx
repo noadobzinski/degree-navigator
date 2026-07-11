@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { usePostHog } from "posthog-js/react";
 import {
   MAJORS,
   MAJOR_DEPARTMENTS,
@@ -69,6 +70,7 @@ function RequirementSummary({
 }
 
 function MajorsPage() {
+  const posthog = usePostHog();
   const [query, setQuery] = useState("");
   const [department, setDepartment] = useState<string>("all");
   const [degreeFilter, setDegreeFilter] = useState<string>("all");
@@ -90,7 +92,7 @@ function MajorsPage() {
     });
   }, [query, department, degreeFilter]);
 
-  const selected = selectedId ? MAJORS.find((m) => m.id === selectedId) ?? null : null;
+  const selected = selectedId ? (MAJORS.find((m) => m.id === selectedId) ?? null) : null;
   const previewDegree = selected?.defaultDegree ?? "BA";
   const previewConcentrations = selected ? concentrationsForMajor(selected, previewDegree) : [];
 
@@ -144,7 +146,9 @@ function MajorsPage() {
           <SelectContent>
             <SelectItem value="all">All departments</SelectItem>
             {MAJOR_DEPARTMENTS.map((d) => (
-              <SelectItem key={d} value={d}>{d}</SelectItem>
+              <SelectItem key={d} value={d}>
+                {d}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -167,7 +171,14 @@ function MajorsPage() {
             <button
               key={m.id}
               type="button"
-              onClick={() => setSelectedId(m.id)}
+              onClick={() => {
+                setSelectedId(m.id);
+                posthog.capture("major_previewed", {
+                  major_id: m.id,
+                  major_name: m.name,
+                  department: m.department,
+                });
+              }}
               className={`w-full rounded-lg border p-3 text-left transition-colors hover:bg-accent ${
                 selectedId === m.id ? "border-primary bg-accent" : "border-border"
               }`}
@@ -242,14 +253,14 @@ function MajorsPage() {
                     </Select>
                     {previewConcentrationId ? (
                       <p className="text-xs text-muted-foreground">
-                        {previewConcentrations.find((c) => c.id === previewConcentrationId)?.description ??
-                          "Requirements below reflect this concentration track."}
+                        {previewConcentrations.find((c) => c.id === previewConcentrationId)
+                          ?.description ?? "Requirements below reflect this concentration track."}
                       </p>
                     ) : (
                       <p className="text-xs text-muted-foreground">
                         {previewConcentrations.length} concentration
-                        {previewConcentrations.length === 1 ? "" : "s"} available — pick one to preview
-                        requirements or leave as standard.
+                        {previewConcentrations.length === 1 ? "" : "s"} available — pick one to
+                        preview requirements or leave as standard.
                       </p>
                     )}
                   </div>
@@ -259,19 +270,31 @@ function MajorsPage() {
                   degree={previewDegree}
                   concentrationId={previewConcentrationId || undefined}
                 />
-                {selected.degrees.length > 1 && selected.degrees.includes("BS") && previewDegree === "BA" && (
-                  <p className="text-xs text-muted-foreground">
-                    B.S. track requires {majorCourseCount(selected, "BS")} courses — see official roadmap for full details.
-                  </p>
-                )}
+                {selected.degrees.length > 1 &&
+                  selected.degrees.includes("BS") &&
+                  previewDegree === "BA" && (
+                    <p className="text-xs text-muted-foreground">
+                      B.S. track requires {majorCourseCount(selected, "BS")} courses — see official
+                      roadmap for full details.
+                    </p>
+                  )}
                 <div className="flex flex-wrap gap-2 pt-2">
                   <Button asChild>
                     <Link
                       to="/settings"
                       search={{
                         major: selected.id,
-                        ...(previewConcentrationId ? { concentration: previewConcentrationId } : {}),
+                        ...(previewConcentrationId
+                          ? { concentration: previewConcentrationId }
+                          : {}),
                       }}
+                      onClick={() =>
+                        posthog.capture("major_set_as_primary", {
+                          major_id: selected.id,
+                          major_name: selected.name,
+                          concentration_id: previewConcentrationId || null,
+                        })
+                      }
                     >
                       Set as my major
                     </Link>

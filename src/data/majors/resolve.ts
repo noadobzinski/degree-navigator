@@ -5,9 +5,7 @@ export function concentrationsForMajor(
   degree: "BA" | "BS",
 ): MajorConcentration[] {
   if (!major?.concentrations?.length) return [];
-  return major.concentrations.filter(
-    (c) => !c.degrees?.length || c.degrees.includes(degree),
-  );
+  return major.concentrations.filter((c) => !c.degrees?.length || c.degrees.includes(degree));
 }
 
 export function resolveConcentrationLabel(

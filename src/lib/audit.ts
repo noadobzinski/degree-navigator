@@ -1,10 +1,7 @@
 import { CATALOG_BY_CODE, type CatalogCourse } from "@/data/courses";
 import { DISTRIBUTIONAL_REQUIREMENTS, GRADUATION_CREDITS } from "@/data/distributional";
 import { resolveCertificate, type Certificate } from "@/data/certificates";
-import {
-  progressFromSlotResults,
-  type RequirementProgress,
-} from "@/lib/credential-progress";
+import { progressFromSlotResults, type RequirementProgress } from "@/lib/credential-progress";
 import {
   MAJORS_BY_ID,
   mergeElectivesIntoCore,
@@ -102,7 +99,12 @@ function matchesSlot(
   const codeMatch = courseMatchesSlotCodes(codesToCheck, slot, catalogByCode);
 
   if (codeMatch) return true;
-  if (needsSkills && !slot.codes?.length && !slot.codePrefix?.length && !slot.requiredAttributes?.length) {
+  if (
+    needsSkills &&
+    !slot.codes?.length &&
+    !slot.codePrefix?.length &&
+    !slot.requiredAttributes?.length
+  ) {
     return true;
   }
   return false;
@@ -116,7 +118,9 @@ export function catalogMatchesSlot(
 ): boolean {
   const attrs = course.ycAttributes ?? [];
   const enriched: Record<string, { ycAttributes?: string[] }> = { ...catalogByCode };
-  const entry = { ycAttributes: attrs.length ? attrs : catalogByCode?.[course.code.toUpperCase()]?.ycAttributes };
+  const entry = {
+    ycAttributes: attrs.length ? attrs : catalogByCode?.[course.code.toUpperCase()]?.ycAttributes,
+  };
   enriched[course.code.toUpperCase()] = entry;
   for (const code of course.crosslistedCodes ?? []) {
     enriched[code.toUpperCase()] = entry;
@@ -140,7 +144,10 @@ export function catalogMatchesSlot(
   );
 }
 
-function lookupCatalog(code: string, catalogByCode: Record<string, CatalogCourse>): CatalogCourse | undefined {
+function lookupCatalog(
+  code: string,
+  catalogByCode: Record<string, CatalogCourse>,
+): CatalogCourse | undefined {
   return lookupCatalogEntry(code, catalogByCode);
 }
 
@@ -203,9 +210,21 @@ function auditRequirementSections(
   if (reqs.prerequisites?.length || reqs.prerequisiteGroups?.length) {
     const prereqSection: MajorAuditSection = { title: "Prerequisites", results: [] };
     if (reqs.prerequisiteGroups?.length) {
-      prereqSection.groups = fillGroups(reqs.prerequisiteGroups, courses, consumed, crosslistLookup, catalogByCode);
+      prereqSection.groups = fillGroups(
+        reqs.prerequisiteGroups,
+        courses,
+        consumed,
+        crosslistLookup,
+        catalogByCode,
+      );
     }
-    prereqSection.results = fillSlots(reqs.prerequisites ?? [], courses, consumed, crosslistLookup, catalogByCode);
+    prereqSection.results = fillSlots(
+      reqs.prerequisites ?? [],
+      courses,
+      consumed,
+      crosslistLookup,
+      catalogByCode,
+    );
     sections.push(prereqSection);
   }
   sections.push({
@@ -216,15 +235,33 @@ function auditRequirementSections(
   });
   const coreSection = sections[sections.length - 1]!;
   if (reqs.coreGroups?.length) {
-    coreSection.groups = fillGroups(reqs.coreGroups, courses, consumed, crosslistLookup, catalogByCode);
+    coreSection.groups = fillGroups(
+      reqs.coreGroups,
+      courses,
+      consumed,
+      crosslistLookup,
+      catalogByCode,
+    );
   }
   coreSection.results = fillSlots(reqs.core, courses, consumed, crosslistLookup, catalogByCode);
   if (reqs.senior?.length || reqs.seniorGroups?.length) {
     const seniorSection: MajorAuditSection = { title: "Senior requirement", results: [] };
     if (reqs.seniorGroups?.length) {
-      seniorSection.groups = fillGroups(reqs.seniorGroups, courses, consumed, crosslistLookup, catalogByCode);
+      seniorSection.groups = fillGroups(
+        reqs.seniorGroups,
+        courses,
+        consumed,
+        crosslistLookup,
+        catalogByCode,
+      );
     }
-    seniorSection.results = fillSlots(reqs.senior ?? [], courses, consumed, crosslistLookup, catalogByCode);
+    seniorSection.results = fillSlots(
+      reqs.senior ?? [],
+      courses,
+      consumed,
+      crosslistLookup,
+      catalogByCode,
+    );
     sections.push(seniorSection);
   }
   return sections;
@@ -323,7 +360,13 @@ export function auditOneCertificate(
     );
     prerequisiteResult = prereqResults[0];
   }
-  const results = fillSlots(certificate.requirements, courses, consumed, crosslistLookup, catalogByCode);
+  const results = fillSlots(
+    certificate.requirements,
+    courses,
+    consumed,
+    crosslistLookup,
+    catalogByCode,
+  );
   return {
     certificate,
     prerequisiteResult,
@@ -379,7 +422,12 @@ export function auditTrack(
   if (!track) return null;
   const consumed = new Set<string>();
   const results = fillSlots(track.requirements, courses, consumed, crosslistLookup);
-  return { track, results, satisfiedCount: results.filter((r) => r.satisfied).length, totalCount: results.length };
+  return {
+    track,
+    results,
+    satisfiedCount: results.filter((r) => r.satisfied).length,
+    totalCount: results.length,
+  };
 }
 
 export function auditDistributional(courses: UserCourse[]) {
@@ -487,7 +535,12 @@ export function suggestRoadmap(
   maxSuggestions = 18,
 ): { priority: "high" | "med" | "low"; code: string; title: string; reason: string }[] {
   const completedCodes = buildCompletedCourseIdentitySet(courses);
-  const suggestions: { priority: "high" | "med" | "low"; code: string; title: string; reason: string }[] = [];
+  const suggestions: {
+    priority: "high" | "med" | "low";
+    code: string;
+    title: string;
+    reason: string;
+  }[] = [];
   const seen = new Set<string>();
   const pushIf = (code: string, reason: string, priority: "high" | "med" | "low") => {
     const c = lookupCatalog(code, catalogByCode);
@@ -524,7 +577,12 @@ export function suggestRoadmap(
 
   if (secondMajorId && secondMajorId !== majorId) {
     const deg2 = secondDegree ?? degree;
-    const audit2 = auditMajor(courses.map((c) => ({ ...c })), secondMajorId, deg2, crosslistLookup);
+    const audit2 = auditMajor(
+      courses.map((c) => ({ ...c })),
+      secondMajorId,
+      deg2,
+      crosslistLookup,
+    );
     if (audit2) {
       const name = audit2.major.name;
       suggestFromMajorAudit(
@@ -561,7 +619,12 @@ export function suggestRoadmap(
     }
   }
 
-  for (const certAudit of auditCertificates(courses, certificateIds, crosslistLookup, catalogByCode)) {
+  for (const certAudit of auditCertificates(
+    courses,
+    certificateIds,
+    crosslistLookup,
+    catalogByCode,
+  )) {
     for (const r of certAudit.results) {
       if (r.satisfied) continue;
       suggestForSlot(

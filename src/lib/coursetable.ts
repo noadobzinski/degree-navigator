@@ -90,7 +90,9 @@ export function normalizeCourseTableCourse(entry: CourseTableCourse): CatalogCou
   const codes = listingCodes(entry);
   if (!codes.length) return null;
   const primary = codes[0];
-  const primaryListing = entry.listings!.find((l) => l.course_code?.replace(/\s+/g, " ").trim() === primary)!;
+  const primaryListing = entry.listings!.find(
+    (l) => l.course_code?.replace(/\s+/g, " ").trim() === primary,
+  )!;
   const crosslistedCodes = codes.length > 1 ? codes.slice(1) : undefined;
   return {
     code: primary,
@@ -113,7 +115,9 @@ export function normalizeCourseTableCourse(entry: CourseTableCourse): CatalogCou
 }
 
 function mergeCatalogCourses(a: CatalogCourse, b: CatalogCourse): CatalogCourse {
-  const allCodes = [...new Set([a.code, b.code, ...(a.crosslistedCodes ?? []), ...(b.crosslistedCodes ?? [])])];
+  const allCodes = [
+    ...new Set([a.code, b.code, ...(a.crosslistedCodes ?? []), ...(b.crosslistedCodes ?? [])]),
+  ];
   const primary = allCodes[0];
   const crosslistedCodes = allCodes.length > 1 ? allCodes.slice(1) : undefined;
   const credits = Math.min(a.credits, b.credits);
@@ -122,7 +126,9 @@ function mergeCatalogCourses(a: CatalogCourse, b: CatalogCourse): CatalogCourse 
     crosslistedCodes,
     title: a.title || b.title,
     credits,
-    distributional: [...new Set([...a.distributional, ...b.distributional])] as CatalogCourse["distributional"],
+    distributional: [
+      ...new Set([...a.distributional, ...b.distributional]),
+    ] as CatalogCourse["distributional"],
     skills: [...new Set([...a.skills, ...b.skills])] as CatalogCourse["skills"],
     ycAttributes: [...new Set([...(a.ycAttributes ?? []), ...(b.ycAttributes ?? [])])],
     subject: a.subject || b.subject,
@@ -144,7 +150,9 @@ export function dedupeCourseTableCourses(entries: CourseTableCourse[]): CatalogC
   }
 
   function indexCourse(course: CatalogCourse) {
-    const keys = [course.code, ...(course.crosslistedCodes ?? [])].flatMap((c) => codeLookupKeys(c));
+    const keys = [course.code, ...(course.crosslistedCodes ?? [])].flatMap((c) =>
+      codeLookupKeys(c),
+    );
     for (const key of keys) byKey.set(key, course);
   }
 

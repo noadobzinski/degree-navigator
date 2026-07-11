@@ -72,7 +72,12 @@ function mcdbBaBase(): MajorRequirements {
   return {
     totalCourses: 11,
     prerequisites: [
-      { id: "gen_chem", label: "General Chemistry I & II", codes: y(["CHEM 161", "CHEM 165"]), needCount: 2 },
+      {
+        id: "gen_chem",
+        label: "General Chemistry I & II",
+        codes: y(["CHEM 161", "CHEM 165"]),
+        needCount: 2,
+      },
     ],
     core: [
       {
@@ -81,9 +86,19 @@ function mcdbBaBase(): MajorRequirements {
         codes: y(["BIOL 101", "BIOL 102", "BIOL 103", "BIOL 104"]),
         needCount: 2,
       },
-      { id: "molbio", label: "Molecular Biology (MCDB 2000)", codes: y(["MCDB 200"]), needCount: 1 },
+      {
+        id: "molbio",
+        label: "Molecular Biology (MCDB 2000)",
+        codes: y(["MCDB 200"]),
+        needCount: 1,
+      },
       { id: "genetics", label: "Genetics (MCDB 2020)", codes: y(["MCDB 202"]), needCount: 1 },
-      { id: "cell", label: "Cellular & Developmental (MCDB 2050)", codes: y(["MCDB 205"]), needCount: 1 },
+      {
+        id: "cell",
+        label: "Cellular & Developmental (MCDB 2050)",
+        codes: y(["MCDB 205"]),
+        needCount: 1,
+      },
       {
         id: "mcdb_electives",
         label: "2 general MCDB electives (2500+) + 1 special elective (3500+); see YCPS",
@@ -112,8 +127,18 @@ function mcdbBsBase(): MajorRequirements {
   return {
     totalCourses: 13,
     prerequisites: [
-      { id: "gen_chem", label: "General Chemistry (CHEM 1610 & 1650)", codes: y(["CHEM 161", "CHEM 165"]), needCount: 2 },
-      { id: "ochem", label: "Organic Chemistry (CHEM 2200 & 2210)", codes: y(["CHEM 220", "CHEM 221"]), needCount: 2 },
+      {
+        id: "gen_chem",
+        label: "General Chemistry (CHEM 1610 & 1650)",
+        codes: y(["CHEM 161", "CHEM 165"]),
+        needCount: 2,
+      },
+      {
+        id: "ochem",
+        label: "Organic Chemistry (CHEM 2200 & 2210)",
+        codes: y(["CHEM 220", "CHEM 221"]),
+        needCount: 2,
+      },
       {
         id: "math",
         label: "Calculus or Statistics",
@@ -128,9 +153,19 @@ function mcdbBsBase(): MajorRequirements {
         codes: y(["BIOL 101", "BIOL 102", "BIOL 103", "BIOL 104"]),
         needCount: 2,
       },
-      { id: "molbio", label: "Molecular Biology (MCDB 2000)", codes: y(["MCDB 200"]), needCount: 1 },
+      {
+        id: "molbio",
+        label: "Molecular Biology (MCDB 2000)",
+        codes: y(["MCDB 200"]),
+        needCount: 1,
+      },
       { id: "genetics", label: "Genetics (MCDB 2020)", codes: y(["MCDB 202"]), needCount: 1 },
-      { id: "cell", label: "Cellular & Developmental (MCDB 2050)", codes: y(["MCDB 205"]), needCount: 1 },
+      {
+        id: "cell",
+        label: "Cellular & Developmental (MCDB 2050)",
+        codes: y(["MCDB 205"]),
+        needCount: 1,
+      },
       { id: "biochem", label: "Biochemistry (MCDB 3100)", codes: y(["MCDB 310"]), needCount: 1 },
       {
         id: "mcdb_electives",
@@ -201,31 +236,20 @@ export const MCDB_CONCENTRATIONS: MajorConcentration[] = [
     id: "neurobiology",
     label: "Neurobiology",
     description: "MCDB 3200 (Neurobiology) plus one approved neurobiology elective.",
-    requirements: mcdbWithConcentration(
-      "MCDB 320",
-      "Neurobiology",
-      MCDB_NEURO_ELECTIVES,
-    ),
+    requirements: mcdbWithConcentration("MCDB 320", "Neurobiology", MCDB_NEURO_ELECTIVES),
   },
   {
     id: "biotechnology",
     label: "Biotechnology",
     description: "MCDB 3700 (Biotechnology) plus one approved biotechnology elective.",
-    requirements: mcdbWithConcentration(
-      "MCDB 370",
-      "Biotechnology",
-      MCDB_BIOTECH_ELECTIVES,
-    ),
+    requirements: mcdbWithConcentration("MCDB 370", "Biotechnology", MCDB_BIOTECH_ELECTIVES),
   },
   {
     id: "quantitative-biology",
     label: "Quantitative Biology",
-    description: "MCDB 3310 (Modeling Biological Systems I) plus one approved quantitative elective.",
-    requirements: mcdbWithConcentration(
-      "MCDB 331",
-      "Quantitative Biology",
-      MCDB_QUANT_ELECTIVES,
-    ),
+    description:
+      "MCDB 3310 (Modeling Biological Systems I) plus one approved quantitative elective.",
+    requirements: mcdbWithConcentration("MCDB 331", "Quantitative Biology", MCDB_QUANT_ELECTIVES),
   },
 ];
 
@@ -246,9 +270,24 @@ function eebBiodiversityReqs(degree: "BA" | "BS"): MajorRequirements {
     return {
       totalCourses: 14,
       prerequisites: [
-        { id: "bio", label: "BIOL 1010–1040", codes: y(["BIOL 101", "BIOL 102", "BIOL 103", "BIOL 104"]), needCount: 4 },
-        { id: "chem", label: "General chemistry + labs", codes: y(["CHEM 161", "CHEM 165", "CHEM 174", "CHEM 175"]), needCount: 2 },
-        { id: "math", label: "Math or statistics", codes: y(["MATH 115", "MATH 120", "S&DS 100", "S&DS 230"]), needCount: 1 },
+        {
+          id: "bio",
+          label: "BIOL 1010–1040",
+          codes: y(["BIOL 101", "BIOL 102", "BIOL 103", "BIOL 104"]),
+          needCount: 4,
+        },
+        {
+          id: "chem",
+          label: "General chemistry + labs",
+          codes: y(["CHEM 161", "CHEM 165", "CHEM 174", "CHEM 175"]),
+          needCount: 2,
+        },
+        {
+          id: "math",
+          label: "Math or statistics",
+          codes: y(["MATH 115", "MATH 120", "S&DS 100", "S&DS 230"]),
+          needCount: 1,
+        },
       ],
       core: [
         ...concCore,
@@ -273,9 +312,24 @@ function eebBiodiversityReqs(degree: "BA" | "BS"): MajorRequirements {
   return {
     totalCourses: 14,
     prerequisites: [
-      { id: "bio", label: "BIOL 1010–1040", codes: y(["BIOL 101", "BIOL 102", "BIOL 103", "BIOL 104"]), needCount: 4 },
-      { id: "chem", label: "General chemistry + labs", codes: y(["CHEM 161", "CHEM 165", "CHEM 1340L", "CHEM 1360L"]), needCount: 2 },
-      { id: "math", label: "Math or statistics", codes: y(["MATH 115", "MATH 120", "S&DS 100", "S&DS 230"]), needCount: 1 },
+      {
+        id: "bio",
+        label: "BIOL 1010–1040",
+        codes: y(["BIOL 101", "BIOL 102", "BIOL 103", "BIOL 104"]),
+        needCount: 4,
+      },
+      {
+        id: "chem",
+        label: "General chemistry + labs",
+        codes: y(["CHEM 161", "CHEM 165", "CHEM 1340L", "CHEM 1360L"]),
+        needCount: 2,
+      },
+      {
+        id: "math",
+        label: "Math or statistics",
+        codes: y(["MATH 115", "MATH 120", "S&DS 100", "S&DS 230"]),
+        needCount: 1,
+      },
     ],
     core: [
       ...concCore,
@@ -319,9 +373,24 @@ function eebOrganismalReqs(degree: "BA" | "BS"): MajorRequirements {
     return {
       totalCourses: 14,
       prerequisites: [
-        { id: "bio", label: "BIOL 1010–1040", codes: y(["BIOL 101", "BIOL 102", "BIOL 103", "BIOL 104"]), needCount: 4 },
-        { id: "chem", label: "General chemistry + labs", codes: y(["CHEM 161", "CHEM 165", "CHEM 174", "CHEM 175"]), needCount: 2 },
-        { id: "math", label: "Math or statistics", codes: y(["MATH 115", "MATH 120", "S&DS 100"]), needCount: 1 },
+        {
+          id: "bio",
+          label: "BIOL 1010–1040",
+          codes: y(["BIOL 101", "BIOL 102", "BIOL 103", "BIOL 104"]),
+          needCount: 4,
+        },
+        {
+          id: "chem",
+          label: "General chemistry + labs",
+          codes: y(["CHEM 161", "CHEM 165", "CHEM 174", "CHEM 175"]),
+          needCount: 2,
+        },
+        {
+          id: "math",
+          label: "Math or statistics",
+          codes: y(["MATH 115", "MATH 120", "S&DS 100"]),
+          needCount: 1,
+        },
       ],
       core: [
         ...concCore,
@@ -346,9 +415,24 @@ function eebOrganismalReqs(degree: "BA" | "BS"): MajorRequirements {
   return {
     totalCourses: 14,
     prerequisites: [
-      { id: "bio", label: "BIOL 1010–1040", codes: y(["BIOL 101", "BIOL 102", "BIOL 103", "BIOL 104"]), needCount: 4 },
-      { id: "chem", label: "General chemistry + labs", codes: y(["CHEM 161", "CHEM 165", "CHEM 1340L", "CHEM 1360L"]), needCount: 2 },
-      { id: "math", label: "Math or statistics", codes: y(["MATH 115", "MATH 120", "S&DS 100"]), needCount: 1 },
+      {
+        id: "bio",
+        label: "BIOL 1010–1040",
+        codes: y(["BIOL 101", "BIOL 102", "BIOL 103", "BIOL 104"]),
+        needCount: 4,
+      },
+      {
+        id: "chem",
+        label: "General chemistry + labs",
+        codes: y(["CHEM 161", "CHEM 165", "CHEM 1340L", "CHEM 1360L"]),
+        needCount: 2,
+      },
+      {
+        id: "math",
+        label: "Math or statistics",
+        codes: y(["MATH 115", "MATH 120", "S&DS 100"]),
+        needCount: 1,
+      },
     ],
     core: [
       ...concCore,
@@ -375,7 +459,8 @@ export const EEB_CONCENTRATIONS: MajorConcentration[] = [
   {
     id: "biodiversity-environment",
     label: "Biodiversity and the Environment",
-    description: "Ecology, evolution, and environmental science track (EEB 2220, 2225, organismal diversity).",
+    description:
+      "Ecology, evolution, and environmental science track (EEB 2220, 2225, organismal diversity).",
     requirements: {
       BA: eebBiodiversityReqs("BA"),
       BS: eebBiodiversityReqs("BS"),
@@ -384,7 +469,8 @@ export const EEB_CONCENTRATIONS: MajorConcentration[] = [
   {
     id: "organismal-biology",
     label: "Organismal Biology",
-    description: "Physiology and pre-health track (EEB 2290, 2295/BENG 3200, MCDB/MB&B 3000, 2291L).",
+    description:
+      "Physiology and pre-health track (EEB 2290, 2295/BENG 3200, MCDB/MB&B 3000, 2291L).",
     requirements: {
       BA: eebOrganismalReqs("BA"),
       BS: eebOrganismalReqs("BS"),
@@ -399,9 +485,24 @@ function evstConc(
   degree: "BA" | "BS",
 ): MajorRequirements {
   const baCore: RequirementSlot[] = [
-    { id: "core_hu", label: "Core humanities", codePrefix: ["EVST", "HIST", "HUMS", "ENGL"], needCount: 1 },
-    { id: "core_so", label: "Core social science", codePrefix: ["EVST", "ANTH", "PLSC", "SOCY"], needCount: 1 },
-    { id: "core_ns", label: "Core natural sciences (3)", codePrefix: ["EVST", "EEB", "G&G", "CHEM", "PHYS"], needCount: 3 },
+    {
+      id: "core_hu",
+      label: "Core humanities",
+      codePrefix: ["EVST", "HIST", "HUMS", "ENGL"],
+      needCount: 1,
+    },
+    {
+      id: "core_so",
+      label: "Core social science",
+      codePrefix: ["EVST", "ANTH", "PLSC", "SOCY"],
+      needCount: 1,
+    },
+    {
+      id: "core_ns",
+      label: "Core natural sciences (3)",
+      codePrefix: ["EVST", "EEB", "G&G", "CHEM", "PHYS"],
+      needCount: 3,
+    },
     {
       id: "concentration",
       label: `6 ${label} concentration courses (DUS-approved)`,
@@ -413,7 +514,12 @@ function evstConc(
   const bsCore: RequirementSlot[] = [
     { id: "core_hu", label: "Core humanities", codePrefix: ["EVST", "HIST"], needCount: 1 },
     { id: "core_so", label: "Core social science", codePrefix: ["EVST", "ANTH"], needCount: 1 },
-    { id: "core_ns", label: "Core natural sciences (2)", codePrefix: ["EVST", "EEB", "G&G"], needCount: 2 },
+    {
+      id: "core_ns",
+      label: "Core natural sciences (2)",
+      codePrefix: ["EVST", "EEB", "G&G"],
+      needCount: 2,
+    },
     {
       id: "concentration",
       label: `6 ${label} concentration courses (3 SC, 2000+; DUS-approved)`,
@@ -427,8 +533,18 @@ function evstConc(
     return {
       totalCourses: 13,
       prerequisites: [
-        { id: "quant", label: "Quantitative prereq", codes: y(["MATH 112", "PHYS 170", "S&DS 100"]), needCount: 1 },
-        { id: "science", label: "BIOL or chemistry", codes: y(["BIOL 101", "CHEM 161"]), needCount: 1 },
+        {
+          id: "quant",
+          label: "Quantitative prereq",
+          codes: y(["MATH 112", "PHYS 170", "S&DS 100"]),
+          needCount: 1,
+        },
+        {
+          id: "science",
+          label: "BIOL or chemistry",
+          codes: y(["BIOL 101", "CHEM 161"]),
+          needCount: 1,
+        },
       ],
       core: baCore,
       senior: [
@@ -444,26 +560,88 @@ function evstConc(
   return {
     totalCourses: 12,
     prerequisites: [
-      { id: "quant", label: "Quantitative prereq", codes: y(["MATH 112", "S&DS 100"]), needCount: 1 },
-      { id: "science", label: "BIOL or chemistry", codes: y(["BIOL 101", "CHEM 161"]), needCount: 1 },
-      { id: "lab", label: "Natural science lab", codePrefix: ["EEB", "G&G", "CHEM", "PHYS"], needCount: 1 },
+      {
+        id: "quant",
+        label: "Quantitative prereq",
+        codes: y(["MATH 112", "S&DS 100"]),
+        needCount: 1,
+      },
+      {
+        id: "science",
+        label: "BIOL or chemistry",
+        codes: y(["BIOL 101", "CHEM 161"]),
+        needCount: 1,
+      },
+      {
+        id: "lab",
+        label: "Natural science lab",
+        codePrefix: ["EEB", "G&G", "CHEM", "PHYS"],
+        needCount: 1,
+      },
     ],
     core: bsCore,
-    senior: [{ id: "senior", label: "Two-term senior project (EVST 4960)", codes: y(["EVST 4960"]), needCount: 2 }],
+    senior: [
+      {
+        id: "senior",
+        label: "Two-term senior project (EVST 4960)",
+        codes: y(["EVST 4960"]),
+        needCount: 2,
+      },
+    ],
   };
 }
 
 const EVST_CONC_META = [
-  { id: "biodiversity-conservation", label: "Biodiversity & Conservation", desc: "Species diversity, ecosystem dynamics, and conservation policy." },
-  { id: "energy-climate", label: "Energy & Climate", desc: "Energy systems, climate change, and environmental quality." },
-  { id: "environmental-humanities", label: "Environmental Humanities", desc: "History, literature, art, and culture in human–environment relations." },
-  { id: "environmental-justice", label: "Environmental Justice", desc: "Disparities, human rights, and injustice in environmental quality." },
-  { id: "environmental-policy", label: "Environmental Policy", desc: "Policy solutions for environmental and natural resource challenges." },
-  { id: "food-agriculture", label: "Food and Agriculture", desc: "Food systems, agriculture, and environmental quality." },
-  { id: "human-health-environment", label: "Human Health and Environment", desc: "Environmental causes of human illness." },
-  { id: "sustainability-natural-resources", label: "Sustainability & Natural Resources", desc: "Natural resource management and conservation." },
-  { id: "urban-environments", label: "Urban Environments", desc: "Urban environmental challenges and sustainable design." },
-  { id: "customized", label: "Customized concentration", desc: "Student-defined area with DUS approval." },
+  {
+    id: "biodiversity-conservation",
+    label: "Biodiversity & Conservation",
+    desc: "Species diversity, ecosystem dynamics, and conservation policy.",
+  },
+  {
+    id: "energy-climate",
+    label: "Energy & Climate",
+    desc: "Energy systems, climate change, and environmental quality.",
+  },
+  {
+    id: "environmental-humanities",
+    label: "Environmental Humanities",
+    desc: "History, literature, art, and culture in human–environment relations.",
+  },
+  {
+    id: "environmental-justice",
+    label: "Environmental Justice",
+    desc: "Disparities, human rights, and injustice in environmental quality.",
+  },
+  {
+    id: "environmental-policy",
+    label: "Environmental Policy",
+    desc: "Policy solutions for environmental and natural resource challenges.",
+  },
+  {
+    id: "food-agriculture",
+    label: "Food and Agriculture",
+    desc: "Food systems, agriculture, and environmental quality.",
+  },
+  {
+    id: "human-health-environment",
+    label: "Human Health and Environment",
+    desc: "Environmental causes of human illness.",
+  },
+  {
+    id: "sustainability-natural-resources",
+    label: "Sustainability & Natural Resources",
+    desc: "Natural resource management and conservation.",
+  },
+  {
+    id: "urban-environments",
+    label: "Urban Environments",
+    desc: "Urban environmental challenges and sustainable design.",
+  },
+  {
+    id: "customized",
+    label: "Customized concentration",
+    desc: "Student-defined area with DUS approval.",
+  },
 ] as const;
 
 export const EVST_CONCENTRATIONS: MajorConcentration[] = EVST_CONC_META.map((c) => ({
@@ -477,8 +655,19 @@ export const EVST_CONCENTRATIONS: MajorConcentration[] = EVST_CONC_META.map((c) 
 }));
 
 const SOCY_SENIOR: RequirementSlot[] = [
-  { id: "senior_sem", label: "3000-level Sociology seminar", codePrefix: ["SOCY"], minLevel: 300, needCount: 1 },
-  { id: "senior", label: "Senior essay (SOCY 4100)", codes: y(["SOCY 4100", "SOCY 410"]), needCount: 1 },
+  {
+    id: "senior_sem",
+    label: "3000-level Sociology seminar",
+    codePrefix: ["SOCY"],
+    minLevel: 300,
+    needCount: 1,
+  },
+  {
+    id: "senior",
+    label: "Senior essay (SOCY 4100)",
+    codes: y(["SOCY 4100", "SOCY 410"]),
+    needCount: 1,
+  },
 ];
 
 export const SOCY_CONCENTRATIONS: MajorConcentration[] = [
@@ -490,10 +679,30 @@ export const SOCY_CONCENTRATIONS: MajorConcentration[] = [
       BA: {
         totalCourses: 13,
         core: [
-          { id: "theory", label: "SOCY 2001 or 2002", codes: y(["SOCY 2001", "SOCY 2002"]), needCount: 1 },
-          { id: "methods_design", label: "SOCY 2100 (research design)", codes: y(["SOCY 2100"]), needCount: 1 },
-          { id: "microecon", label: "Intermediate microeconomics (ECON 2121 or 2125)", codes: y(["ECON 2121", "ECON 2125", "ECON 121"]), needCount: 1 },
-          { id: "methods", label: "Social science methods", codes: y(["S&DS 100", "S&DS 110", "S&DS 363", "GLBL 2121"]), needCount: 1 },
+          {
+            id: "theory",
+            label: "SOCY 2001 or 2002",
+            codes: y(["SOCY 2001", "SOCY 2002"]),
+            needCount: 1,
+          },
+          {
+            id: "methods_design",
+            label: "SOCY 2100 (research design)",
+            codes: y(["SOCY 2100"]),
+            needCount: 1,
+          },
+          {
+            id: "microecon",
+            label: "Intermediate microeconomics (ECON 2121 or 2125)",
+            codes: y(["ECON 2121", "ECON 2125", "ECON 121"]),
+            needCount: 1,
+          },
+          {
+            id: "methods",
+            label: "Social science methods",
+            codes: y(["S&DS 100", "S&DS 110", "S&DS 363", "GLBL 2121"]),
+            needCount: 1,
+          },
           {
             id: "inequality_econ",
             label: "2 intermediate/advanced inequality or economic sociology courses",
@@ -501,7 +710,12 @@ export const SOCY_CONCENTRATIONS: MajorConcentration[] = [
             minLevel: 200,
             needCount: 2,
           },
-          { id: "electives", label: "SOCY electives toward 13 courses", codePrefix: ["SOCY"], needCount: 5 },
+          {
+            id: "electives",
+            label: "SOCY electives toward 13 courses",
+            codePrefix: ["SOCY"],
+            needCount: 5,
+          },
         ],
         senior: SOCY_SENIOR,
       },
@@ -515,10 +729,25 @@ export const SOCY_CONCENTRATIONS: MajorConcentration[] = [
       BA: {
         totalCourses: 13,
         core: [
-          { id: "gateway", label: "SOCY 1600 or 1601", codes: y(["SOCY 1600", "SOCY 1601"]), needCount: 1 },
-          { id: "theory", label: "SOCY 2001 or 2002", codes: y(["SOCY 2001", "SOCY 2002"]), needCount: 1 },
+          {
+            id: "gateway",
+            label: "SOCY 1600 or 1601",
+            codes: y(["SOCY 1600", "SOCY 1601"]),
+            needCount: 1,
+          },
+          {
+            id: "theory",
+            label: "SOCY 2001 or 2002",
+            codes: y(["SOCY 2001", "SOCY 2002"]),
+            needCount: 1,
+          },
           { id: "methods_design", label: "SOCY 2100", codes: y(["SOCY 2100"]), needCount: 1 },
-          { id: "methods", label: "Social science methods", codes: y(["S&DS 100", "S&DS 110", "S&DS 363"]), needCount: 1 },
+          {
+            id: "methods",
+            label: "Social science methods",
+            codes: y(["S&DS 100", "S&DS 110", "S&DS 363"]),
+            needCount: 1,
+          },
           {
             id: "health_socy",
             label: "2 intermediate/advanced Sociology courses on health",
@@ -546,12 +775,40 @@ export const SOCY_CONCENTRATIONS: MajorConcentration[] = [
       BA: {
         totalCourses: 13,
         core: [
-          { id: "theory", label: "SOCY 2001 or 2002", codes: y(["SOCY 2001", "SOCY 2002"]), needCount: 1 },
+          {
+            id: "theory",
+            label: "SOCY 2001 or 2002",
+            codes: y(["SOCY 2001", "SOCY 2002"]),
+            needCount: 1,
+          },
           { id: "methods_design", label: "SOCY 2100", codes: y(["SOCY 2100"]), needCount: 1 },
-          { id: "intro_stats", label: "Intro statistics", codes: y(["S&DS 100", "S&DS 110", "S&DS 363", "GLBL 2121"]), needCount: 1 },
-          { id: "adv_stats", label: "Intermediate/advanced statistics", codePrefix: ["SOCY", "S&DS"], minLevel: 200, needCount: 1 },
-          { id: "methods_extra", label: "2 additional methods courses", codePrefix: ["SOCY", "S&DS", "CPSC"], minLevel: 200, needCount: 2 },
-          { id: "indep_study", label: "Independent study as research assistant", codePrefix: ["SOCY"], minLevel: 400, needCount: 1 },
+          {
+            id: "intro_stats",
+            label: "Intro statistics",
+            codes: y(["S&DS 100", "S&DS 110", "S&DS 363", "GLBL 2121"]),
+            needCount: 1,
+          },
+          {
+            id: "adv_stats",
+            label: "Intermediate/advanced statistics",
+            codePrefix: ["SOCY", "S&DS"],
+            minLevel: 200,
+            needCount: 1,
+          },
+          {
+            id: "methods_extra",
+            label: "2 additional methods courses",
+            codePrefix: ["SOCY", "S&DS", "CPSC"],
+            minLevel: 200,
+            needCount: 2,
+          },
+          {
+            id: "indep_study",
+            label: "Independent study as research assistant",
+            codePrefix: ["SOCY"],
+            minLevel: 400,
+            needCount: 1,
+          },
           { id: "electives", label: "SOCY electives", codePrefix: ["SOCY"], needCount: 4 },
         ],
         senior: SOCY_SENIOR,
@@ -567,9 +824,19 @@ export const SOCY_CONCENTRATIONS: MajorConcentration[] = [
         totalCourses: 13,
         core: [
           { id: "gateway", label: "SOCY 1700", codes: y(["SOCY 1700", "SOCY 170"]), needCount: 1 },
-          { id: "theory", label: "SOCY 2001 or 2002", codes: y(["SOCY 2001", "SOCY 2002"]), needCount: 1 },
+          {
+            id: "theory",
+            label: "SOCY 2001 or 2002",
+            codes: y(["SOCY 2001", "SOCY 2002"]),
+            needCount: 1,
+          },
           { id: "methods_design", label: "SOCY 2100", codes: y(["SOCY 2100"]), needCount: 1 },
-          { id: "methods", label: "Social science methods", codes: y(["S&DS 100", "S&DS 110", "S&DS 363"]), needCount: 1 },
+          {
+            id: "methods",
+            label: "Social science methods",
+            codes: y(["S&DS 100", "S&DS 110", "S&DS 363"]),
+            needCount: 1,
+          },
           {
             id: "race_inequality",
             label: "5 courses on race or inequality (up to 2 outside SOCY)",
@@ -591,10 +858,26 @@ export const SOCY_CONCENTRATIONS: MajorConcentration[] = [
       BA: {
         totalCourses: 13,
         core: [
-          { id: "theory", label: "SOCY 2001 and 2002", codes: y(["SOCY 2001", "SOCY 2002"]), needCount: 2 },
+          {
+            id: "theory",
+            label: "SOCY 2001 and 2002",
+            codes: y(["SOCY 2001", "SOCY 2002"]),
+            needCount: 2,
+          },
           { id: "methods_design", label: "SOCY 2100", codes: y(["SOCY 2100"]), needCount: 1 },
-          { id: "methods", label: "Social science methods", codes: y(["S&DS 100", "S&DS 110", "S&DS 363"]), needCount: 1 },
-          { id: "seminar", label: "1 intermediate/advanced SOCY seminar", codePrefix: ["SOCY"], minLevel: 200, needCount: 1 },
+          {
+            id: "methods",
+            label: "Social science methods",
+            codes: y(["S&DS 100", "S&DS 110", "S&DS 363"]),
+            needCount: 1,
+          },
+          {
+            id: "seminar",
+            label: "1 intermediate/advanced SOCY seminar",
+            codePrefix: ["SOCY"],
+            minLevel: 200,
+            needCount: 1,
+          },
           {
             id: "outside",
             label: "Up to 4 approved courses outside SOCY forming a coherent unit",
