@@ -1,4 +1,4 @@
-import { CheckCircle2, Circle, AlertTriangle } from "lucide-react";
+import { CheckCircle2, CircleDot, Circle, AlertTriangle } from "lucide-react";
 import type { PlanAuditResult } from "@/lib/plan-audit";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -83,6 +83,8 @@ export function PlanRequirementsPanel({
             <div key={d.req.id} className="flex items-start gap-2 rounded-md border border-border p-2 text-sm">
               {d.satisfied ? (
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+              ) : d.count > 0 ? (
+                <CircleDot className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
               ) : (
                 <Circle className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
               )}
