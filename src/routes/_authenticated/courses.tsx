@@ -59,6 +59,12 @@ import {
 } from "@/lib/credit-allocation";
 import { CreditAllocationSelect } from "@/components/credit-allocation-select";
 import { useCourseCreditAllocation } from "@/hooks/use-course-credit-allocation";
+import { DepartmentAllocationSelect } from "@/components/department-allocation-select";
+import { useCourseDepartmentAllocation } from "@/hooks/use-course-department-allocation";
+import {
+  catalogCourseHasDepartmentChoice,
+  courseHasDepartmentChoice,
+} from "@/lib/department-allocation";
 import { Checkbox } from "@/components/ui/checkbox";
 
 export const Route = createFileRoute("/_authenticated/courses")({
@@ -90,6 +96,8 @@ function CoursesPage() {
   const [catalogSeason, setCatalogSeason] = useState(() => currentSeasonCode());
   /** Credit choice when adding multi-tag courses from browse (code → bucket or null = auto). */
   const [addAllocations, setAddAllocations] = useState<Record<string, CreditBucketId | null>>({});
+  /** Department choice when adding cross-listed courses from browse (code → subject or null = all). */
+  const [addDepartments, setAddDepartments] = useState<Record<string, string | null>>({});
 
   const classYear = profileQ.data?.class_year ?? null;
   const catalogSeasons: CatalogSeason[] = useMemo(() => {
@@ -132,9 +140,11 @@ function CoursesPage() {
     mutationFn: ({
       course,
       credit_allocation,
+      department_allocation,
     }: {
       course: CatalogCourse;
       credit_allocation?: CreditBucketId | null;
+      department_allocation?: string | null;
     }) => {
       const { skills, counts_as_wr } = skillsForNewCourse(course.skills, course.code);
       const preview = userCoursePreviewFromCatalog(course, {
@@ -152,6 +162,7 @@ function CoursesPage() {
           skills,
           counts_as_wr: wrPatch !== undefined ? wrPatch : counts_as_wr,
           credit_allocation: credit_allocation ?? null,
+          department_allocation: department_allocation ?? null,
           term: addTerm,
           year: addYear,
           status: catalogSeason === currentSeasonCode() ? "in_progress" : "completed",
@@ -183,6 +194,7 @@ function CoursesPage() {
   const myCourses = (coursesQ.data ?? []) as UserCourse[];
 
   const allocationM = useCourseCreditAllocation();
+  const departmentM = useCourseDepartmentAllocation();
 
   const taken = new Set(myCourses.map((c) => courseTakenKey(c.course_code, c.term, c.year)));
   const takenIdentities = new Set(myCourses.map((c) => courseIdentityKey(c.course_code)));
@@ -195,6 +207,14 @@ function CoursesPage() {
 
   function setAddAllocation(course: CatalogCourse, allocation: CreditBucketId | null) {
     setAddAllocations((prev) => ({ ...prev, [course.code]: allocation }));
+  }
+
+  function addDepartmentForCatalog(course: CatalogCourse): string | null {
+    return addDepartments[course.code] ?? null;
+  }
+
+  function setAddDepartment(course: CatalogCourse, department: string | null) {
+    setAddDepartments((prev) => ({ ...prev, [course.code]: department }));
   }
 
   function resolveCourse(code: string): CatalogCourse {
@@ -304,8 +324,11 @@ function CoursesPage() {
           <div className="grid max-h-[420px] gap-2 overflow-y-auto">
             {browseCourses.map((c) => {
               const hasCreditChoice = catalogCourseHasCreditChoice(c);
+              const hasDeptChoice = catalogCourseHasDepartmentChoice(c);
               const preview = userCoursePreviewFromCatalog(c, {
                 credit_allocation: addAllocationForCatalog(c),
+                department_allocation: addDepartmentForCatalog(c),
+                crosslisted_codes: c.crosslistedCodes,
               });
               const prereqUnmetNote = unmetPrerequisiteNote(
                 unmetPrerequisites(c.prerequisites, takenIdentities),
@@ -367,6 +390,13 @@ function CoursesPage() {
                       onChange={(allocation) => setAddAllocation(c, allocation)}
                     />
                   ) : null}
+                  {hasDeptChoice ? (
+                    <DepartmentAllocationSelect
+                      compact
+                      course={preview}
+                      onChange={(department) => setAddDepartment(c, department)}
+                    />
+                  ) : null}
                   {c.crosslistedCodes?.length ? (
                     <p className="mt-1 text-[10px] text-muted-foreground">
                       {formatCrosslistNote(c.code, c.crosslistedCodes) ??
@@ -393,6 +423,7 @@ function CoursesPage() {
                     addM.mutate({
                       course: resolveCourse(c.code),
                       credit_allocation: hasCreditChoice ? addAllocationForCatalog(c) : null,
+                      department_allocation: hasDeptChoice ? addDepartmentForCatalog(c) : null,
                     })
                   }
                 >
@@ -471,6 +502,13 @@ function CoursesPage() {
                     disabled={allocationM.isPending}
                     onChange={(allocation) => allocationM.mutate({ course: row, allocation })}
                   />
+                  {courseHasDepartmentChoice(row) ? (
+                    <DepartmentAllocationSelect
+                      course={row}
+                      disabled={departmentM.isPending}
+                      onChange={(department) => departmentM.mutate({ course: row, department })}
+                    />
+                  ) : null}
                   {wrOffered && !courseHasExclusiveCreditChoice(row) ? (
                     <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
                       <Checkbox
