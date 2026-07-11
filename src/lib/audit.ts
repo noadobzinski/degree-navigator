@@ -252,20 +252,39 @@ export function countMajorAuditUnits(sections: MajorAuditSection[]): {
   return { satisfiedCount, totalCount };
 }
 
+/** Title of the section that holds a major's prerequisite/introductory slots. */
+export const PREREQUISITE_SECTION_TITLE = "Prerequisites";
+
+function collectSectionCourses(section: MajorAuditSection, byId: Map<string, UserCourse>) {
+  for (const r of section.results) {
+    for (const c of r.filled) byId.set(c.id, c);
+  }
+  for (const g of section.groups ?? []) {
+    for (const r of g.slotResults) {
+      for (const c of r.filled) byId.set(c.id, c);
+    }
+  }
+}
+
 /** Course instances assigned to any slot in this major audit. */
 export function coursesUsedInMajorAudit(sections: MajorAuditSection[]): UserCourse[] {
   const byId = new Map<string, UserCourse>();
-  for (const s of sections) {
-    for (const r of s.results) {
-      for (const c of r.filled) byId.set(c.id, c);
-    }
-    for (const g of s.groups ?? []) {
-      for (const r of g.slotResults) {
-        for (const c of r.filled) byId.set(c.id, c);
-      }
-    }
-  }
+  for (const s of sections) collectSectionCourses(s, byId);
   return [...byId.values()];
+}
+
+/**
+ * Course ids assigned to a major's prerequisite/introductory slots. Yale exempts
+ * these from the double-major overlap limit ("Prerequisites in either major are
+ * not considered to be overlapping courses").
+ */
+export function prerequisiteCourseIds(sections: MajorAuditSection[]): Set<string> {
+  const byId = new Map<string, UserCourse>();
+  for (const s of sections) {
+    if (s.title !== PREREQUISITE_SECTION_TITLE) continue;
+    collectSectionCourses(s, byId);
+  }
+  return new Set(byId.keys());
 }
 
 /** Flatten every slot result in a major audit (top-level + grouped). */
@@ -385,24 +404,50 @@ export function auditCertificates(
 }
 
 export type DoubleMajorOverlap = {
+  /** Shared courses that count toward the two-course overlap limit. */
   courses: UserCourse[];
   count: number;
   maxAllowed: number;
   withinLimit: boolean;
+  /**
+   * Shared courses that Yale exempts from the limit because they are a
+   * prerequisite/introductory requirement in at least one of the two majors.
+   */
+  exemptPrerequisites: UserCourse[];
 };
 
+/**
+ * Yale's double-major overlap rule: each major must be completed independently,
+ * with no more than two term courses overlapping.
+ *
+ * - Prerequisites in *either* major are not considered overlapping courses, so
+ *   shared introductory courses (e.g. General Chemistry, Calculus, Physics) are
+ *   exempt from the limit.
+ * - Every other course that counts toward both majors is included in the
+ *   overlap tally. (Courses in excess of the minimum requirements of both
+ *   majors are not assigned to any slot here, so they are already excluded.)
+ */
 export function computeDoubleMajorOverlap(
   primary: MajorAudit,
   secondary: MajorAudit,
 ): DoubleMajorOverlap {
+  const exemptIds = new Set<string>([
+    ...prerequisiteCourseIds(primary.sections),
+    ...prerequisiteCourseIds(secondary.sections),
+  ]);
+
   const primaryIds = new Set(coursesUsedInMajorAudit(primary.sections).map((c) => c.id));
-  const overlap = coursesUsedInMajorAudit(secondary.sections).filter((c) => primaryIds.has(c.id));
+  const shared = coursesUsedInMajorAudit(secondary.sections).filter((c) => primaryIds.has(c.id));
+
+  const overlap = shared.filter((c) => !exemptIds.has(c.id));
+  const exemptPrerequisites = shared.filter((c) => exemptIds.has(c.id));
   const count = overlap.length;
   return {
     courses: overlap,
     count,
     maxAllowed: YALE_DOUBLE_MAJOR_MAX_OVERLAP,
     withinLimit: count <= YALE_DOUBLE_MAJOR_MAX_OVERLAP,
+    exemptPrerequisites,
   };
 }
 
