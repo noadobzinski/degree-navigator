@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GraduationCap } from "lucide-react";
 import { toast } from "sonner";
+import { describeAuthError } from "@/lib/auth-errors";
 
 export const Route = createFileRoute("/login")({
   validateSearch: z.object({
@@ -47,7 +48,8 @@ function LoginPage() {
         await router.navigate({ to: afterSignIn as "/dashboard" });
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed");
+      console.error("[login] auth request failed", e);
+      toast.error(describeAuthError(e));
     } finally {
       setLoading(false);
     }
