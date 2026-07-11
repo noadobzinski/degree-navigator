@@ -6,7 +6,6 @@ import {
   totalCredits,
   type UserCourse,
 } from "@/lib/audit";
-import type { CatalogCourse } from "@/data/courses";
 import { MAJORS_BY_ID } from "@/data/majors";
 import { activeImplicationNotes, impliedPrerequisiteCourses } from "@/lib/prerequisite-implications";
 import { yearRestrictionViolation } from "@/lib/schedule-year-rules";
@@ -48,7 +47,12 @@ export type PlanAuditInput = {
   certificateIds?: string[];
   classYear?: number | null;
   crosslistLookup?: CrosslistLookup;
-  catalogByCode?: Record<string, CatalogCourse>;
+  /**
+   * Optional catalog keyed by course code. Only `title` (for nicer labels on
+   * implied prereqs / warnings) and `ycAttributes` are read, so this accepts
+   * both the full catalog and the attributes-only audit catalog.
+   */
+  catalogByCode?: Record<string, { title?: string; ycAttributes?: string[] }>;
 };
 
 function majorProgressLabel(
@@ -70,7 +74,7 @@ export function auditDegreePlan(input: PlanAuditInput): PlanAuditResult {
   }
   if (input.catalogByCode) {
     for (const [code, cat] of Object.entries(input.catalogByCode)) {
-      titleByCode[code.toUpperCase()] = cat.title;
+      if (cat.title) titleByCode[code.toUpperCase()] = cat.title;
     }
   }
 

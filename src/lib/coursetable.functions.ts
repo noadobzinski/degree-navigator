@@ -115,7 +115,6 @@ const scheduleInputSchema = z.object({
     })
     .nullable()
     .optional(),
-  season: z.string().regex(/^\d{6}$/).optional(),
 });
 
 export const getDegreeSchedule = createServerFn({ method: "POST" })
