@@ -175,27 +175,28 @@ export const INTERDISCIPLINARY_CERTIFICATES: Certificate[] = [
     category: "interdisciplinary",
     catalogUrl: "https://catalog.yale.edu/ycps/subjects-of-instruction/energy-studies/",
     description:
-      "Six credits across three tracks (2 each). ENRG 3000 required (Energy & Society). Max 2 credits may overlap with major.",
+      "Six credits across three tracks (2 each). ENRG 3000 required (Energy & Society). Only courses carrying the matching YC ENRG attribute in Yale Course Search count. Max 2 credits may overlap with major.",
     requirements: [
-      {
+      attributeElectives({
         id: "science_tech",
         label: "Energy Science & Technology (2 courses)",
-        codePrefix: ["ENRG", "ENAS", "PHYS", "CHEM", "EEB", "CENG"],
         needCount: 2,
-      },
-      {
+        requiredAttributes: [...YC.energyScienceTech],
+      }),
+      attributeElectives({
         id: "environment",
         label: "Energy & Environment (2 courses)",
-        codePrefix: ["ENRG", "EVST", "EEB", "G&G", "F&ES"],
         needCount: 2,
-      },
-      {
+        requiredAttributes: [...YC.energyEnvironment],
+      }),
+      attributeElectives({
         id: "society",
         label: "Energy & Society (2 courses, incl. ENRG 3000)",
-        codes: y(["ENRG 3000", "ENRG 300"]),
-        codePrefix: ["ENRG", "EVST", "ECON", "PLSC", "HIST"],
+        description:
+          "Courses must carry the YC ENRG Energy & Society attribute in Yale Course Search; ENRG 3000 (Energy & Society) is required.",
         needCount: 2,
-      },
+        requiredAttributes: [...YC.energySociety],
+      }),
     ],
   },
   {
