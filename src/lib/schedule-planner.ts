@@ -32,6 +32,11 @@ export type ScheduledCourse = {
   source: "planned" | "suggested";
   /** Note shown when this course has prerequisites still to be satisfied. */
   prereqNote?: string;
+  /**
+   * Open-ended placeholder (e.g. "any Humanities course") rather than a specific
+   * catalog course — the student is free to fill it with anything qualifying.
+   */
+  flexible?: boolean;
 };
 
 export type ScheduleTerm = {
@@ -49,6 +54,13 @@ export type DegreeSchedule = {
     plannedCount: number;
     termsRemaining: number;
     graduationYear: number | null;
+    /**
+     * True when every specific degree requirement (major, second major, track,
+     * certificate, and any prerequisites) is satisfied. Only open-ended choices
+     * (distributional / free electives) may remain, so the student can fill the
+     * rest of their schedule with any classes they like.
+     */
+    requirementsComplete: boolean;
   };
   scenarioLabel: string;
 };
@@ -166,6 +178,7 @@ function suggestionToScheduled(
     credits: catalogCredits(s.code, catalogByCode),
     source: "suggested",
     prereqNote: s.prereqNote,
+    flexible: s.flexible,
   };
 }
 
@@ -617,6 +630,7 @@ export function buildDegreeSchedule(input: SchedulePlannerInput): DegreeSchedule
 
   const nonEmptyTerms = terms.filter((t) => t.courses.length > 0);
   const lastSeason = seasons.at(-1)?.code ?? currentSeason;
+  const requirementsComplete = suggestions.every((s) => s.flexible);
 
   return {
     terms:
@@ -630,10 +644,11 @@ export function buildDegreeSchedule(input: SchedulePlannerInput): DegreeSchedule
           })),
     unscheduled,
     summary: {
-      suggestedCount: suggestions.length,
+      suggestedCount: suggestions.filter((s) => !s.flexible).length,
       plannedCount,
       termsRemaining: seasons.filter((s) => compareSeasonCodes(s.code, lastSeason) <= 0).length,
       graduationYear: input.classYear ?? null,
+      requirementsComplete,
     },
     scenarioLabel,
   };

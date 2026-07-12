@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { courseTableSearchUrl } from "@/lib/coursetable";
 import { courseIdentityKey } from "@/lib/course-codes";
 import type { DegreeSchedule, ScheduledCourse } from "@/lib/schedule-planner";
-import { Calendar, ExternalLink, Lock } from "lucide-react";
+import { Calendar, ExternalLink, Lock, Sparkles } from "lucide-react";
 
 type ScheduleViewProps = {
   schedule: DegreeSchedule;
@@ -18,6 +18,23 @@ function CourseRow({
   course: ScheduledCourse;
   highlighted?: boolean;
 }) {
+  if (course.flexible) {
+    return (
+      <div className="rounded-md border border-dashed border-border p-3">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+              <span className="font-semibold">{course.title}</span>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">{course.reason}</p>
+          </div>
+          <Badge variant="secondary">Your choice</Badge>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={`rounded-md border p-3 ${highlighted ? "border-primary/50 bg-primary/5" : "border-border"}`}
@@ -66,11 +83,33 @@ function CourseRow({
   );
 }
 
+function FreeChoiceBanner() {
+  return (
+    <Card className="border-primary/30 bg-primary/5">
+      <CardContent className="flex items-start gap-3 py-4">
+        <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+        <div className="space-y-1">
+          <p className="font-medium">You&rsquo;ve completed all your specific degree requirements.</p>
+          <p className="text-sm text-muted-foreground">
+            Every major, track, and program requirement is accounted for. Any remaining terms are
+            yours to fill — take whatever classes you&rsquo;re curious about. Any open slots below are
+            just distributional areas you can satisfy with any qualifying course.
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function ScheduleView({ schedule, highlightCodes, emptyMessage }: ScheduleViewProps) {
   const termsWithCourses = schedule.terms.filter((t) => t.courses.length > 0);
   const hasContent = termsWithCourses.length > 0 || schedule.unscheduled.length > 0;
+  const requirementsComplete = schedule.summary.requirementsComplete;
 
   if (!hasContent) {
+    if (requirementsComplete) {
+      return <FreeChoiceBanner />;
+    }
     return (
       <Card>
         <CardContent className="py-12 text-center text-muted-foreground">
@@ -83,6 +122,7 @@ export function ScheduleView({ schedule, highlightCodes, emptyMessage }: Schedul
 
   return (
     <div className="space-y-4">
+      {requirementsComplete ? <FreeChoiceBanner /> : null}
       {termsWithCourses.map((term) => (
         <Card key={term.seasonCode}>
           <CardHeader className="pb-3">

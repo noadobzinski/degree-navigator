@@ -16,10 +16,7 @@ import {
   type MajorConcentration,
 } from "@/data/majors";
 import { TRACKS_BY_ID } from "@/data/tracks";
-import {
-  auditDistributionalWithAllocation,
-  getEligibleCreditBuckets,
-} from "@/lib/credit-allocation";
+import { auditDistributionalWithAllocation } from "@/lib/credit-allocation";
 import {
   effectiveSkills,
   WR_OPTIONAL_SKILL,
@@ -671,26 +668,22 @@ export function suggestRoadmap(
     }
   }
 
+  // Distributional requirements are satisfied by *any* qualifying course, so
+  // recommending a specific arbitrary catalog course (e.g. an unrelated poetry
+  // seminar for a STEM major) is misleading and ill-fitting. Surface these as
+  // open-ended "choose any qualifying course" placeholders the student can fill
+  // with whatever interests them.
   const { rows: dist } = auditDistributionalWithAllocation(courses);
   for (const d of dist) {
     if (d.satisfied) continue;
-    for (const c of Object.values(catalogByCode)) {
-      if (hasCompletedCourseCode(c.code, completedCodes)) continue;
-      const pseudo = {
-        id: c.code,
-        course_code: c.code,
-        course_title: c.title,
-        credits: c.credits,
-        distributional: c.distributional,
-        skills: c.skills,
-        status: "planned" as const,
-        term: null,
-        year: null,
-      };
-      if (getEligibleCreditBuckets(pseudo).includes(d.req.id)) {
-        pushIf(c.code, `Distributional: ${d.req.label}`, "med");
-        if (suggestions.filter((s) => s.reason.startsWith("Distributional")).length >= 6) break;
-      }
+    for (let i = 0; i < d.remaining; i++) {
+      suggestions.push({
+        code: `${FLEXIBLE_SUGGESTION_CODE_PREFIX}${d.req.id}:${i + 1}`,
+        title: `${d.req.label} elective`,
+        reason: `Distributional: choose any ${d.req.label} course that interests you`,
+        priority: "low",
+        flexible: true,
+      });
     }
   }
 
@@ -704,4 +697,14 @@ export type RoadmapSuggestion = {
   reason: string;
   /** Human-readable note when this course has prerequisites not yet met. */
   prereqNote?: string;
+  /**
+   * True for open-ended placeholders (e.g. "any Humanities course") rather than
+   * a specific catalog course. Distributional and free-elective requirements are
+   * satisfied by *any* qualifying course, so we surface them as a free choice
+   * instead of recommending an arbitrary, often ill-fitting, specific course.
+   */
+  flexible?: boolean;
 };
+
+/** Synthetic code prefix used for flexible/open-elective placeholder suggestions. */
+export const FLEXIBLE_SUGGESTION_CODE_PREFIX = "ELECTIVE:";
