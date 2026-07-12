@@ -155,6 +155,23 @@ function ladderPosition(code: string): LadderPosition | undefined {
 }
 
 /**
+ * Codes of every lower rung on the same ladder that `code` supersedes. Taking
+ * an advanced course (e.g. MATH 120) means the prior courses (MATH 112/115) are
+ * effectively covered — both as prerequisites and as courses no longer needed.
+ * Returns an empty list for courses that are not part of any ladder.
+ */
+export function ladderSupersededCodes(code: string): string[] {
+  const position = ladderPosition(code);
+  if (!position) return [];
+  const ladder = COURSE_LADDERS[position.ladder];
+  const out: string[] = [];
+  for (let rung = 0; rung < position.rung; rung++) {
+    out.push(...ladder[rung]);
+  }
+  return out;
+}
+
+/**
  * True when a completed course sits at or above the required course in the same
  * ladder, so it should fulfil a requirement that lists the lower course.
  */
@@ -184,11 +201,17 @@ export function buildCompletedCourseIdentitySet(
   courses: Iterable<{ course_code: string }>,
 ): Set<string> {
   const set = new Set<string>();
-  for (const course of courses) {
-    set.add(courseIdentityKey(course.course_code));
-    for (const variant of codeVariants(course.course_code)) {
+  const add = (code: string) => {
+    set.add(courseIdentityKey(code));
+    for (const variant of codeVariants(code)) {
       set.add(courseIdentityKey(variant));
     }
+  };
+  for (const course of courses) {
+    add(course.course_code);
+    // A higher ladder course covers the lower ones it supersedes (MATH 120 → 112/115),
+    // so those never register as unmet prerequisites or as courses still to take.
+    for (const lower of ladderSupersededCodes(course.course_code)) add(lower);
   }
   return set;
 }

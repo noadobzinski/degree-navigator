@@ -1,5 +1,10 @@
 import type { CatalogCourse } from "@/data/courses";
-import { canonicalCourseCode, courseIdentityKey, lookupCatalogEntry } from "@/lib/course-codes";
+import {
+  canonicalCourseCode,
+  courseIdentityKey,
+  ladderSupersededCodes,
+  lookupCatalogEntry,
+} from "@/lib/course-codes";
 
 /**
  * A prerequisite expressed as a list of AND-groups. Each group holds OR
@@ -156,6 +161,11 @@ export function buildHaveCourseKeySet(
     set.add(courseIdentityKey(course.course_code));
     for (const code of course.crosslisted_codes ?? []) {
       set.add(courseIdentityKey(code));
+    }
+    // Advanced courses cover the lower ones they supersede (MATH 120 → 112/115),
+    // which satisfies prerequisites that list those earlier courses.
+    for (const lower of ladderSupersededCodes(course.course_code)) {
+      set.add(courseIdentityKey(lower));
     }
   }
   return set;

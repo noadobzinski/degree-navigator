@@ -13,6 +13,7 @@ import { currentSeasonCode } from "@/lib/coursetable";
 import {
   buildCompletedCourseIdentitySet,
   courseIdentityKey,
+  ladderSupersededCodes,
   lookupCatalogEntry,
 } from "@/lib/course-codes";
 import type { CrosslistLookup } from "@/lib/crosslist";
@@ -558,6 +559,10 @@ function annotatePrereqNotes(
       );
       course.prereqNote = unmetPrerequisiteNote(unmet) ?? undefined;
       thisTermKeys.push(courseIdentityKey(course.code));
+      // An advanced course also covers the lower ones it supersedes for later terms.
+      for (const lower of ladderSupersededCodes(course.code)) {
+        thisTermKeys.push(courseIdentityKey(lower));
+      }
     }
     for (const key of thisTermKeys) availableBefore.add(key);
   }
