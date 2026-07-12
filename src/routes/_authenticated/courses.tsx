@@ -42,6 +42,7 @@ import {
   Lock,
 } from "lucide-react";
 import {
+  buildHaveCourseKeySet,
   describePrerequisites,
   unmetPrerequisiteNote,
   unmetPrerequisites,
@@ -198,6 +199,9 @@ function CoursesPage() {
 
   const taken = new Set(myCourses.map((c) => courseTakenKey(c.course_code, c.term, c.year)));
   const takenIdentities = new Set(myCourses.map((c) => courseIdentityKey(c.course_code)));
+  // For prerequisite checks, an advanced course covers the lower ones it
+  // supersedes (e.g. MATH 120 satisfies a MATH 112/115 prerequisite).
+  const prereqSatisfiedIdentities = buildHaveCourseKeySet(myCourses);
   const takenThisSeason = (code: string) => taken.has(courseTakenKey(code, addTerm, addYear));
   const courseAlreadyOnList = (code: string) => takenIdentities.has(courseIdentityKey(code));
 
@@ -331,7 +335,7 @@ function CoursesPage() {
                 crosslisted_codes: c.crosslistedCodes,
               });
               const prereqUnmetNote = unmetPrerequisiteNote(
-                unmetPrerequisites(c.prerequisites, takenIdentities),
+                unmetPrerequisites(c.prerequisites, prereqSatisfiedIdentities),
               );
               return (
               <div
