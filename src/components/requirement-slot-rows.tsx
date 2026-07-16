@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { CheckCircle2, AlertCircle } from "lucide-react";
+import { CheckCircle2, CircleDot, Circle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FilledRequirementCourses } from "@/components/filled-requirement-courses";
 import type { CredentialRequirementRow } from "@/lib/credential-progress";
@@ -33,9 +33,9 @@ export function RequirementSlotRows({
           {row.satisfied ? (
             <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
           ) : row.filled.length > 0 ? (
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+            <CircleDot className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
           ) : (
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+            <Circle className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
           )}
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center justify-between gap-2">
