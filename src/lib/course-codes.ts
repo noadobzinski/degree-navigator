@@ -16,6 +16,13 @@ export function canonicalCourseCode(code: string): string {
   return `${subject} ${base}${labSuffix}`;
 }
 
+/** Subject prefix of a Yale course code, e.g. "HIST 205" → "HIST". */
+export function subjectFromCode(code: string): string {
+  const canon = canonicalCourseCode(code);
+  const match = canon.match(/^([A-Z&]+)\s+/);
+  return match ? match[1] : canon;
+}
+
 /** Manual equivalents that title matching cannot infer (lab clusters, cross-dept aliases). */
 const MANUAL_EQUIVALENT_GROUPS: string[][] = [
   ["CHEM 174", "CHEM 175", "CHEM 1340L", "CHEM 1360L", "CHEM 134L", "CHEM 136L", "CHEM 1710L"],
