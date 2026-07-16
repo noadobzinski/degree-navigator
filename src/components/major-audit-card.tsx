@@ -1,4 +1,4 @@
-import { CheckCircle2, AlertCircle } from "lucide-react";
+import { CheckCircle2, CircleDot, Circle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FilledRequirementCourses } from "@/components/filled-requirement-courses";
@@ -100,8 +100,10 @@ function SlotRow({
     >
       {r.satisfied ? (
         <CheckCircle2 className="mt-0.5 h-5 w-5 text-success" />
+      ) : r.filled.length > 0 ? (
+        <CircleDot className="mt-0.5 h-5 w-5 text-warning" />
       ) : (
-        <AlertCircle className="mt-0.5 h-5 w-5 text-warning" />
+        <Circle className="mt-0.5 h-5 w-5 text-muted-foreground" />
       )}
       <div className="flex-1">
         <div className="flex flex-wrap items-center justify-between gap-2">

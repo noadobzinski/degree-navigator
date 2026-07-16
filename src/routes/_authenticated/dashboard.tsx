@@ -362,7 +362,13 @@ function Dashboard() {
           <CardContent className="space-y-2">
             {trackAudit.results.map((r) => (
               <div key={r.slot.id} className="flex items-start gap-3 rounded-md border border-border p-3">
-                {r.satisfied ? <CheckCircle2 className="mt-0.5 h-5 w-5 text-success" /> : <AlertCircle className="mt-0.5 h-5 w-5 text-warning" />}
+                {r.satisfied ? (
+                  <CheckCircle2 className="mt-0.5 h-5 w-5 text-success" />
+                ) : r.filled.length > 0 ? (
+                  <CircleDot className="mt-0.5 h-5 w-5 text-warning" />
+                ) : (
+                  <Circle className="mt-0.5 h-5 w-5 text-muted-foreground" />
+                )}
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="font-medium">{r.slot.label}</p>
