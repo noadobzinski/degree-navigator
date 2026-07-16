@@ -441,11 +441,56 @@ function earliestTermForPrereqs(
   return { earliest, blocked: false };
 }
 
-function firstTermWithCapacity(terms: ScheduleTerm[], from: number): number {
+function firstTermWithCapacity(
+  terms: ScheduleTerm[],
+  from: number,
+  capacityByCode: Map<string, number>,
+): number {
   for (let t = Math.max(0, from); t < terms.length; t++) {
-    if (terms[t].courses.length < COURSES_PER_TERM) return t;
+    const cap = capacityByCode.get(terms[t].seasonCode) ?? COURSES_PER_TERM;
+    if (terms[t].courses.length < cap) return t;
   }
   return -1;
+}
+
+/** Per-term suggestion capacity from the skeleton for a given base load. */
+function buildCapacityMap(
+  terms: ScheduleTerm[],
+  load: number,
+  skeleton?: PlanSkeleton | null,
+): Map<string, number> {
+  return new Map(terms.map((t) => [t.seasonCode, termCapacity(t.seasonCode, load, skeleton)]));
+}
+
+/** Total free slots across all terms after accounting for already-placed courses. */
+function freeCapacity(terms: ScheduleTerm[], capacityByCode: Map<string, number>): number {
+  return terms.reduce((sum, t) => {
+    const cap = capacityByCode.get(t.seasonCode) ?? COURSES_PER_TERM;
+    return sum + Math.max(0, cap - t.courses.length);
+  }, 0);
+}
+
+/**
+ * Pick the smallest per-term course load (>= the user's requested default, up to
+ * {@link MAX_COURSES_PER_TERM}) that leaves enough room for every remaining
+ * suggestion to be scheduled before graduation. This is what lets the roadmap
+ * pack more credits into each semester instead of pushing required courses past
+ * the graduation window. Terms the user explicitly marked off or overrode keep
+ * their fixed target — only default terms scale up.
+ */
+function fitCapacityToDeadline(
+  terms: ScheduleTerm[],
+  defaultLoad: number,
+  neededSlots: number,
+  skeleton?: PlanSkeleton | null,
+): Map<string, number> {
+  let load = defaultLoad;
+  let capacityByCode = buildCapacityMap(terms, load, skeleton);
+  while (freeCapacity(terms, capacityByCode) < neededSlots && load < MAX_COURSES_PER_TERM) {
+    load += 1;
+    capacityByCode = buildCapacityMap(terms, load, skeleton);
+  }
+  return capacityByCode;
 }
 
 function assignSuggestionsToTerms(
@@ -471,16 +516,6 @@ function assignSuggestionsToTerms(
   terms.forEach((term, i) => {
     for (const c of term.courses) placed.set(courseIdentityKey(c.code), i);
   });
-  // Per-term suggestion capacity from the skeleton. Planned (user-pinned)
-  // courses always stay where the user put them, but they count against the
-  // term's target so we don't overload a term the user wanted kept light.
-  const capacityByCode = new Map<string, number>(
-    terms.map((t) => [t.seasonCode, termCapacity(t.seasonCode, defaultLoad, skeleton)]),
-  );
-
-  const alreadyScheduled = new Set(
-    terms.flatMap((t) => t.courses.map((c) => courseIdentityKey(c.code))),
-  );
 
   const flexBase = suggestions
     .filter((s) => !placed.has(courseIdentityKey(s.code)))
@@ -492,6 +527,14 @@ function assignSuggestionsToTerms(
     new Set(placed.keys()),
     catalogByCode,
   ).sort((a, b) => PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority]);
+
+  // Per-term suggestion capacity from the skeleton. Planned (user-pinned)
+  // courses always stay where the user put them, but they count against the
+  // term's target so we don't overload a term the user wanted kept light. If the
+  // requirements don't all fit at the requested load, bump the per-term load so
+  // each remaining semester carries more credits rather than spilling required
+  // courses past graduation.
+  const capacityByCode = fitCapacityToDeadline(terms, defaultLoad, pending.length, skeleton);
 
   const unscheduled: ScheduledCourse[] = [];
 
@@ -512,7 +555,7 @@ function assignSuggestionsToTerms(
       }
       const { earliest, blocked } = earliestTermForPrereqs(item.code, placed, catalogByCode);
       if (blocked) continue;
-      const target = firstTermWithCapacity(terms, earliest);
+      const target = firstTermWithCapacity(terms, earliest, capacityByCode);
       if (target < 0) {
         unscheduled.push(item);
         placed.set(key, terms.length);
@@ -535,7 +578,7 @@ function assignSuggestionsToTerms(
   for (const item of pending) {
     const key = courseIdentityKey(item.code);
     if (placed.has(key)) continue;
-    const target = firstTermWithCapacity(terms, 0);
+    const target = firstTermWithCapacity(terms, 0, capacityByCode);
     if (target < 0) {
       unscheduled.push(item);
       placed.set(key, terms.length);
