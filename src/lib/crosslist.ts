@@ -1,10 +1,9 @@
 import type { CatalogCourse } from "@/data/courses";
 import {
   canonicalCourseCode,
-  codeLookupKeys,
-  courseCodesMatch,
   courseSatisfiesAnyRequirementCode,
   lookupCatalogEntry,
+  subjectFromCode,
 } from "@/lib/course-codes";
 
 /** All Yale course codes for one offering (including cross-listings). */
@@ -63,7 +62,14 @@ export function alternateCodesForCourse(
   if (!lookup) return [];
   const group = lookup.get(canonicalCourseCode(courseCode));
   if (!group) return [];
-  return [...group].filter((c) => !courseCodesMatch(c, courseCode));
+  const ownSubject = subjectFromCode(courseCode);
+  // Keep only listings in a *different* department. We compare by subject prefix
+  // rather than course-code equality on purpose: a course that is both
+  // cross-listed and renumbered (e.g. "The Age of Cleopatra" as CLCV 0531 /
+  // HIST 0724, previously CLCV 031 / HIST 024) has all four codes lumped into a
+  // single title-based renumbering group, so `courseCodesMatch` treats HIST 0724
+  // as equal to CLCV 0531 and would wrongly drop the genuine cross-listed code.
+  return [...group].filter((c) => subjectFromCode(c) !== ownSubject);
 }
 
 export function codesForRequirementMatch(
@@ -90,9 +96,10 @@ export function formatCrosslistNote(
   crosslistedCodes?: string[] | null,
   lookup?: CrosslistLookup,
 ): string | null {
+  const ownSubject = subjectFromCode(courseCode);
   const alts = [
     ...new Set([...(crosslistedCodes ?? []), ...alternateCodesForCourse(courseCode, lookup)]),
-  ].filter((c) => !courseCodesMatch(c, courseCode));
+  ].filter((c) => subjectFromCode(c) !== ownSubject);
   if (!alts.length) return null;
   return `Also listed as ${alts.join(", ")}`;
 }

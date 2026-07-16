@@ -10,7 +10,21 @@ import { decodeProfileFromDb, updateProfileRow } from "@/lib/profile-persistence
 import { getCrosslistLookup } from "@/lib/catalog-cache";
 import { alternateCodesForCourse } from "@/lib/crosslist";
 import { currentSeasonCode } from "@/lib/coursetable";
+import { termFieldsToSeasonCode, type YaleTerm } from "@/lib/coursetable-seasons";
 import { seasonsForHistoricalCatalog } from "@/lib/requirement-examples";
+
+const YALE_TERMS: readonly YaleTerm[] = ["Fall", "Spring", "Summer"];
+
+/** Season code for the term a stored course was taken, when both fields are set. */
+function seasonForCourseTerm(
+  term: string | null | undefined,
+  year: number | null | undefined,
+): string | null {
+  if (!year) return null;
+  const matched = YALE_TERMS.find((t) => t === term);
+  if (!matched) return null;
+  return termFieldsToSeasonCode(matched, year);
+}
 
 export const getProfile = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -60,8 +74,18 @@ export const getMyCourses = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     const decoded = (data ?? []).map((row) => decodeCourseFromDb(row));
 
+    // Include the exact term each course was taken in, so cross-listings resolve
+    // for older courses (or ones whose numbering has since changed) even when the
+    // term falls outside the recent-season window.
+    const courseSeasons = decoded
+      .map((c) => seasonForCourseTerm(c.term, c.year))
+      .filter((s): s is string => s !== null);
     const seasons = [
-      ...new Set([currentSeasonCode(), ...seasonsForHistoricalCatalog(null).slice(-6)]),
+      ...new Set([
+        currentSeasonCode(),
+        ...seasonsForHistoricalCatalog(null).slice(-6),
+        ...courseSeasons,
+      ]),
     ];
     let lookup;
     try {

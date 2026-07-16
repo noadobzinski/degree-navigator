@@ -1,6 +1,6 @@
 import type { CatalogCourse } from "@/data/courses";
 import type { UserCourse } from "@/lib/audit";
-import { canonicalCourseCode } from "@/lib/course-codes";
+import { subjectFromCode } from "@/lib/course-codes";
 import {
   allListingCodes,
   alternateCodesForCourse,
@@ -11,12 +11,7 @@ import {
 /** Marker stored in skills[] when the DB column has not been migrated yet. */
 export const DEPT_ALLOC_SKILL_PREFIX = "_dept:";
 
-/** Subject prefix of a Yale course code, e.g. "HIST 205" → "HIST". */
-export function subjectFromCode(code: string): string {
-  const canon = canonicalCourseCode(code);
-  const match = canon.match(/^([A-Z&]+)\s+/);
-  return match ? match[1] : canon;
-}
+export { subjectFromCode };
 
 export type DepartmentOption = {
   /** Subject prefix, e.g. "HIST". Stored as the allocation value. */
