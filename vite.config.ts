@@ -20,4 +20,28 @@ export default defineConfig({
       publicDir: ".vercel/output/static",
     },
   },
+  vite: {
+    server: {
+      proxy: {
+        "/ingest/static": {
+          target: "https://us-assets.i.posthog.com",
+          changeOrigin: true,
+          rewrite: (path: string) => path.replace(/^\/ingest/, ""),
+          secure: false,
+        },
+        "/ingest/array": {
+          target: "https://us-assets.i.posthog.com",
+          changeOrigin: true,
+          rewrite: (path: string) => path.replace(/^\/ingest/, ""),
+          secure: false,
+        },
+        "/ingest": {
+          target: "https://us.i.posthog.com",
+          changeOrigin: true,
+          rewrite: (path: string) => path.replace(/^\/ingest/, ""),
+          secure: false,
+        },
+      },
+    },
+  },
 });

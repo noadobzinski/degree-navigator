@@ -4,6 +4,8 @@ import { GraduationCap, LayoutDashboard, BookOpen, Map, Settings, LogOut, BookOp
 import { Button } from "@/components/ui/button";
 import { usePrefetchCourseTableCatalog, useCourseTableCatalogMeta } from "@/hooks/use-coursetable-catalog";
 import { useCourseRenumbering } from "@/hooks/use-course-renumbering";
+import { usePostHog } from "@posthog/react";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ context, location }) => {
@@ -25,12 +27,23 @@ const NAV = [
 
 function AuthLayout() {
   const router = useRouter();
+  const { auth } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const posthog = usePostHog();
   usePrefetchCourseTableCatalog();
   useCourseRenumbering(true);
   const catalogMeta = useCourseTableCatalogMeta();
 
+  // Re-identify returning visitors so server-side and client-side sessions stay correlated.
+  useEffect(() => {
+    if (auth.userId) {
+      posthog?.identify(auth.userId);
+    }
+  }, [auth.userId, posthog]);
+
   async function signOut() {
+    posthog?.capture("user_signed_out");
+    posthog?.reset();
     await supabase.auth.signOut();
     router.navigate({ to: "/" });
   }

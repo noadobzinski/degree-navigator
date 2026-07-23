@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { z } from "zod";
+import { usePostHog } from "@posthog/react";
 import { getProfile, updateProfile } from "@/lib/audit.functions";
 import { useCourseTableCatalogMeta, useClientQueryEnabled } from "@/hooks/use-coursetable-catalog";
 import { CERTIFICATE_CATEGORIES, CERTIFICATES, resolveCertificateId } from "@/data/certificates";
@@ -41,6 +42,7 @@ function SettingsPage() {
   const updateFn = useServerFn(updateProfile);
   const qc = useQueryClient();
   const clientReady = useClientQueryEnabled();
+  const posthog = usePostHog();
   const profileQ = useQuery({
     queryKey: ["profile"],
     queryFn: () => fetchProfile(),
@@ -125,6 +127,15 @@ function SettingsPage() {
     onSuccess: () => {
       toast.success("Saved");
       qc.invalidateQueries({ queryKey: ["profile"] });
+      posthog?.capture("profile_saved", {
+        major_id: majorId || null,
+        degree_type: degree,
+        has_double_major: doubleMajor && !!secondMajorId,
+        has_concentration: !!concentrationId,
+        certificate_count: certificateIds.length,
+        has_track: trackId !== "none",
+        has_class_year: !!year,
+      });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
   });

@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { usePostHog } from "@posthog/react";
 import {
   MAJORS,
   MAJOR_DEPARTMENTS,
@@ -74,6 +75,7 @@ function MajorsPage() {
   const [degreeFilter, setDegreeFilter] = useState<string>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [previewConcentrationId, setPreviewConcentrationId] = useState<string>("");
+  const posthog = usePostHog();
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -167,7 +169,15 @@ function MajorsPage() {
             <button
               key={m.id}
               type="button"
-              onClick={() => setSelectedId(m.id)}
+              onClick={() => {
+                setSelectedId(m.id);
+                posthog?.capture("major_previewed", {
+                  major_id: m.id,
+                  major_name: m.name,
+                  major_department: m.department,
+                  degree_options: m.degrees,
+                });
+              }}
               className={`w-full rounded-lg border p-3 text-left transition-colors hover:bg-accent ${
                 selectedId === m.id ? "border-primary bg-accent" : "border-border"
               }`}

@@ -8,6 +8,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
+import { PostHogProvider } from "@posthog/react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -94,12 +95,36 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient; auth
   errorComponent: ErrorComponent,
 });
 
+const POSTHOG_KEY = import.meta.env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN as string | undefined;
+const POSTHOG_HOST = import.meta.env.VITE_PUBLIC_POSTHOG_HOST as string | undefined;
+
+if (import.meta.env.DEV && typeof window !== "undefined" && (!POSTHOG_KEY || !POSTHOG_HOST)) {
+  console.error(
+    `${!POSTHOG_KEY ? "VITE_PUBLIC_POSTHOG_PROJECT_TOKEN" : "VITE_PUBLIC_POSTHOG_HOST"} variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once the variable is configured`,
+  );
+}
+
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head><HeadContent /></head>
       <body>
-        {children}
+        {POSTHOG_KEY && POSTHOG_HOST ? (
+          <PostHogProvider
+            apiKey={POSTHOG_KEY}
+            options={{
+              api_host: "/ingest",
+              ui_host: POSTHOG_HOST,
+              defaults: "2025-05-24",
+              capture_exceptions: true,
+              debug: import.meta.env.DEV,
+            }}
+          >
+            {children}
+          </PostHogProvider>
+        ) : (
+          children
+        )}
         <Scripts />
       </body>
     </html>

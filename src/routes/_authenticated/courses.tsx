@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
+import { usePostHog } from "@posthog/react";
 import { getMyCourses, getProfile, addCourse, updateCourse, deleteCourse } from "@/lib/audit.functions";
 import {
   useCourseTableCatalogMeta,
@@ -81,6 +82,7 @@ function CoursesPage() {
   const deleteFn = useServerFn(deleteCourse);
   const clientReady = useClientQueryEnabled();
   const qc = useQueryClient();
+  const posthog = usePostHog();
   const coursesQ = useQuery({
     queryKey: ["courses"],
     queryFn: () => fetchCourses(),
@@ -170,9 +172,16 @@ function CoursesPage() {
         },
       });
     },
-    onSuccess: () => {
+    onSuccess: (_, vars) => {
       toast.success(`Added for ${selectedSeasonLabel}`);
       qc.invalidateQueries({ queryKey: ["courses"] });
+      posthog?.capture("course_added", {
+        course_code: vars.course.code,
+        course_subject: vars.course.subject,
+        distributional: vars.course.distributional,
+        season: selectedSeasonLabel,
+        credits: vars.course.credits,
+      });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
   });
@@ -182,13 +191,19 @@ function CoursesPage() {
       status?: "planned" | "in_progress" | "completed";
       counts_as_wr?: boolean | null;
     }) => updateFn({ data: vars }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["courses"] }),
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["courses"] });
+      if (vars.status) {
+        posthog?.capture("course_status_updated", { new_status: vars.status });
+      }
+    },
   });
   const delM = useMutation({
     mutationFn: (id: string) => deleteFn({ data: { id } }),
     onSuccess: () => {
       toast.success("Removed");
       qc.invalidateQueries({ queryKey: ["courses"] });
+      posthog?.capture("course_removed");
     },
   });
 

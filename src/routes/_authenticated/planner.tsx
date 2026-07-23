@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
+import { usePostHog } from "@posthog/react";
 import { getProfile, getMyCourses, addCourse, updateCourse, deleteCourse } from "@/lib/audit.functions";
 import {
   useCourseTableCatalogSearch,
@@ -58,6 +59,7 @@ function PlannerPage() {
   const addFn = useServerFn(addCourse);
   const updateFn = useServerFn(updateCourse);
   const deleteFn = useServerFn(deleteCourse);
+  const posthog = usePostHog();
 
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -133,11 +135,18 @@ function PlannerPage() {
         },
       });
     },
-    onSuccess: () => {
+    onSuccess: (_, vars) => {
       toast.success("Course added to plan");
       qc.invalidateQueries({ queryKey: ["courses"] });
       setSearch("");
       setAddToSeason(null);
+      posthog?.capture("planner_course_added", {
+        course_code: vars.course.code,
+        course_subject: vars.course.subject,
+        semester: vars.season.label,
+        distributional: vars.course.distributional,
+        credits: vars.course.credits,
+      });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to add"),
   });

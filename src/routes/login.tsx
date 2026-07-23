@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { GraduationCap } from "lucide-react";
 import { toast } from "sonner";
 import { describeAuthError } from "@/lib/auth-errors";
+import { usePostHog } from "@posthog/react";
 
 export const Route = createFileRoute("/login")({
   validateSearch: z.object({
@@ -28,6 +29,7 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const posthog = usePostHog();
 
   const afterSignIn = redirectTo && redirectTo.startsWith("/") ? redirectTo : "/dashboard";
 
@@ -42,6 +44,7 @@ function LoginPage() {
         redirectTo: `${window.location.origin}/reset-password`,
       });
       if (error) throw error;
+      posthog?.capture("password_reset_requested");
       toast.success("Check your email for a link to reset your password.");
       setMode("signin");
     } catch (e) {
@@ -60,16 +63,24 @@ function LoginPage() {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: { emailRedirectTo: `${window.location.origin}${afterSignIn}` },
         });
         if (error) throw error;
+        if (data.user) {
+          posthog?.identify(data.user.id);
+          posthog?.capture("user_signed_up");
+        }
         toast.success("Account created. Check your email to confirm, then sign in.");
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        if (data.user) {
+          posthog?.identify(data.user.id);
+          posthog?.capture("user_signed_in");
+        }
         await router.navigate({ to: afterSignIn as "/dashboard" });
       }
     } catch (e) {

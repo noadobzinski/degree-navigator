@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
+import { usePostHog } from "@posthog/react";
+import { useEffect } from "react";
 import { getProfile, getMyCourses } from "@/lib/audit.functions";
 import { useCourseTableCatalogMeta, useClientQueryEnabled } from "@/hooks/use-coursetable-catalog";
 import { useCrosslistLookup } from "@/hooks/use-crosslist";
@@ -41,6 +43,7 @@ function Dashboard() {
   const fetchProfile = useServerFn(getProfile);
   const fetchCourses = useServerFn(getMyCourses);
   const clientReady = useClientQueryEnabled();
+  const posthog = usePostHog();
   const metaQ = useCourseTableCatalogMeta();
   const profileQ = useQuery({
     queryKey: ["profile"],
@@ -77,6 +80,20 @@ function Dashboard() {
     clientReady && !!profileForExamples?.major_id,
   );
 
+  // Capture once when the audit loads with a major configured.
+  useEffect(() => {
+    const profile = profileQ.data;
+    const courses = coursesQ.data ?? [];
+    if (!profile?.major_id || !profile?.degree_type) return;
+    posthog?.capture("degree_audit_viewed", {
+      major_id: profile.major_id,
+      degree_type: profile.degree_type,
+      has_second_major: !!profile.second_major_id,
+      course_count: courses.length,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileQ.data?.major_id, coursesQ.isSuccess]);
+
   if (!clientReady || profileQ.isLoading || coursesQ.isLoading) {
     return <div className="text-muted-foreground">Loading your audit…</div>;
   }
@@ -103,6 +120,7 @@ function Dashboard() {
 
   const major = MAJORS_BY_ID[profile.major_id];
   const degree = (profile.degree_type ?? major?.defaultDegree ?? "BA") as "BA" | "BS";
+
   const majorAudit = auditMajor(
     courses,
     profile.major_id,
