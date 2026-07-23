@@ -113,7 +113,9 @@ function RootShell({ children }: { children: ReactNode }) {
           <PostHogProvider
             apiKey={POSTHOG_KEY}
             options={{
-              api_host: "/ingest",
+              // Dev uses Vite's /ingest proxy; production must hit PostHog directly
+              // (or a Vercel rewrite). Local-only /ingest 404s on Vercel.
+              api_host: import.meta.env.DEV ? "/ingest" : POSTHOG_HOST,
               ui_host: POSTHOG_HOST,
               defaults: "2025-05-24",
               capture_exceptions: true,
